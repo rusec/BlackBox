@@ -1,0 +1,27 @@
+# Ignore Node Modules
+node_modules
+node_modules/**
+node_modules/*
+
+test
+
+# Ignore db
+muffins
+
+# Ignore Computers
+computers.csv
+
+# Files
+
+phone.txt
+index_test.js
+log.log
+
+# Compiled
+
+Tortilla-linux
+Tortilla-macos
+Tortilla-win.exe
+
+
+phonea.txt
