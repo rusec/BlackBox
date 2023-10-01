@@ -45,7 +45,7 @@ async function edit() {
 
             choices: [
                 new inquirer.Separator(),
-                "Home",
+                "Back",
                 new inquirer.Separator(),
                 { name: 'Change Password (if manually changed)', value: "Change Password" },
                 new inquirer.Separator(),
@@ -57,8 +57,9 @@ async function edit() {
                 new inquirer.Separator(),
                 "Remove",
                 new inquirer.Separator(),
-                "Back",
+                "Home",
                 new inquirer.Separator(),
+
 
             ],
             message: "Please select a computer:",

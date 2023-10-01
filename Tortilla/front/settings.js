@@ -25,7 +25,8 @@ async function Settings() {
                 new inquirer.Separator(),
                 "Back",
                 new inquirer.Separator(),
-            ]
+            ],
+            message: "Please select a setting"
         }
     ])
     switch (program) {
