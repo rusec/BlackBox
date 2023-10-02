@@ -4,7 +4,13 @@ const keccak256 = require("keccak256");
 const gen = require("random-seed");
 const words = require('an-array-of-english-words')
 
-
+/**
+ * Generates an array of random passwords.
+ *
+ * @param {number} length - The number of passwords to generate.
+ * @param {string} seeder - A seed string for the random number generator.
+ * @returns {string[]} An array of randomly generated passwords.
+ */
 module.exports = function generatePasses(length, seeder) {
     const rng = new gen(keccak256(seeder).toString('hex'));
 

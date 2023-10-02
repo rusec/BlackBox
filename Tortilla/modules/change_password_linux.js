@@ -15,15 +15,16 @@ const shadowFile = '/etc/shadow'
 module.exports = {
 
     /**
- * 
- * @param {ssh2} conn 
- * @param {string} username username of account
- * @param {string} password password to set to
- * @param {string} sudopassword sudo account password
- * 
- * @param {*} algorithm 
- * @returns {Promise<Boolean | String>}
- */
+     * Changes the password of a user on a remote system using SSH.
+     *
+     * @param {ssh2} conn - An SSH connection object.
+     * @param {string} username - The username of the account for which the password will be changed.
+     * @param {string} password - The new password to set for the user account.
+     * @param {string} sudopassword - The sudo account password (if required for changing the password).
+     * @param {number} [algorithm=6] - The algorithm used for password encryption (default is 6).
+     * @returns {Promise<Boolean | String>} A promise that resolves to `true` if the password is changed successfully,
+     *    or a string containing an error message if the change fails.
+     */
     changePassword: async function (conn, username, password, sudopassword, algorithm = 6) {
 
 

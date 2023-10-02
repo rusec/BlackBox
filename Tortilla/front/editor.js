@@ -126,6 +126,9 @@ async function edit() {
                 type: "confirm"
             }
         ])
+
+
+
         if (!confirm) {
             return home();
         }
@@ -133,6 +136,9 @@ async function edit() {
         await runningDB.writeCompPassword(id, newPassword)
         console.log("password updated!")
         await delay(300)
+
+
+
         home();
     }
     async function changeUsername() {
@@ -148,6 +154,9 @@ async function edit() {
                 type: "confirm"
             }
         ])
+
+
+
         if (!confirm) {
             return home();
         }
@@ -155,6 +164,9 @@ async function edit() {
         await runningDB.writeComputers(json)
         console.log("username updated!")
         await delay(300)
+
+
+
         home();
     }
     async function changeOS() {
@@ -175,6 +187,9 @@ async function edit() {
                 type: "confirm"
             }
         ])
+
+
+
         if (!confirm) {
             return home();
         }
@@ -182,6 +197,9 @@ async function edit() {
         await runningDB.writeComputers(json)
         console.log("OS updated!")
         await delay(300)
+
+
+
         home();
     }
 }

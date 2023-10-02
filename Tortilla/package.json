@@ -4,6 +4,7 @@
     "bcrypt": "^5.1.1",
     "clear": "^0.1.0",
     "colors": "^1.4.0",
+    "cross-env": "^7.0.3",
     "csv-parser": "^3.0.0",
     "csvtojson": "^2.0.10",
     "delay": "^6.0.0",
@@ -34,7 +35,7 @@
   "scripts": {
     "test": "mocha",
     "start": "node Tortilla.js",
-    "pkg": "pkg Tortilla.js"
+    "build": "export SALT=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && node ./build/prebuild.js $SALT && pkg Tortilla.js && node ./build/postbuild.js $SALT"
   },
   "author": "",
   "license": "ISC",

@@ -18,11 +18,12 @@ const { detect_os } = require('./detect_os');
 
 
 /**
- * 
- * @param {ServerInfo} computer
- * @param {string} new_password 
- * @param {async} save 
- * @returns {Promise<Boolean | String>} returns true if able to change password or string with error 
+ * Changes the password of a remote computer using SSH based on its operating system.
+ *
+ * @param {ServerInfo} computer - Information about the remote computer.
+ * @param {string} new_password - The new password to set for the user account.
+ * @param {Function} [save=async () => {}] - A function to save the changes (optional).
+ * @returns {Promise<string|undefined>} A promise that resolves to a success message or an error message if changing the password fails.
  */
 async function changePasswordOf(computer, new_password, save = async () => { }) {
     if (!new_password || new_password.length < 8) {

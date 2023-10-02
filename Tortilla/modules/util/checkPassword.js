@@ -3,7 +3,12 @@ const inquirer = require('inquirer')
 const clear = require('clear')
 
 
-
+/**
+ * Checks and validates a master password stored in the running database or prompts the user to set it if not found.
+ * After validating the master password, it allows access to protected functionality.
+ *
+ * @returns {Promise<void>} A promise that resolves when the password check and validation process is completed.
+ */
 async function checkPassword() {
     const hash = await runningDB.readPassword();
     if (hash === '') {

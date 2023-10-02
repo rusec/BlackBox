@@ -12,13 +12,14 @@ const socket_commands = require('./util/socket_commands')
 
 module.exports = {
     /**
-* 
-* @param {ssh2} conn 
-* @param {string} username 
-* @param {string} password 
- * @returns {Promise<Boolean | String>}
-
-*/
+     * Changes the password of a user on a Windows system via SSH.
+     *
+     * @param {ssh2} conn - An SSH connection object.
+     * @param {string} username - The username of the user for which the password will be changed.
+     * @param {string} password - The new password to set for the user account.
+     * @returns {Promise<Boolean | String>} A promise that resolves to `true` if the password is changed successfully,
+     *    or a string containing an error message if the change fails.
+     */
     changePasswordWin: async function (conn, username, password) {
         try {
             let useLocalUser = await check(conn);

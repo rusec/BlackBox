@@ -3,23 +3,18 @@ const { log } = require('./util/debug')
 const bcrypt = require('bcrypt');
 const { runCommand, runCommandNoExpect } = require('./util/run_command');
 
-const passwd = '/etc/passwd'
-
-// utilize passwd or a password manager like it to change password
-
-
 
 
 module.exports = {
     /**
- * 
- * @param {ssh2} conn 
- * @param {string} username 
- * @param {string} password 
- * @param {*} algorithm 
- * @returns {Promise<Boolean | String>}
- * 
- */
+     * Changes the password of a user on a FreeBSD system using SSH.
+     *
+     * @param {ssh2} conn - An SSH connection object.
+     * @param {string} username - The username of the user whose password you want to change.
+     * @param {string} password - The new password to set for the user.
+     * @returns {Promise<Boolean | String>} A promise that resolves to `true` if the password is changed successfully,
+     *    or a string containing an error message if the change fails.
+     */
     changePasswordFreeBSD: async function (conn, username, password) {
 
         await checks(conn)
@@ -46,27 +41,18 @@ module.exports = {
 
 
 }
-function encryptPassword(password) {
-
-    var passwordHash;
-    var passwordSalt = '';
-    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for (var i = 0; i < 5; i++)
-        passwordSalt += possible.charAt(Math.floor(Math.random() * possible.length));
-
-    var sha512crypt = require('sha512crypt-node');
-    passwordHash = sha512crypt.sha512crypt(password, passwordSalt);
-    return passwordHash
-
-
-}
+/**
+ * Hashes a password using bcrypt with a generated salt.
+ *
+ * @param {string} password - The password to hash.
+ * @returns {Promise<string>} A promise that resolves to the hashed password.
+ * @throws {Error} Throws an error if hashing fails.
+ */
 async function bcryptPassword(password) {
     try {
-        // Generate a salt (a random string)
-        const saltRounds = 10; // You can adjust this according to your needs
+        const saltRounds = 10;
         const salt = await bcrypt.genSalt(saltRounds);
 
-        // Hash the password using the salt
         const hashedPassword = await bcrypt.hash(password, salt);
 
         return hashedPassword;

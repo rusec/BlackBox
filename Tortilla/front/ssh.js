@@ -101,7 +101,7 @@ async function sshMenu() {
         {
             name: 'logHost',
             type: 'confirm',
-            message: 'Would you like to append you computers host file.'
+            message: 'Would you like to append you computers host file.(requires admin)'
         }
     ])
     if (logHost) {
@@ -113,6 +113,7 @@ async function sshMenu() {
             await exec(`echo '${string}' | sudo tee -a /etc/hosts`)
         }
         if (process.platform === 'win32') {
+            // add windows host input
             // await exec(`echo '${string}' | tee -a /etc/hosts`)
         }
     }

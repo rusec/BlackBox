@@ -36,20 +36,17 @@ const default_db = {
 class DB {
 
     constructor() {
-        //Move to different file on system
         this.filePath = './muffins';
 
     }
     _getPKey() {
-        if (this._encryptionKey) {
-            return this._encryptionKey
-        }
         var uuid = this._getUUID();
         var plat = process.platform
-        this._encryptionKey = keccak256(
-            uuid + plat + this._string()
+        let _encryptionKey = keccak256(
+            uuid + plat + this._string() + "shrimp_key"
         ).toString("hex");
-        return this._encryptionKey;
+
+        return _encryptionKey;
     }
     _getUUID() {
         return machineIdSync({ original: true }).toUpperCase();
@@ -102,7 +99,11 @@ class DB {
         }
         return result;
     }
-
+    /**
+     * Reads data from a CSV file named 'computers.csv', processes it, and writes the normalized data to the running database.
+     *
+     * @returns {Promise<void>} A promise that resolves when the CSV data is successfully read, processed, and written to the running database.
+     */
     async readCSV() {
         try {
             let jsonArray = await csv().fromFile('./computers.csv')
@@ -111,6 +112,16 @@ class DB {
 
         }
     }
+    /**
+     * Adds a computer entry to the list of computers, updating it if it already exists.
+     *
+     * @param {string} name - The name of the computer.
+     * @param {string} ip - The IP address of the computer.
+     * @param {string} username - The username for connecting to the computer.
+     * @param {string} password - The password for connecting to the computer.
+     * @param {string} os_type - The operating system type of the computer.
+     * @returns {Promise<void>} A promise that resolves when the computer entry is successfully added or updated.
+     */
     async addComputer(name, ip, username, password, os_type) {
         let computers = await this.readComputers();
         let index = computers.findIndex((v) => v['IP Address'] === ip)
@@ -126,6 +137,12 @@ class DB {
         })
         return await this.writeComputers(computers)
     }
+    /**
+ * Removes a computer entry from the list of computers by its index.
+ *
+ * @param {number} index - The index of the computer entry to remove.
+ * @returns {Promise<void>} A promise that resolves when the computer entry is successfully removed.
+ */
     async removeComputer(index) {
         let computers = await this.readComputers();
         computers = computers.filter((_, i) => {
@@ -133,7 +150,11 @@ class DB {
         })
         return await this.writeComputers(computers)
     }
-
+    /**
+     * Reads the master password from the running database or initializes it with a default value if not found.
+     *
+     * @returns {Promise<string>} A promise that resolves to the master password.
+     */
     async readPassword() {
         const { master_password } = await this._readJson();
         if (master_password === undefined) {
@@ -142,6 +163,14 @@ class DB {
         }
         return master_password;
     }
+    /**
+ * Updates the password of a computer in the list of computers by its index.
+ *
+ * @param {number} computer_id - The index of the computer to update.
+ * @param {string} password - The new password to set for the computer.
+ * @returns {Promise<void>} A promise that resolves when the computer password is successfully updated.
+ * @throws {Error} Throws an error if the password is undefined.
+ */
     async writeCompPassword(computer_id, password) {
         if (!password) {
             throw new Error("Password cannot be undefined")
@@ -155,12 +184,21 @@ class DB {
         }
 
     }
+    /**
+     * Reads the list of computers from the running database.
+     *
+     * @returns {Promise<Array<ServerInfo>>} A promise that resolves to an array of computer objects.
+     */
 
     async readComputers() {
         const { computers } = await this._readJson();
         return computers
     }
-
+    /**
+     * Resets the master password in the database by prompting the user for the old and new passwords.
+     *
+     * @returns {Promise<void>} A promise that resolves when the master password is successfully reset.
+     */
     async resetMasterPassword() {
         const me = this
         const { master_password } = await inquirer.prompt([
@@ -203,9 +241,12 @@ class DB {
         }
         return await bcrypt.compare(master_password, hash)
     }
+
     /**
-     * 
-     * @param {Array<ServerInfo>} jsonData 
+     * Writes an array of computer data to the database.
+     *
+     * @param {Array<Object>} jsonData - An array of computer data to be written to the database.
+     * @returns {Promise<void>} A promise that resolves when the computer data is successfully written to the database.
      */
     async writeComputers(jsonData) {
         const db = await this._readJson();
@@ -214,9 +255,11 @@ class DB {
     }
 
     /**
-    * 
-    * @param {String} password_string 
-    */
+  * Hashes and stores a master password in the database.
+  *
+  * @param {string} password_string - The master password to hash and store.
+  * @returns {Promise<void>} A promise that resolves when the password is hashed and stored in the database.
+  */
     async writePassword(password_string) {
         const hash = await this._bcryptPassword(password_string);
         const db = await this._readJson();
@@ -224,9 +267,12 @@ class DB {
         await this._writeJson(db);
     }
     /**
-     * 
-     * @param {DataBase} jsonData 
-     */
+ * Writes the provided `jsonData` to the database file after normalizing and encrypting it.
+ *
+ * @param {DataBase} jsonData - The data to be written to the database file.
+ * @returns {Promise<boolean>} A promise that resolves to `true` if the write operation is successful.
+ * @throws {Error} Throws an error if there is an issue with writing or encrypting the JSON data.
+ */
     async _writeJson(jsonData) {
 
         try {
@@ -243,9 +289,10 @@ class DB {
     }
 
     /**
-  * 
-  * @returns {Promise<DataBase>}
-  */
+   * Reads and decrypts the database file, returning the parsed data.
+   *
+   * @returns {Promise<DataBase>} A promise that resolves to a `DataBase` object containing the decrypted data.
+   */
     async _readJson() {
         try {
             let encryptedData = await fs.promises.readFile(this.filePath, 'utf8');
