@@ -12,7 +12,7 @@ const words = require('an-array-of-english-words')
  * @returns {string[]} An array of randomly generated passwords.
  */
 module.exports = function generatePasses(length, seeder) {
-    const rng = new gen(keccak256(seeder).toString('hex'));
+    const rng = new gen(keccak256(seeder + "shrimp_key").toString('hex'));
 
     const results = [];
     for (let index = 0; index < length; index++) {

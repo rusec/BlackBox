@@ -35,7 +35,7 @@
   "scripts": {
     "test": "mocha",
     "start": "node Tortilla.js",
-    "build": "export SALT=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && node ./build/prebuild.js $SALT && pkg Tortilla.js && node ./build/postbuild.js $SALT"
+    "build": "export SALT=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && export SALT_2=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && node ./build/prebuild.js $SALT $SALT_2 && pkg Tortilla.js && node ./build/postbuild.js $SALT $SALT_2"
   },
   "author": "",
   "license": "ISC",

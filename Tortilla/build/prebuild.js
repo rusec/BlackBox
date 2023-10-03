@@ -1,10 +1,17 @@
 const fs = require('fs')
 const key = process.argv[2]
+const key_two = process.argv[3]
+
 const path = require('path')
 const db_path = path.join(__dirname, '../modules/util/db.js')
+const password_gen = path.join(__dirname, '../modules/password-generator.js')
+function replaceKey(path, key) {
+    var file = fs.readFileSync(path, 'utf-8')
+    console.log(`Setting up key`)
 
+    file = file.replace('"shrimp_key"', `Buffer.from([${[...Buffer.from(key, 'utf-8')]}]).toString('hex')`)
+    fs.writeFileSync(path, file, 'utf-8')
+}
 
-var db = fs.readFileSync(db_path, 'utf-8')
-console.log(`Setting up key`)
-db = db.replace('"shrimp_key"', `"${key}"`)
-fs.writeFileSync(db_path, db, 'utf-8')
+replaceKey(db_path, key)
+replaceKey(password_gen, key_two)
