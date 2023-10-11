@@ -1,0 +1,123 @@
+import inquirer from "inquirer";
+import runningDB from "../modules/util/db";
+import clear from "clear";
+import { delay } from "../modules/util/util";
+import { changePasswordOf } from "../modules/passwords";
+import { log } from "../modules/util/debug";
+import { generatePasses } from "../modules/password-generator";
+import fs from "fs";
+import { removeANSIColorCodes } from "../modules/util/util";
+import { Home } from "./home";
+async function runScript() {
+    const originalConsoleLog = console.log;
+    let capturedOutput = "";
+
+    try {
+        const computers = await runningDB.readComputers();
+
+        const { seed } = await inquirer.prompt([
+            {
+                name: "seed",
+                type: "input",
+                message: "Please enter a seed",
+            },
+        ]);
+
+        //Hold Original Log for later
+        console.log = function (...args) {
+            const string = args.map((arg) => String(arg)).join(" ");
+            capturedOutput += string + "\n";
+            originalConsoleLog(string);
+        };
+
+        //Clear and print status
+        await clear();
+        log(`running script on ${computers.length} computers`);
+
+        //Generate values
+        const passwords = generatePasses(computers.length, seed);
+
+        const promises = computers.map((element, i) => {
+            const password = passwords[i];
+            const callBack = async function () {
+                return await runningDB.writeCompPassword(i, password);
+            };
+            return changePasswordOf(element, password, callBack);
+        });
+
+        var results = await Promise.allSettled(promises);
+        const numberOfSuccess = results
+            .filter(({ status }) => status === "fulfilled")
+            .map((p) => typeof (p as PromiseFulfilledResult<any>).value == "boolean" && (p as PromiseFulfilledResult<any>).value).length;
+
+        console.log(`Successfully changed passwords on ${numberOfSuccess} of ${computers.length}`.green);
+
+        const { logToFile } = await inquirer.prompt([
+            {
+                name: "logToFile",
+                type: "confirm",
+                message: "Would you like to generate a report?",
+            },
+        ]);
+        if (logToFile) {
+            const runningLog = results
+                .map((element, i) => {
+                    if (typeof (element as PromiseFulfilledResult<any>).value === "boolean" && (element as PromiseFulfilledResult<any>).value) {
+                        return `Changed password of ${computers[i]["IP Address"]}`;
+                    } else {
+                        return `Error on ${computers[i]["IP Address"]} ${(element as PromiseFulfilledResult<any>).value}`;
+                    }
+                })
+                .join("\n");
+
+            fs.writeFileSync("log.log", removeANSIColorCodes(runningLog + "\n\nLOG:\n" + capturedOutput), "utf8");
+        }
+
+        await delay(1000);
+    } catch (error) {
+        console.log(`Error while updating passwords ${error}`);
+        await delay(1000);
+    } finally {
+        console.log = originalConsoleLog;
+    }
+
+    Home();
+
+    //Set up reporting
+}
+
+async function runSingleScript(id: number) {
+    try {
+        const { password } = await inquirer.prompt([
+            {
+                name: "password",
+                type: "password",
+                message: "Please enter a new password",
+                validate: function (value) {
+                    if (value.length > 8) {
+                        return true;
+                    }
+                    return "password must be longer then 8 characters";
+                },
+            },
+        ]);
+        const computers = await runningDB.readComputers();
+        log(`running script on ${computers[id].Name}`);
+        let numberOfSuccess = 0;
+        const result = await changePasswordOf(computers[id], password);
+        if (typeof result === "boolean" && result) {
+            computers[id].Password = password;
+            numberOfSuccess++;
+        }
+
+        log(`Successfully changed passwords on ${numberOfSuccess} of 1`.green);
+
+        runningDB.writeComputers(computers);
+    } catch (error) {
+        console.log(`Error while updating passwords ${error}`);
+        await delay(1000);
+    }
+    Home();
+}
+
+export { runScript, runSingleScript };
