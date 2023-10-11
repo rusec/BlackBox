@@ -1,16 +1,3 @@
-##Get History
-# Define the cmdHistoryFile to store the command history on the Desktop
-$cmdHistoryFile = "$env:USERPROFILE\Desktop\cmd_history.txt"
-
-# Check if the history file exists and display its content
-if (Test-Path -Path $cmdHistoryFile) {
-    Write-Host "Command History:"
-    Get-Content -Path $cmdHistoryFile | ForEach-Object { Write-Host $_ }
-} else {
-    Write-Host "No command history found."
-}
-
-
 ###Checking Policy restricitons of CMD
 $registryPath = "HKCU:\Software\Policies\Microsoft\Windows\System"
 
@@ -28,13 +15,11 @@ if ($null -ne $disableCMD) { ##Checks if if wether a registry key was retrived a
 }
 
 
-###Reset Access control list 
-$cmdPath = "$env:windir\System32\cmd.exe"
+# Define the path to cmd.exe
+$cmdPath = "$env:SystemRoot\System32\cmd.exe"
 
+# Reset the permissions to default for cmd.exe
+icacls $cmdPath /reset
 
-if((Get-Item $cmdPath).IsReadOnly) { # Check if cmd.exe is Read-Only
-    Set-ItemProperty -Path $cmdPath -Name IsReadOnly -Value $false #Changes Read only attribute to false 
-    Write-Host "Read-Only attribute has been removed from cmd.exe."
-} else {
-    Write-Host "cmd is not to Read-Only."
-}
+# Output the updated permissions
+icacls $cmdPath
