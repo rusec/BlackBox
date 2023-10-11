@@ -27,15 +27,6 @@ const default_db = {
     ssh_public: "",
     computers: [],
 };
-// /**
-//  * Represents information about a remote server or device.
-//  * @typedef {Object} ServerInfo
-//  * @property {string} Name - The name or identifier of the server/device.
-//  * @property {string} "IP Address" - The IP address of the server/device.
-//  * @property {string} Username - The username used for authentication.
-//  * @property {string} Password - The password used for authentication.
-//  * @property {string} "OS Type" - The type or name of the operating system (OS) running on the server/device.
-//  */
 class DB {
     constructor() {
         this.filePath = "./muffins";
