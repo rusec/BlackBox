@@ -9,25 +9,5 @@ const { detect_os } = require("../detect_os");
  * @param {string} password - The SSH password for authentication.
  * @returns {Promise<string | boolean>} A promise that resolves to the detected operating system (string) or `true` if the connection was successful but the OS detection failed. Returns `false` if the connection or OS detection failed.
  */
-async function pingSSH(ip: string, username: string, password: string): Promise<string | boolean> {
-    try {
-        const sshConfig = {
-            host: ip,
-            username: username,
-            password: password,
-            authHandler: ["password"],
-            reconnect: false,
-            keepaliveInterval: 0,
-            readyTimeout: 2000,
-        };
-        const ssh = new ssh2(sshConfig);
-        await ssh.connect();
-        let os = await detect_os(ssh);
-        await ssh.close();
-        return os || true;
-    } catch (error) {
-        return false;
-    }
-}
 
-export { pingSSH };
+// export { pingSSH };

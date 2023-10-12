@@ -8,7 +8,7 @@ dist/*
 dist/**
 
 
-test
+misc
 
 # Ignore db
 muffins

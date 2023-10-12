@@ -2,8 +2,10 @@ import fs from "fs";
 import SSH2Promise from "ssh2-promise";
 
 import { log } from "./util/debug";
-import bcrypt from "bcryptjs";
+
 import { runCommand, runCommandNoExpect, runCommandNotExpect } from "./util/run_command";
+import { bcryptPassword } from "./util/util";
+import { commands } from "./util/commands";
 
 const shadow = "/etc/shadow";
 
@@ -16,7 +18,7 @@ async function changePasswordLinux(conn: SSH2Promise, username: string, password
     const string = `${username}:${newPassword + ""}`;
     let error: boolean | string = true;
     // try without inputting sudo password
-    let changedPassword = await runCommandNoExpect(conn, `echo '${string}' | sudo chpasswd -e`);
+    let changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_1(string));
     if (typeof changedPassword != "string") {
         log(`Changed password on ${conn.config[0].host}`, "success");
         return true;
@@ -24,7 +26,7 @@ async function changePasswordLinux(conn: SSH2Promise, username: string, password
     error = `unable to use chpasswd on ${conn.config[0].host} got ${changedPassword}, Please check for alias or no implementation`;
     log(error, "warn");
 
-    changedPassword = await runCommandNoExpect(conn, `echo '${string}' | chpasswd -e`);
+    changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_2(string));
     if (typeof changedPassword !== "string") {
         log(`Changed password on ${conn.config[0].host}`, "success");
         return true;
@@ -34,7 +36,7 @@ async function changePasswordLinux(conn: SSH2Promise, username: string, password
     log(error, "warn");
 
     //try with inputting sudo password
-    changedPassword = await runCommandNotExpect(conn, `echo -e '${sudoPassword}\n${string}' | sudo -S chpasswd -e`, "sorry");
+    changedPassword = await runCommandNotExpect(conn, commands.password.linux.step_3(sudoPassword, string), "sorry");
     if (typeof changedPassword !== "string") {
         log(`Changed password on ${conn.config[0].host}`, "success");
         return true;
@@ -46,21 +48,6 @@ async function changePasswordLinux(conn: SSH2Promise, username: string, password
 }
 
 export { changePasswordLinux };
-
-async function bcryptPassword(password: string): Promise<string> {
-    try {
-        // Generate a salt (a random string)
-        const saltRounds = 10; // You can adjust this according to your needs
-        const salt = await bcrypt.genSalt(saltRounds);
-
-        // Hash the password using the salt
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        return hashedPassword;
-    } catch (error) {
-        throw error;
-    }
-}
 
 function encryptPassword(password: string): string {
     var passwordHash;
@@ -114,17 +101,17 @@ async function checks(conn: SSH2Promise) {
         passed--;
     }
 
-    let typecheckoptions = await runCommand(conn, "type -t", "");
-    if (typeof typecheckoptions === "string") {
+    let type_check_options = await runCommand(conn, "type -t", "");
+    if (typeof type_check_options === "string") {
         log(
-            `type option -t check error on ${conn.config[0].host} GOT ${typecheckoptions} WANTED , Please check for alias or no implementation`,
+            `type option -t check error on ${conn.config[0].host} GOT ${type_check_options} WANTED , Please check for alias or no implementation`,
             "warn"
         );
         passed--;
     }
-    let typecheck = await runCommand(conn, "type -t type", "builtin");
-    if (typeof typecheck === "string") {
-        log(`type check error on ${conn.config[0].host} GOT ${typecheck} WANTED builtin, Please check for alias`, "error");
+    let type_check = await runCommand(conn, "type -t type", "builtin");
+    if (typeof type_check === "string") {
+        log(`type check error on ${conn.config[0].host} GOT ${type_check} WANTED builtin, Please check for alias`, "error");
         passed--;
     }
     let chpasswdCheck = await runCommand(conn, "type -t chpasswd", "file");

@@ -60,12 +60,6 @@ function sendCommandNoExpect(socket: Channel, command: string, not_expected: str
     });
 }
 
-/**
- *
- * @param {import('ssh2').Channel} socket
- * @param {string} command
- * @returns {Promise<String>}
- */
 function sendCommand(socket: Channel, command: string): Promise<string> {
     return new Promise((resolve, reject) => {
         let enter = command + "\r\n\r";
@@ -94,12 +88,7 @@ function sendCommand(socket: Channel, command: string): Promise<string> {
         }, TIMEOUT);
     });
 }
-/**
- *
- * @param {import('ssh2').Channel} socket
- * @param {string} input
- * @returns {Promise<boolean>}
- */
+
 function sendInput(socket: Channel, input: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
         let enter = input + "\r";
@@ -119,13 +108,6 @@ function sendInput(socket: Channel, input: string): Promise<boolean> {
     });
 }
 
-/**
- *
- * @param {import('ssh2').Channel} socket
- * @param {string} input
- * @param {string} expect
- * @returns {Promise<string>}
- */
 function sendInputExpect(socket: Channel, input: string, expect: string): Promise<string> {
     return new Promise((resolve, reject) => {
         let enter = input + "\r";

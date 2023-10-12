@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 function removeANSIColorCodes(inputString: string): string {
     const colorCodePattern = /\x1B\[[0-9;]*[A-Za-z]/g;
 
@@ -26,4 +27,17 @@ function isValidIPAddress(ip: string): boolean {
 
     return true;
 }
-export { removeANSIColorCodes, delay, isValidIPAddress };
+async function bcryptPassword(password: string): Promise<string> {
+    try {
+        const saltRounds = 10;
+        const salt = await bcrypt.genSalt(saltRounds);
+
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        return hashedPassword;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export { removeANSIColorCodes, delay, isValidIPAddress, bcryptPassword };

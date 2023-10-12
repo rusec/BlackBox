@@ -8,6 +8,7 @@ import inquirer from "inquirer";
 import keccak256 from "keccak256";
 import { machineIdSync } from "node-machine-id";
 import keygen from "ssh-keygen-lite";
+import { options } from "./options";
 type DataBase = {
     master_password: string;
     ssh_private: string;
@@ -27,7 +28,7 @@ export type ServerInfo = {
     "IP Address": string;
     Username: string;
     Password: string;
-    "OS Type": string;
+    "OS Type": options;
 };
 
 class DB {
@@ -98,11 +99,11 @@ class DB {
 
     async getSSHPublicKey() {
         const db = await this._readJson();
-        return db.ssh_private;
+        return db.ssh_public;
     }
     async getSSHPrivateKey() {
         const db = await this._readJson();
-        return db.ssh_public;
+        return db.ssh_private;
     }
 
     /**
@@ -126,7 +127,7 @@ class DB {
      * @param {string} os_type - The operating system type of the computer.
      * @returns {Promise<void>} A promise that resolves when the computer entry is successfully added or updated.
      */
-    async addComputer(name: string, ip: string, username: string, password: string, os_type: string): Promise<boolean> {
+    async addComputer(name: string, ip: string, username: string, password: string, os_type: options): Promise<boolean> {
         let computers = await this.readComputers();
         let index = computers.findIndex((v) => v["IP Address"] === ip);
         if (index != -1) {
@@ -372,6 +373,7 @@ async function genKey(): Promise<{
 }> {
     return new Promise((resolve) => {
         keygen({
+            comment: "a0d5125e9b004f08eb68990f",
             read: true,
             format: "PEM",
         })

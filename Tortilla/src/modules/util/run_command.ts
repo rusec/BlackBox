@@ -56,5 +56,13 @@ async function runCommandNoExpect(conn: SSH2Promise, command: string): Promise<s
         return typeof error === "string" ? error.trim().replace("\n", " ") : error.message.trim().replace("\n", " ");
     }
 }
+async function getOutput(conn: SSH2Promise, command: string): Promise<string> {
+    try {
+        const value = await conn.exec(command);
+        return value;
+    } catch (error: any) {
+        return typeof error === "string" ? error.trim().replace("\n", " ") : error.message.trim().replace("\n", " ");
+    }
+}
 
-export { runCommand, runCommandNoExpect, runCommandNotExpect };
+export { runCommand, runCommandNoExpect, runCommandNotExpect, getOutput };

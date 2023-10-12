@@ -8,6 +8,7 @@ import { changePasswordFreeBSD } from "./change_password_freeBSD";
 import { log } from "./util/debug";
 import options from "./util/options";
 import { detect_os } from "./detect_os";
+import { ejectSSHkey } from "./util/ssh_utils";
 
 async function changePasswordOf(computer: ServerInfo, new_password: string, save: () => any = async () => {}): Promise<boolean | string> {
     if (!new_password || new_password.length < 8) {
@@ -19,7 +20,7 @@ async function changePasswordOf(computer: ServerInfo, new_password: string, save
         username: computer.Username,
         password: computer.Password,
         privateKey: await runningDB.getSSHPrivateKey(),
-        authHandler: ["password", "publickey"],
+        authHandler: ["publickey", "password"],
         reconnect: false,
         keepaliveInterval: 0,
     };
@@ -54,6 +55,7 @@ async function changePasswordOf(computer: ServerInfo, new_password: string, save
         }
 
         // ADD CHECK FOR SSH KEY
+        await ejectSSHkey(conn, computer["OS Type"]);
 
         await conn.close();
 

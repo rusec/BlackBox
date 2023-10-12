@@ -4,6 +4,7 @@ import color from "colors";
 
 const bold = color.bold;
 
+type options = "log" | "debug" | "warn" | "error" | "info" | "success" | undefined;
 /**
  * Logs a message with an optional message type and override flag to the console.
  *
@@ -12,7 +13,7 @@ const bold = color.bold;
  * @param {boolean} [override=false] - If true, the message type is overridden by the provided type.
  * @returns {void} This function does not return a value.
  */
-var log = (message: string, type: string = "debug", override: boolean = false): void => {
+var log = (message: string, type: options = "debug", override: boolean = false): void => {
     let t;
     switch (type.toLowerCase()) {
         default:
