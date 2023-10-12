@@ -159,7 +159,7 @@ async function makeConnection(Server: ServerInfo, useKey?: boolean): Promise<SSH
     }
 }
 
-async function pingSSH(ip: string, username: string, password: string): Promise<string | boolean> {
+async function pingSSH(ip: string, username: string, password: string): Promise<options | boolean> {
     try {
         const sshConfig: SSHConfig = {
             host: ip,

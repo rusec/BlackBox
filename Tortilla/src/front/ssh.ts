@@ -2,7 +2,7 @@ import inquirer from "inquirer";
 import runningDB from "../modules/util/db";
 import clear from "clear";
 import { isValidIPAddress } from "../modules/util/util";
-import { pingSSH } from "../modules/util/ping";
+import { pingSSH } from "../modules/util/ssh_utils";
 import { log } from "../modules/util/debug";
 import fs from "fs/promises";
 import util from "util";
