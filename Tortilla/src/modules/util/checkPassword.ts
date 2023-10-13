@@ -26,6 +26,7 @@ async function checkPassword(): Promise<void> {
         ]);
         await runningDB.writePassword(master_password);
     }
+
     await clear();
     let trials = 3;
     await inquirer.prompt([

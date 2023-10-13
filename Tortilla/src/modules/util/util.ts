@@ -39,5 +39,8 @@ async function bcryptPassword(password: string): Promise<string> {
         throw error;
     }
 }
+function replaceAll(string: string, search: string, replace: string) {
+    return string.split(search).join(replace);
+}
 
-export { removeANSIColorCodes, delay, isValidIPAddress, bcryptPassword };
+export { removeANSIColorCodes, delay, isValidIPAddress, bcryptPassword, replaceAll };

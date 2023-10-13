@@ -6,7 +6,7 @@ import { edit } from "./editor";
 import { generatePasswords } from "./generate";
 import { runScript } from "./passwordScript";
 
-const checkPassword = require("../modules/util/checkPassword");
+const { checkPassword } = require("../modules/util/checkPassword");
 const { Settings } = require("./settings");
 
 async function Home() {
@@ -25,6 +25,8 @@ async function Home() {
                 new inquirer.Separator(),
                 "Run Password Changer",
                 new inquirer.Separator(),
+                "Run Password TEST",
+                new inquirer.Separator(),
                 "Computers",
                 new inquirer.Separator(),
                 "Generate Passwords",
@@ -42,11 +44,15 @@ async function Home() {
         case "Home":
             Home();
             break;
-
         case "Run Password Changer":
             await clear();
             await checkPassword();
             runScript();
+            break;
+        case "Run Password TEST":
+            await clear();
+            await checkPassword();
+            runScript(true);
             break;
         case "Generate Passwords":
             generatePasswords();

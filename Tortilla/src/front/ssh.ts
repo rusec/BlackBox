@@ -55,6 +55,7 @@ async function sshMenu() {
             ip: filtered_string[1] || "",
         };
     });
+
     var usernames = usernames_string.split(",").map((v: string) => v.trim());
     var passwords = passwords_string.split(",").map((v: string) => v.trim());
 

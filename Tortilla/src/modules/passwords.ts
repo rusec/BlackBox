@@ -8,28 +8,28 @@ import { changePasswordFreeBSD } from "./change_password_freeBSD";
 import { log } from "./util/debug";
 import options from "./util/options";
 import { detect_os } from "./detect_os";
-import { ejectSSHkey } from "./util/ssh_utils";
+import { ejectSSHkey, makeConnection } from "./util/ssh_utils";
 
-async function changePasswordOf(computer: ServerInfo, new_password: string, save: () => any = async () => {}): Promise<boolean | string> {
+export type password_result = {
+    password: string;
+    ssh: boolean;
+    error: false | string;
+};
+
+async function changePasswordOf(computer: ServerInfo, new_password: string): Promise<password_result | string> {
     if (!new_password || new_password.length < 8) {
         return "Password does not meet requirements";
     }
 
-    const sshConfig: SSHConfig = {
-        host: computer["IP Address"],
-        username: computer.Username,
-        password: computer.Password,
-        privateKey: await runningDB.getSSHPrivateKey(),
-        authHandler: ["publickey", "password"],
-        reconnect: false,
-        keepaliveInterval: 0,
-    };
-    const conn = new SSH2Promise(sshConfig);
+    const conn = await makeConnection(computer, true);
+
     log(`Attempting connection to ${computer["IP Address"]} `, "log");
     try {
-        let res;
+        if (!conn) {
+            throw new Error(`Unable to connect to host ${computer["IP Address"]}`);
+        }
 
-        await conn.connect();
+        let res;
         log(`connected to ${computer["IP Address"]}`, "log");
         if (!options.includes(computer["OS Type"])) {
             let os = await detect_os(conn);
@@ -55,7 +55,7 @@ async function changePasswordOf(computer: ServerInfo, new_password: string, save
         }
 
         // ADD CHECK FOR SSH KEY
-        await ejectSSHkey(conn, computer["OS Type"]);
+        let ssh_key = await ejectSSHkey(conn, computer["OS Type"]);
 
         await conn.close();
 
@@ -63,10 +63,9 @@ async function changePasswordOf(computer: ServerInfo, new_password: string, save
         if (typeof res === "string") {
             return res;
         }
-        return await save();
+        return { password: new_password, ssh: ssh_key, error: false };
     } catch (error: any) {
-        await conn.close();
-        log(`${conn.config[0].host} Got Error: ${error.message ? error.message : error}`, "error");
+        log(`${conn && conn.config[0].host} Got Error: ${error.message ? error.message : error}`, "error");
         return `Got Error: ${error.message ? error.message : error}`;
     }
 }

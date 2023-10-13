@@ -1,14 +1,14 @@
 import inquirer from "inquirer";
-import runningDB from "../modules/util/db";
+import runningDB, { ServerInfo } from "../modules/util/db";
 import clear from "clear";
 import { delay } from "../modules/util/util";
-import { changePasswordOf } from "../modules/passwords";
+import { changePasswordOf, password_result } from "../modules/passwords";
 import { log } from "../modules/util/debug";
 import { generatePasses } from "../modules/password-generator";
 import fs from "fs";
 import { removeANSIColorCodes } from "../modules/util/util";
 import { Home } from "./home";
-async function runScript() {
+async function runScript(debug?: boolean) {
     const originalConsoleLog = console.log;
     let capturedOutput = "";
 
@@ -32,17 +32,19 @@ async function runScript() {
 
         //Clear and print status
         await clear();
-        log(`running script on ${computers.length} computers`);
+        log(`Running script on ${computers.length} computers`);
 
         //Generate values
-        const passwords = generatePasses(computers.length, seed);
 
-        const promises = computers.map((element, i) => {
+        const passwords = debug ? computers.map(() => "Password123") : generatePasses(computers.length, seed);
+
+        const promises = computers.map(async (element, i) => {
             const password = passwords[i];
-            const callBack = async function () {
-                return await runningDB.writeCompPassword(i, password);
-            };
-            return changePasswordOf(element, password, callBack);
+            const result = await changePasswordOf(element, password);
+            if (typeof result == "string") {
+                throw new Error(result);
+            }
+            return await runningDB.writeCompResult(i, result);
         });
 
         var results = await Promise.allSettled(promises);
@@ -102,17 +104,15 @@ async function runSingleScript(id: number) {
             },
         ]);
         const computers = await runningDB.readComputers();
-        log(`running script on ${computers[id].Name}`);
-        let numberOfSuccess = 0;
+        log(`Running script on ${computers[id].Name}`);
         const result = await changePasswordOf(computers[id], password);
-        if (typeof result === "boolean" && result) {
-            computers[id].Password = password;
-            numberOfSuccess++;
+        if (typeof result == "string") {
+            log(`Error changing password Error: ${result}`, "error");
+            await delay(1000);
+        } else {
+            log(`Successfully changed passwords on ${computers[id]["IP Address"]}`.green);
+            await runningDB.writeCompResult(id, result);
         }
-
-        log(`Successfully changed passwords on ${numberOfSuccess} of 1`.green);
-
-        runningDB.writeComputers(computers);
     } catch (error) {
         console.log(`Error while updating passwords ${error}`);
         await delay(1000);

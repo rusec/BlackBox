@@ -26,6 +26,7 @@ async function Settings() {
             message: "Please select a setting",
         },
     ]);
+
     switch (program) {
         case "Setup":
             await clear();

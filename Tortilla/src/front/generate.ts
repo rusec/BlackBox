@@ -30,10 +30,12 @@ async function generatePasswords() {
             },
         },
     ]);
+
     let passwords = generatePasses(amount, seed);
     for (const password of passwords) {
         console.log(password);
     }
+
     const { file } = await inquirer.prompt([
         {
             name: "file",
@@ -50,6 +52,7 @@ async function generatePasswords() {
         log("Updated Text File");
         delay(300);
     }
+
     Home();
 }
 

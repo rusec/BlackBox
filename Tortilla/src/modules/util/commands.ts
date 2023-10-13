@@ -1,3 +1,5 @@
+import { replaceAll } from "./util";
+
 const commands = {
     password: {
         darwin: {
@@ -17,17 +19,22 @@ const commands = {
         eject: {
             windows: (ssh_key: string) =>
                 `powershell Add-Content -Force -Path $env:ProgramData\\ssh\\administrators_authorized_keys -Value '${ssh_key}';icacls.exe ""$env:ProgramData\\ssh\\administrators_authorized_keys"" /inheritance:r /grant ""Administrators:F"" /grant ""SYSTEM:F""`,
-            linux: (ssh_key: string) => `mkdir -p ~/.ssh && echo '${ssh_key}' | && cat >> ~/.ssh/authorized_keys`,
+            linux: (ssh_key: string) => `mkdir -p ~/.ssh && echo "${ssh_key}" | cat >> ~/.ssh/authorized_keys`,
         },
         remove: {
             windows: (ssh_key: string) =>
                 `powershell -command \"$keyToRemove = \\"${ssh_key}\\";$authorizedKeysPath = Join-Path $env:ProgramData \\"ssh\\administrators_authorized_keys\\"; $authorizedKeysContent = Get-Content -Path $authorizedKeysPath; $authorizedKeysContent = $authorizedKeysContent -notmatch [regex]::Escape($keyToRemove); $authorizedKeysContent | Set-Content -Path $authorizedKeysPath; icacls.exe $authorizedKeysPath /inheritance:r /grant \\"Administrators:F\\" /grantclear \\"SYSTEM:F\\"; Write-Host \\"SSH key removal complete.\\"\"`,
-            linux: (ssh_key: string) => `ssh_key="${ssh_key}" && sed -i 's/$ssh_key//g' ~/.ssh/authorized_keys`,
+            linux: (ssh_key: string) => `ssh_key="${replaceAll(ssh_key, "/", "\\/")}" && sed -i "s/$ssh_key//g" ~/.ssh/authorized_keys`,
+            freebsd: (ssh_key: string) => `setenv ssh_key "${replaceAll(ssh_key, "/", "\\/")}" && sed -i "" "s/$ssh_key//g" ~/.ssh/authorized_keys`,
         },
         echo: {
             windows: `powershell cat "$env:ProgramData\\ssh\\administrators_authorized_keys"`,
             linux: "cat ~/.ssh/authorized_keys",
         },
+    },
+    detect: {
+        windows: 'systeminfo | findstr /B /C:"OS Name" /B /C:"OS Version"',
+        linux: "uname -a",
     },
 };
 

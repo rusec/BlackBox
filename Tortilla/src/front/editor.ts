@@ -5,6 +5,9 @@ import { delay } from "../modules/util/util";
 import { checkPassword } from "../modules/util/checkPassword";
 import { runSingleScript } from "./passwordScript";
 import { Home } from "./home";
+import { addSSH, removeSSH, removeSSHkey } from "../modules/util/ssh_utils";
+import { changePasswordOf } from "../modules/passwords";
+import { log } from "../modules/util/debug";
 async function edit() {
     await clear();
     let json = await runningDB.readComputers();
@@ -25,11 +28,12 @@ async function edit() {
             message: "Please select the IP Address you want to edit:",
         },
     ]);
+    const head = `> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${blankPassword(json[id].Password)} ${
+        json[id]["OS Type"]
+    } | pub_key: ${json[id].ssh_key ? "true" : "false"}`.bgBlue;
 
     await clear();
-    console.log(
-        `> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${blankPassword(json[id].Password)} ${json[id]["OS Type"]} `.bgBlue
-    );
+    console.log(head);
 
     const { section } = await inquirer.prompt([
         {
@@ -41,15 +45,16 @@ async function edit() {
                 new inquirer.Separator(),
                 "Back",
                 new inquirer.Separator(),
-                { name: "Change Password (if manually changed)", value: "Change Password" },
+                { name: "Change Password", value: "change_pass_man" },
                 new inquirer.Separator(),
+                { name: "Change Password (if changed from target)", value: "Change Password" },
                 "Change Username",
-                new inquirer.Separator(),
                 "Change OS",
                 new inquirer.Separator(),
-                "Run Password Changer",
+                { name: "Inject SSH Key", value: "add_ssh" },
+                { name: "Remove SSH Key", value: "remove_ssh" },
                 new inquirer.Separator(),
-                "Remove",
+                { name: "Remove Computer", value: "Remove" },
                 new inquirer.Separator(),
                 "Home",
                 new inquirer.Separator(),
@@ -63,7 +68,9 @@ async function edit() {
             edit();
             break;
         case "Change Password":
-            changePassword();
+            await checkPassword();
+            await changePassword();
+            edit();
             break;
         case "Change Username":
             changeUsername();
@@ -74,9 +81,25 @@ async function edit() {
         case "Remove":
             Remove();
             break;
-        case "Run Password Changer":
+        case "change_pass_man":
             await checkPassword();
             await runSingleScript(id);
+            break;
+        case "add_ssh":
+            await checkPassword();
+            let r = await addSSH(json[id]);
+            if (r) {
+                await runningDB.writeCompSSH(id, r);
+            }
+            edit();
+            break;
+        case "remove_ssh":
+            await checkPassword();
+            let result = await removeSSH(json[id]);
+            if (result) {
+                await runningDB.writeCompSSH(id, !result);
+            }
+            edit();
             break;
         case "Home":
             Home();
@@ -86,13 +109,12 @@ async function edit() {
     async function Remove() {
         await clear();
         await checkPassword();
-        console.log(
-            `> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${blankPassword(json[id].Password)} ${json[id]["OS Type"]} `.bgBlue
-        );
+        console.log(head);
 
         let { confirm } = await inquirer.prompt([
             {
-                name: "confirm",
+                name: `confirm`,
+                message: `confirm removing ${json[id].Name} ${json[id]["IP Address"]}`,
                 type: "confirm",
             },
         ]);
@@ -101,8 +123,10 @@ async function edit() {
         }
 
         await runningDB.removeComputer(id);
+
         return Home();
     }
+
     async function changePassword() {
         let { newPassword, confirm } = await inquirer.prompt([
             {
@@ -115,12 +139,12 @@ async function edit() {
                 type: "confirm",
             },
         ]);
-
         if (!confirm) {
             return Home();
         }
 
         await runningDB.writeCompPassword(id, newPassword);
+
         console.log("password updated!");
         await delay(300);
 
@@ -137,12 +161,13 @@ async function edit() {
                 type: "confirm",
             },
         ]);
-
         if (!confirm) {
             return Home();
         }
+
         json[id].Username = newUsername;
         await runningDB.writeComputers(json);
+
         console.log("username updated!");
         await delay(300);
 
@@ -165,12 +190,13 @@ async function edit() {
                 type: "confirm",
             },
         ]);
-
         if (!confirm) {
             return Home();
         }
+
         json[id]["OS Type"] = newOSType;
         await runningDB.writeComputers(json);
+
         console.log("OS updated!");
         await delay(300);
 

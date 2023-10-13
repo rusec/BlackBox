@@ -4,7 +4,7 @@ import color from "colors";
 
 const bold = color.bold;
 
-type options = "log" | "debug" | "warn" | "error" | "info" | "success" | undefined;
+export type options = "log" | "debug" | "warn" | "error" | "info" | "success" | undefined;
 /**
  * Logs a message with an optional message type and override flag to the console.
  *

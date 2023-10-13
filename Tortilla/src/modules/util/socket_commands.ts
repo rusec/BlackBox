@@ -5,7 +5,6 @@ const TIMEOUT = 4000;
 
 function sendCommandExpect(socket: Channel, command: string, expected: string) {
     return new Promise((resolve, reject) => {
-        let enter = command + "\r";
         let log = "";
 
         const onData = (data: string) => {
@@ -22,7 +21,7 @@ function sendCommandExpect(socket: Channel, command: string, expected: string) {
         };
 
         socket.stdout.on("data", onData);
-        socket.write(enter);
+        socket.write(`${command}\r`);
 
         const timeoutId = setTimeout(() => {
             reject(log);
@@ -33,7 +32,6 @@ function sendCommandExpect(socket: Channel, command: string, expected: string) {
 
 function sendCommandNoExpect(socket: Channel, command: string, not_expected: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        let enter = command + "\r\r";
         let log = "";
 
         const onData = (data: string) => {
@@ -51,7 +49,7 @@ function sendCommandNoExpect(socket: Channel, command: string, not_expected: str
         };
 
         socket.stdout.on("data", onData);
-        socket.write(enter);
+        socket.write(`${command}\r\r`);
 
         const timeout = setTimeout(() => {
             resolve(log);
@@ -62,7 +60,6 @@ function sendCommandNoExpect(socket: Channel, command: string, not_expected: str
 
 function sendCommand(socket: Channel, command: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        let enter = command + "\r\n\r";
         let log = "";
 
         const onData = (data: string) => {
@@ -80,7 +77,7 @@ function sendCommand(socket: Channel, command: string): Promise<string> {
         };
 
         socket.stdout.on("data", onData);
-        socket.write(enter, "utf8");
+        socket.write(`${command}\r\n\r`, "utf8");
 
         const timerId = setTimeout(() => {
             reject(log);
@@ -91,9 +88,7 @@ function sendCommand(socket: Channel, command: string): Promise<string> {
 
 function sendInput(socket: Channel, input: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
-        let enter = input + "\r";
-
-        socket.stdin.write(enter, (err) => {
+        socket.stdin.write(`${input}\r`, (err) => {
             if (err) {
                 reject(err);
             } else {
@@ -110,7 +105,6 @@ function sendInput(socket: Channel, input: string): Promise<boolean> {
 
 function sendInputExpect(socket: Channel, input: string, expect: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        let enter = input + "\r";
         let log = "";
 
         const onData = (data: string) => {
@@ -128,7 +122,7 @@ function sendInputExpect(socket: Channel, input: string, expect: string): Promis
         };
 
         socket.stdout.on("data", onData);
-        socket.stdin.write(enter, "utf8");
+        socket.stdin.write(`${input}\r`, "utf8");
 
         const timeoutId = setTimeout(() => {
             reject(log);

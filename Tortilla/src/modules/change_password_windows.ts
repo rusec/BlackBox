@@ -9,35 +9,37 @@ import socket_commands from "./util/socket_commands";
 async function changePasswordWin(conn: SSH2Promise, username: string, password: string) {
     try {
         let useLocalUser = await check(conn);
-
-        let shell_socket = await conn.shell();
+        let shellSocket = await conn.shell();
+        const host = conn.config[0].host;
 
         try {
-            log(`Using ${useLocalUser ? "Get-Local" : "net user"} on ${conn.config[0].host}`, "info");
+            log(`Using ${useLocalUser ? "Get-Local" : "net user"} on ${host}`, "info");
             if (useLocalUser) {
-                await socket_commands.sendCommandExpect(shell_socket, `PowerShell`, `Windows PowerShell`);
-                await delay(3000);
-                await socket_commands.sendCommand(shell_socket, `$pass = Read-Host -AsSecureString`);
-                await socket_commands.sendInput(shell_socket, `${password}`);
-                await socket_commands.sendCommand(shell_socket, `$user = Get-LocalUser "${username}"`);
-                await socket_commands.sendCommandNoExpect(shell_socket, `Set-LocalUser -Name $user -Password $pass`, "Unable to update the password");
+                await socket_commands.sendCommandExpect(shellSocket, `PowerShell`, `Windows PowerShell`);
+                await delay(2000);
+                await socket_commands.sendCommand(shellSocket, `$pass = Read-Host -AsSecureString`);
+                await socket_commands.sendInput(shellSocket, `${password}`);
+                await socket_commands.sendCommand(shellSocket, `$user = Get-LocalUser "${username}"`);
+                await socket_commands.sendCommandNoExpect(shellSocket, `Set-LocalUser -Name $user -Password $pass`, "Unable to update the password");
             } else {
-                await socket_commands.sendCommandExpect(shell_socket, `net user ${username} *`, "Type a password for the user:");
-                await delay(3000);
-                await socket_commands.sendInputExpect(shell_socket, `${password}`, "Retype the password to confirm:");
-                await socket_commands.sendInputExpect(shell_socket, `${password}`, "The command completed successfully");
+                await socket_commands.sendCommandExpect(shellSocket, `net user ${username} *`, "Type a password for the user:");
+                await delay(2000);
+                await socket_commands.sendInputExpect(shellSocket, `${password}`, "Retype the password to confirm:");
+                await socket_commands.sendInputExpect(shellSocket, `${password}`, "The command completed successfully");
             }
-            log(`Changed password on ${conn.config[0].host}`, "success");
+            log(`Changed password on ${host}`, "success");
         } catch (error: any) {
-            shell_socket.close();
-            log(`Unable to change password on ${conn.config[0].host}`, "error");
-
+            shellSocket.close();
+            log(`Unable to change password on ${host}`, "error");
             return !error.message ? error.toString() : error.message;
         }
-        await socket_commands.sendCommand(shell_socket, "exit");
-        shell_socket.close();
+
+        await socket_commands.sendCommand(shellSocket, "exit");
+        shellSocket.close();
+
         return true;
     } catch (error: any) {
+        console.log("error", error);
         return error.message ? error : error.message;
     }
 }

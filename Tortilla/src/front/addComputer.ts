@@ -34,13 +34,15 @@ const addComputer = async function () {
         },
     ]);
     var os_type = await pingSSH(ip, user, pass);
+
     if (typeof os_type == "string") {
         await runningDB.addComputer(name, ip, user, pass, os_type);
+        log(`Added`, "success");
     } else {
-        log("unable to add computer, invalid", "error");
-        await delay(1000);
+        log(`Unable to reach computer, Not Added`, "error");
     }
 
+    await delay(1000);
     Home();
 };
 

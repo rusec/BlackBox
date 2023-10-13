@@ -9,6 +9,7 @@ import keccak256 from "keccak256";
 import { machineIdSync } from "node-machine-id";
 import keygen from "ssh-keygen-lite";
 import { options } from "./options";
+import { password_result } from "../passwords";
 type DataBase = {
     master_password: string;
     ssh_private: string;
@@ -29,6 +30,7 @@ export type ServerInfo = {
     Username: string;
     Password: string;
     "OS Type": options;
+    ssh_key: boolean;
 };
 
 class DB {
@@ -139,6 +141,7 @@ class DB {
             Username: username || "",
             Password: password || "",
             "OS Type": os_type || "",
+            ssh_key: false,
         });
         return await this.writeComputers(computers);
     }
@@ -183,6 +186,29 @@ class DB {
         try {
             const computers = await this.readComputers();
             computers[computer_id].Password = password;
+            return await this.writeComputers(computers);
+        } catch (error) {
+            return false;
+        }
+    }
+    async writeCompSSH(computer_id: number, result: boolean): Promise<boolean> {
+        try {
+            const computers = await this.readComputers();
+            computers[computer_id].ssh_key = result;
+            return await this.writeComputers(computers);
+        } catch (error) {
+            return false;
+        }
+    }
+    async writeCompResult(computer_id: number, result: password_result): Promise<boolean> {
+        if (!result.password) {
+            throw new Error("Password cannot be undefined");
+        }
+        try {
+            const computers = await this.readComputers();
+            computers[computer_id].Password = result.password;
+            computers[computer_id].ssh_key = result.ssh;
+            log(`Writing computer ${computers[computer_id]["IP Address"]}`, "info");
             return await this.writeComputers(computers);
         } catch (error) {
             return false;
@@ -359,6 +385,7 @@ function normalizeServerInfo(jsonArr: Array<ServerInfo>): Array<ServerInfo> {
             Username: jsonObj.Username || "",
             Password: jsonObj.Password || "",
             "OS Type": jsonObj["OS Type"] || "",
+            ssh_key: false,
         };
 
         normalizedArr.push(serverInfo);

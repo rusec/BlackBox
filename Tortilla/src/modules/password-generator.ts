@@ -31,6 +31,7 @@ function generatePasses(length: number, seeder: string): string[] {
         }
         results.push(pass);
     }
+
     function capitalizeRandomWord() {
         var word = getWord();
         var index_cap = randomBetween(0, word.length);

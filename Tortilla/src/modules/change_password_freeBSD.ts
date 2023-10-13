@@ -9,21 +9,23 @@ async function changePasswordFreeBSD(conn: SSH2Promise, username: string, passwo
     await checks(conn);
 
     const bcrypt_password = await bcryptPassword(password);
+    const host = conn.config[0].host;
 
-    let changed_password = await runCommand(conn, commands.password.freebsd.step_1(bcrypt_password, username), `user information updated`);
-    if (typeof changed_password != "string") {
-        log(`Changed password on ${conn.config[0].host}`, "success");
+    let changedPassword = await runCommand(conn, commands.password.freebsd.step_1(bcrypt_password, username), `user information updated`);
+    if (typeof changedPassword != "string") {
+        log(`Changed password on ${host}`, "success");
         return true;
     }
-    let error = `unable to use chpass on ${conn.config[0].host} got ${changed_password.trim()}, Please check for alias or no implementation`;
+    let error = `Unable to use chpass on ${host}. Got: ${changedPassword.trim()}. Please check for alias or no implementation.`;
     log(error, "warn");
 
-    changed_password = await runCommandNoExpect(conn, commands.password.freebsd.step_2(bcrypt_password, username));
-    if (typeof changed_password != "string") {
-        log(`Changed password on ${conn.config[0].host}`, "success");
+    changedPassword = await runCommandNoExpect(conn, commands.password.freebsd.step_2(bcrypt_password, username));
+    if (typeof changedPassword != "string") {
+        log(`Changed password on ${host}`, "success");
         return true;
     }
-    error = `unable to use usermod on ${conn.config[0].host} got ${changed_password.trim()}, Please check for alias or no implementation`;
+
+    error = `Unable to use usermod on ${host}. Got: ${changedPassword.trim()}. Please check for alias or no implementation.`;
     log(error, "error");
     return error;
 }
