@@ -29,7 +29,9 @@ if ((Get-Service w32time).Status -ne 'Running') {
 }
 
  #(default Microsoft servers used here, you can replace this)
-$NTPServers = "time.windows.com,0x1"
+##$NTPServers = "time.windows.com,0x1"
+$NTPServers = "us.pool.ntp.org,0x1 north-america.pool.ntp.org,0x1"
+
 
 
 w32tm /config /manualpeerlist:$NTPServers /syncfromflags:manual /reliable:YES /update
