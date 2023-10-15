@@ -12,3 +12,9 @@ w32tm /resync
 
 # Output the configuration
 w32tm /query /status
+
+####V2?
+$NTPServers = "time.google.com,0x1"
+w32tm /config /manualpeerlist:$NTPServers /syncfromflags:manual /reliable:YES /update
+Restart-Service w32time
+w32tm /resync
