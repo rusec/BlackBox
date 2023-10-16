@@ -12,7 +12,7 @@ def check_iptables(port, protocol, state):
         print("Error {}".format(e))
 
 
-    print(output)
+    '''print(output)'''
 
 
     result = output.split('\n')
@@ -72,12 +72,14 @@ def port_DROP(port, protocol):
            
             try:
                 if (protocol == "tcp"):
+                    check_iptables(port,protocol, "ACCEPT")
                     check_iptables(port,protocol, "DROP")
                     command = "/sbin/iptables -A OUTPUT -p tcp --dport {} -j DROP && /sbin/service iptables save".format(port)
                     output = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                     
 
                 if (protocol == "udp"):
+                    check_iptables(port,protocol, "ACCEPT")
                     check_iptables(port,protocol, "DROP")
                     command = "/sbin/iptables -A OUTPUT -p udp --dport {} -j DROP && /sbin/service iptables save".format(port)
                     output = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -94,12 +96,14 @@ def port_ACCEPT(port, protocol):
 
         try:
             if (protocol == "tcp"):
+                check_iptables(port,protocol, "DROP")
                 check_iptables(port,protocol, "ACCEPT")
                 command = "/sbin/iptables -A OUTPUT -p tcp --dport {} -j ACCEPT && /sbin/service iptables save".format(port)
                 output = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                 
 
             if (protocol == "udp"):
+                check_iptables(port,protocol, "DROP")
                 check_iptables(port,protocol, "ACCEPT")
                 command = "/sbin/iptables -A OUTPUT -p udp --dport {} -j ACCEPT && /sbin/service iptables save".format(port)
                 output = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
