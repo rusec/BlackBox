@@ -68,8 +68,11 @@
     "scripts": {
         "test": "mocha -r ts-node/register test/**/*.spec.ts",
         "start": "tsc && node ./dist/src/index.js",
-        "build": "export SALT=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && export SALT_2=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && node ./build/prebuild.js $SALT $SALT_2 && tsc && pkg ./dist/src/index.js --out-path releases/latest && node ./build/postbuild.js $SALT $SALT_2 && echo 'Binaries are located in releases/latest'",
+        "build": "export SALT=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && export SALT_2=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && node ./build/prebuild.js $SALT $SALT_2 && tsc && pkg --out-path releases/latest/Tortilla -t node16-linux,node16-win,node16-macos ./dist/src/index.js && node ./build/postbuild.js $SALT $SALT_2 && echo 'Binaries are located in releases/latest'",
         "clean": "rm index-linux && rm index-macos && rm index-win.exe"
+    },
+    "pkg": {
+        "name": "Tortilla"
     },
     "author": "",
     "license": "ISC",

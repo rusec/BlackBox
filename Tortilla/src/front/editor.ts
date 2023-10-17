@@ -73,13 +73,16 @@ async function edit() {
             edit();
             break;
         case "Change Username":
-            changeUsername();
+            await changeUsername();
+            edit();
             break;
         case "Change OS":
-            changeOS();
+            await changeOS();
+            edit();
             break;
         case "Remove":
-            Remove();
+            await Remove();
+            edit();
             break;
         case "change_pass_man":
             await checkPassword();
@@ -128,8 +131,6 @@ async function edit() {
         }
 
         await runningDB.removeComputer(id);
-
-        return Home();
     }
 
     async function changePassword() {
@@ -152,8 +153,6 @@ async function edit() {
 
         console.log("password updated!");
         await delay(300);
-
-        Home();
     }
     async function changeUsername() {
         let { newUsername, confirm } = await inquirer.prompt([
@@ -175,8 +174,6 @@ async function edit() {
 
         console.log("username updated!");
         await delay(300);
-
-        Home();
     }
     async function changeOS() {
         let { newOSType, confirm } = await inquirer.prompt([
@@ -204,8 +201,6 @@ async function edit() {
 
         console.log("OS updated!");
         await delay(300);
-
-        Home();
     }
 }
 
