@@ -1,13 +1,13 @@
 import inquirer from "inquirer";
-import runningDB from "../modules/util/db";
+import runningDB from "../../modules/util/db";
 import clear from "clear";
-import { delay } from "../modules/util/util";
-import { checkPassword } from "../modules/util/checkPassword";
+import { delay } from "../../modules/util/util";
+import { checkPassword } from "../../modules/util/checkPassword";
 import { runSingleScript } from "./passwordScript";
-import { Home } from "./home";
-import { addSSH, makeInteractiveShell, removeSSH, removeSSHkey } from "../modules/util/ssh_utils";
-import { changePasswordOf } from "../modules/passwords";
-import { log } from "../modules/util/debug";
+import { Home } from "../menu/home";
+import { addSSH, makeInteractiveShell, removeSSH, removeSSHkey } from "../../modules/util/ssh_utils";
+import { changePasswordOf } from "../../modules/password/change_passwords";
+import { log } from "../../modules/util/debug";
 async function edit() {
     await clear();
     let json = await runningDB.readComputers();

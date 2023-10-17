@@ -1,13 +1,13 @@
 import inquirer from "inquirer";
-import runningDB, { ServerInfo } from "../modules/util/db";
+import runningDB, { ServerInfo } from "../../modules/util/db";
 import clear from "clear";
-import { delay } from "../modules/util/util";
-import { changePasswordOf, password_result } from "../modules/passwords";
-import { log } from "../modules/util/debug";
-import { generatePasses } from "../modules/password-generator";
+import { delay } from "../../modules/util/util";
+import { changePasswordOf, password_result } from "../../modules/password/change_passwords";
+import { log } from "../../modules/util/debug";
+import { generatePasses } from "../../modules/util/password-generator";
 import fs from "fs";
-import { removeANSIColorCodes } from "../modules/util/util";
-import { Home } from "./home";
+import { removeANSIColorCodes } from "../../modules/util/util";
+import { Home } from "../menu/home";
 async function runScript(debug?: boolean) {
     const originalConsoleLog = console.log;
     let capturedOutput = "";

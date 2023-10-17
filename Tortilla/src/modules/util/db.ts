@@ -9,7 +9,7 @@ import keccak256 from "keccak256";
 import { machineIdSync } from "node-machine-id";
 import keygen from "ssh-keygen-lite";
 import { options } from "./options";
-import { password_result } from "../passwords";
+import { password_result } from "../password/change_passwords";
 type DataBase = {
     master_password: string;
     ssh_private: string;

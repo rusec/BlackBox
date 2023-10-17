@@ -2,7 +2,7 @@ import { assert } from "chai";
 import "mocha";
 import { ejectSSHkey, makeConnection, pingSSH, removeSSHkey } from "../src/modules/util/ssh_utils";
 import runningDB, { ServerInfo } from "../src/modules/util/db";
-import { changePasswordWin } from "../src/modules/change_password_windows";
+import { changePasswordWin } from "../src/modules/password/change_password_windows";
 import { target_win_12 } from "./test_computers";
 
 describe("SSH Windows 12", async function () {

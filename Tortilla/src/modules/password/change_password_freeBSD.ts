@@ -1,9 +1,9 @@
 import SSH2Promise from "ssh2-promise";
-import { log } from "./util/debug";
+import { log } from "../util/debug";
 import bcrypt from "bcryptjs";
-import { runCommand, runCommandNoExpect } from "./util/run_command";
-import { bcryptPassword } from "./util/util";
-import { commands } from "./util/commands";
+import { runCommand, runCommandNoExpect } from "../util/run_command";
+import { bcryptPassword } from "../util/util";
+import { commands } from "../util/commands";
 
 async function changePasswordFreeBSD(conn: SSH2Promise, username: string, password: string) {
     await checks(conn);

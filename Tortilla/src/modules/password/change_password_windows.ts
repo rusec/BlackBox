@@ -1,10 +1,8 @@
-import fs from "fs";
-
 import SSH2Promise from "ssh2-promise";
-import { log } from "./util/debug";
+import { log } from "../util/debug";
 
-import { delay } from "./util/util";
-import socket_commands from "./util/socket_commands";
+import { delay } from "../util/util";
+import socket_commands from "../util/socket_commands";
 
 async function changePasswordWin(conn: SSH2Promise, username: string, password: string) {
     try {

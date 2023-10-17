@@ -39,8 +39,19 @@ async function bcryptPassword(password: string): Promise<string> {
         throw error;
     }
 }
+function encryptPassword(password: string): string {
+    var passwordHash;
+    var passwordSalt = "";
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    for (var i = 0; i < 5; i++) passwordSalt += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    var sha512crypt = require("sha512crypt-node");
+    passwordHash = sha512crypt.sha512crypt(password, passwordSalt);
+    return passwordHash;
+}
+
 function replaceAll(string: string, search: string, replace: string) {
     return string.split(search).join(replace);
 }
 
-export { removeANSIColorCodes, delay, isValidIPAddress, bcryptPassword, replaceAll };
+export { removeANSIColorCodes, delay, isValidIPAddress, bcryptPassword, replaceAll, encryptPassword };

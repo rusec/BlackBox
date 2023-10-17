@@ -2,6 +2,7 @@ import delay from "delay";
 import { removeANSIColorCodes } from "./util";
 import { Channel } from "ssh2";
 const TIMEOUT = 4000;
+/** THIS FILE IS FOR COMMANDS SENT BY A SOCKET CONNECTION */
 
 function sendCommandExpect(socket: Channel, command: string, expected: string) {
     return new Promise((resolve, reject) => {

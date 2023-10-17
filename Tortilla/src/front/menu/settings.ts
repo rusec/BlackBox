@@ -1,8 +1,8 @@
 import clear from "clear";
 import inquirer from "inquirer";
-import { sshMenu } from "./ssh";
-import { addComputer } from "./addComputer";
-import runningDB from "../modules/util/db";
+import { sshMenu } from "../page/ssh";
+import { addComputer } from "../page/addComputer";
+import runningDB from "../../modules/util/db";
 import { Home } from "./home";
 async function Settings() {
     const { program } = await inquirer.prompt([

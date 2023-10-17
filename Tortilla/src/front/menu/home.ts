@@ -1,13 +1,12 @@
 import inquirer from "inquirer";
 import clear from "clear";
 import "colors";
-import runningDB from "../modules/util/db";
-import { edit } from "./editor";
-import { generatePasswords } from "./generate";
-import { runScript } from "./passwordScript";
-
-const { checkPassword } = require("../modules/util/checkPassword");
-const { Settings } = require("./settings");
+import runningDB from "../../modules/util/db";
+import { edit } from "../page/editor";
+import { generatePasswords } from "../page/generate";
+import { runScript } from "../page/passwordScript";
+import { checkPassword } from "../../modules/util/checkPassword";
+import { Settings } from "./settings";
 
 async function Home() {
     await clear();

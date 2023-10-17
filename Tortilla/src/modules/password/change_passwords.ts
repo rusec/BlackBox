@@ -1,12 +1,12 @@
 import { changePasswordLinux } from "./change_password_linux";
 import { changePasswordWin } from "./change_password_windows";
-import { ServerInfo } from "./util/db";
+import { ServerInfo } from "../util/db";
 import { changePasswordDarwin } from "./change_password_darwin";
 import { changePasswordFreeBSD } from "./change_password_freeBSD";
-import { log } from "./util/debug";
-import options from "./util/options";
-import { detect_os } from "./detect_os";
-import { ejectSSHkey, makeConnection, testPassword } from "./util/ssh_utils";
+import { log } from "../util/debug";
+import options from "../util/options";
+import { detect_os } from "../util/ssh_utils";
+import { ejectSSHkey, makeConnection, testPassword } from "../util/ssh_utils";
 
 export type password_result = {
     password: string;

@@ -2,7 +2,7 @@ import { assert } from "chai";
 import "mocha";
 import { ejectSSHkey, makeConnection, pingSSH, removeSSHkey } from "../src/modules/util/ssh_utils";
 import runningDB, { ServerInfo } from "../src/modules/util/db";
-import { changePasswordLinux } from "../src/modules/change_password_linux";
+import { changePasswordLinux } from "../src/modules/password/change_password_linux";
 import { target_linux } from "./test_computers";
 
 describe("SSH Ubuntu", async function () {

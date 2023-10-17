@@ -1,10 +1,10 @@
 import inquirer from "inquirer";
 import clear from "clear";
-import { generatePasses } from "../modules/password-generator";
+import { generatePasses } from "../../modules/util/password-generator";
 import fs from "fs";
-import { log } from "../modules/util/debug";
-import { delay } from "../modules/util/util";
-import { Home } from "./home";
+import { log } from "../../modules/util/debug";
+import { delay } from "../../modules/util/util";
+import { Home } from "../menu/home";
 async function generatePasswords() {
     await clear();
     const { seed, amount } = await inquirer.prompt([

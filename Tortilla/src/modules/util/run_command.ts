@@ -1,6 +1,8 @@
 import SSH2Promise from "ssh2-promise";
 import { replaceAll } from "./util";
 
+/** THIS FILE IS FOR COMMANDS SENT BY A REGULAR CONNECTION */
+
 /**
  * Checks for not expected output
  * @param {ssh2} conn

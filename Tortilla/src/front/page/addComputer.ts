@@ -1,10 +1,10 @@
 import inquirer from "inquirer";
-import { isValidIPAddress } from "../modules/util/util";
-import runningDB from "../modules/util/db";
-import { pingSSH } from "../modules/util/ssh_utils";
-import { log } from "../modules/util/debug";
-import { delay } from "../modules/util/util";
-import { Home } from "./home";
+import { isValidIPAddress } from "../../modules/util/util";
+import runningDB from "../../modules/util/db";
+import { pingSSH } from "../../modules/util/ssh_utils";
+import { log } from "../../modules/util/debug";
+import { delay } from "../../modules/util/util";
+import { Home } from "../menu/home";
 const addComputer = async function () {
     const { name, ip, user, pass } = await inquirer.prompt([
         {

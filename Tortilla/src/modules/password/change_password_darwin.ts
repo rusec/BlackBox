@@ -1,6 +1,6 @@
 import SSH2Promise from "ssh2-promise";
-import { log } from "./util/debug";
-import { commands } from "./util/commands";
+import { log } from "../util/debug";
+import { commands } from "../util/commands";
 
 const passwd = "/etc/passwd";
 

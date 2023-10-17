@@ -1,11 +1,8 @@
-import fs from "fs";
 import SSH2Promise from "ssh2-promise";
-
-import { log, options } from "./util/debug";
-
-import { runCommand, runCommandNoExpect, runCommandNotExpect } from "./util/run_command";
-import { bcryptPassword } from "./util/util";
-import { commands } from "./util/commands";
+import { log, options } from "../util/debug";
+import { runCommand, runCommandNoExpect, runCommandNotExpect } from "../util/run_command";
+import { bcryptPassword, encryptPassword } from "../util/util";
+import { commands } from "../util/commands";
 
 const shadow = "/etc/shadow";
 
@@ -51,16 +48,6 @@ async function changePasswordLinux(conn: SSH2Promise, username: string, password
 
 export { changePasswordLinux };
 
-function encryptPassword(password: string): string {
-    var passwordHash;
-    var passwordSalt = "";
-    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    for (var i = 0; i < 5; i++) passwordSalt += possible.charAt(Math.floor(Math.random() * possible.length));
-
-    var sha512crypt = require("sha512crypt-node");
-    passwordHash = sha512crypt.sha512crypt(password, passwordSalt);
-    return passwordHash;
-}
 /**
  *
  * @param {ssh2} conn

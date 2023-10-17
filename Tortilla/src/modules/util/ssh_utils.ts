@@ -2,15 +2,11 @@ import SSH2Promise from "ssh2-promise";
 import runningDB, { ServerInfo } from "./db";
 import { getOutput, runCommand, runCommandNoExpect } from "./run_command";
 import SSHConfig from "ssh2-promise/lib/sshConfig";
-import { detect_os } from "../detect_os";
 import { options } from "./options";
 import { log } from "./debug";
 import { commands } from "./commands";
-import { Home } from "../../front/home";
-import { delay } from "./util";
 import { Channel } from "ssh2";
 import readline from "readline";
-import fs from "fs";
 
 // SSH COMMANDS for ejections
 
@@ -307,4 +303,44 @@ async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
         });
     });
 }
-export { pingSSH, injectSSHkey as ejectSSHkey, makeConnection, makeConn, removeSSHkey, removeSSH, addSSH, makeInteractiveShell, testPassword };
+async function detect_os(conn: SSH2Promise): Promise<options> {
+    log(`checking for os ${conn.config[0].host}`, "log");
+    try {
+        const system = await conn.exec(commands.detect.linux);
+        const name = system.toLowerCase();
+
+        if (name.includes("linux")) {
+            return "linux";
+        } else if (name.includes("freebsd") || name.includes("openbsd")) {
+            return "freebsd";
+        } else if (name.includes("darwin")) {
+            return "darwin";
+        } else {
+            const windowsInfo = await conn.exec(commands.detect.windows);
+            if (windowsInfo.toLowerCase().includes("windows")) {
+                return "windows";
+            }
+            return "Unknown";
+        }
+    } catch (error) {
+        if (typeof error === "string" && error.toLowerCase().includes("is not recognized")) {
+            const windowsInfo = await conn.exec(commands.detect.windows);
+            if (windowsInfo.toLowerCase().includes("windows")) {
+                return "windows";
+            }
+        }
+        return "Unknown";
+    }
+}
+export {
+    pingSSH,
+    injectSSHkey as ejectSSHkey,
+    makeConnection,
+    makeConn,
+    removeSSHkey,
+    removeSSH,
+    addSSH,
+    makeInteractiveShell,
+    testPassword,
+    detect_os,
+};
