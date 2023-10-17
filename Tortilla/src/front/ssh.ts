@@ -23,8 +23,8 @@ async function sshMenu() {
                 var computers = strings.map((v) => {
                     var filtered_string = v.trim().split(" ");
                     return {
-                        name: filtered_string[0] || "",
-                        ip: filtered_string[1] || "",
+                        name: filtered_string[0].trim() || "",
+                        ip: filtered_string[1].trim() || "",
                     };
                 });
                 for (const computer of computers) {
@@ -48,14 +48,15 @@ async function sshMenu() {
         },
     ]);
 
+    //construct computers names and ip object
     var computers = computers_string.split(",").map((v: string) => {
         var filtered_string = v.trim().split(" ");
         return {
-            name: filtered_string[0] || "",
-            ip: filtered_string[1] || "",
+            name: filtered_string[0].trim() || "",
+            ip: filtered_string[1].trim() || "",
         };
     });
-
+    //get usernames and passwords array
     var usernames = usernames_string.split(",").map((v: string) => v.trim());
     var passwords = passwords_string.split(",").map((v: string) => v.trim());
 
@@ -67,6 +68,8 @@ async function sshMenu() {
             };
         });
     });
+
+    // create username and password combos
     let sessions: any[] = [];
     for (const users of users_sessions)
         for (let session of users) {
@@ -79,11 +82,11 @@ async function sshMenu() {
 
         for (const session of sessions) {
             var os_type = await pingSSH(computer.ip, session.user, session.pass);
-
             if (typeof os_type == "string") {
                 log(`Found valid session for ${computer.ip} saving...`, "success");
                 await runningDB.addComputer(computer.name, computer.ip, session.user, session.pass, os_type);
                 passed = true;
+                break;
             }
         }
         if (!passed) {
@@ -91,6 +94,7 @@ async function sshMenu() {
         }
         return passed;
     });
+
     await Promise.allSettled(promises);
 
     const { logHost } = await inquirer.prompt([

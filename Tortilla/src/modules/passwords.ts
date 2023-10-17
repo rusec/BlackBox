@@ -1,14 +1,12 @@
-import SSHConfig from "ssh2-promise/lib/sshConfig";
 import { changePasswordLinux } from "./change_password_linux";
 import { changePasswordWin } from "./change_password_windows";
-import runningDB, { ServerInfo } from "./util/db";
-import SSH2Promise from "ssh2-promise";
+import { ServerInfo } from "./util/db";
 import { changePasswordDarwin } from "./change_password_darwin";
 import { changePasswordFreeBSD } from "./change_password_freeBSD";
 import { log } from "./util/debug";
 import options from "./util/options";
 import { detect_os } from "./detect_os";
-import { ejectSSHkey, makeConnection } from "./util/ssh_utils";
+import { ejectSSHkey, makeConnection, testPassword } from "./util/ssh_utils";
 
 export type password_result = {
     password: string;
@@ -30,7 +28,7 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
         }
 
         let res;
-        log(`connected to ${computer["IP Address"]}`, "log");
+        log(`Connected to ${computer["IP Address"]}`, "log");
         if (!options.includes(computer["OS Type"])) {
             let os = await detect_os(conn);
             if (os) computer["OS Type"] = os;
@@ -57,13 +55,12 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
         // ADD CHECK FOR SSH KEY
         let ssh_key = await ejectSSHkey(conn, computer["OS Type"]);
 
-        await conn.close();
+        let pass_success = await testPassword(conn, new_password);
 
+        await conn.close();
         conn.removeAllListeners();
-        if (typeof res === "string") {
-            return res;
-        }
-        return { password: new_password, ssh: ssh_key, error: false };
+
+        return { password: pass_success ? new_password : computer.Password, ssh: ssh_key, error: pass_success ? false : res };
     } catch (error: any) {
         log(`${conn && conn.config[0].host} Got Error: ${error.message ? error.message : error}`, "error");
         return `Got Error: ${error.message ? error.message : error}`;

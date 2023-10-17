@@ -16,8 +16,8 @@ async function changePasswordLinux(conn: SSH2Promise, username: string, password
     const host = conn.config[0].host;
     const newPassword = algorithm === 6 ? encryptPassword(password) : await bcryptPassword(password);
     const string = `${username}:${newPassword + ""}`;
-    let error: boolean | string = true;
 
+    let error: boolean | string = true;
     // Try changing the password without inputting the sudo password first.
     let changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_1(string));
     if (typeof changedPassword != "string") {

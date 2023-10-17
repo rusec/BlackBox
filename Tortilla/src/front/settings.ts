@@ -12,23 +12,23 @@ async function Settings() {
             pageSize: 60,
             choices: [
                 new inquirer.Separator(),
-                "Setup",
-                new inquirer.Separator(),
+                new inquirer.Separator("Computer Setup"),
+                "Shotgun Setup",
                 "Add Computer",
-                new inquirer.Separator(),
-                "Reset Master Password",
-                new inquirer.Separator(),
                 "Load CSV",
                 new inquirer.Separator(),
-                "Back",
+                new inquirer.Separator("Passwords"),
+                "Reset Master Password",
                 new inquirer.Separator(),
+                new inquirer.Separator("Navigation"),
+                "Back",
             ],
             message: "Please select a setting",
         },
     ]);
 
     switch (program) {
-        case "Setup":
+        case "Shotgun Setup":
             await clear();
             sshMenu();
             break;

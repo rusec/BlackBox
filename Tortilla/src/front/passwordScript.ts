@@ -41,8 +41,8 @@ async function runScript(debug?: boolean) {
         const promises = computers.map(async (element, i) => {
             const password = passwords[i];
             const result = await changePasswordOf(element, password);
-            if (typeof result == "string") {
-                throw new Error(result);
+            if (typeof result == "string" || result.error) {
+                throw new Error(typeof result == "string" ? result : result.error ? result.error : "");
             }
             return await runningDB.writeCompResult(i, result);
         });
@@ -106,8 +106,9 @@ async function runSingleScript(id: number) {
         const computers = await runningDB.readComputers();
         log(`Running script on ${computers[id].Name}`);
         const result = await changePasswordOf(computers[id], password);
-        if (typeof result == "string") {
-            log(`Error changing password Error: ${result}`, "error");
+
+        if (typeof result == "string" || result.error) {
+            log(`Error changing password Error: ${typeof result == "string" ? result : result.error ? result.error : ""}`, "error");
             await delay(1000);
         } else {
             log(`Successfully changed passwords on ${computers[id]["IP Address"]}`.green);

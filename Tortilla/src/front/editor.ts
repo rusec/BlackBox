@@ -5,7 +5,7 @@ import { delay } from "../modules/util/util";
 import { checkPassword } from "../modules/util/checkPassword";
 import { runSingleScript } from "./passwordScript";
 import { Home } from "./home";
-import { addSSH, removeSSH, removeSSHkey } from "../modules/util/ssh_utils";
+import { addSSH, makeInteractiveShell, removeSSH, removeSSHkey } from "../modules/util/ssh_utils";
 import { changePasswordOf } from "../modules/passwords";
 import { log } from "../modules/util/debug";
 async function edit() {
@@ -25,7 +25,7 @@ async function edit() {
             pageSize: 50,
 
             choices: ipAddressesChoices,
-            message: "Please select the IP Address you want to edit:",
+            message: "Please select a computer:",
         },
     ]);
     const head = `> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${blankPassword(json[id].Password)} ${
@@ -42,21 +42,21 @@ async function edit() {
             pageSize: 50,
 
             choices: [
-                new inquirer.Separator(),
-                "Back",
-                new inquirer.Separator(),
+                new inquirer.Separator("Connect"),
+                { name: "Start Shell", value: "shell" },
                 { name: "Change Password", value: "change_pass_man" },
-                new inquirer.Separator(),
+                new inquirer.Separator("Data"),
                 { name: "Change Password (if changed from target)", value: "Change Password" },
                 "Change Username",
                 "Change OS",
-                new inquirer.Separator(),
+                { name: "Remove Computer", value: "Remove" },
+                new inquirer.Separator("SSH"),
                 { name: "Inject SSH Key", value: "add_ssh" },
                 { name: "Remove SSH Key", value: "remove_ssh" },
                 new inquirer.Separator(),
-                { name: "Remove Computer", value: "Remove" },
-                new inquirer.Separator(),
+                new inquirer.Separator("Navigation"),
                 "Home",
+                "Back",
                 new inquirer.Separator(),
             ],
             message: "Please select a computer:",
@@ -100,6 +100,11 @@ async function edit() {
                 await runningDB.writeCompSSH(id, !result);
             }
             edit();
+            break;
+        case "shell":
+            await checkPassword();
+            await makeInteractiveShell(json[id]);
+            Home();
             break;
         case "Home":
             Home();

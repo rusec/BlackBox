@@ -8,6 +8,9 @@ import { log } from "./debug";
 import { commands } from "./commands";
 import { Home } from "../../front/home";
 import { delay } from "./util";
+import { Channel } from "ssh2";
+import readline from "readline";
+import fs from "fs";
 
 // SSH COMMANDS for ejections
 
@@ -24,14 +27,20 @@ async function removeSSHkey(conn: SSH2Promise, os_type: options): Promise<boolea
             break;
         case "freeBSD":
             var output = await runCommandNoExpect(conn, commands.ssh.remove.freebsd(ssh_key));
-            if (!output) {
-                return false;
+            if (typeof output === "string" && output.includes("setenv")) {
+                output = await runCommandNoExpect(conn, commands.ssh.remove.linux(ssh_key));
+                if (!output) {
+                    return false;
+                }
             }
             break;
         case "freebsd":
             var output = await runCommandNoExpect(conn, commands.ssh.remove.freebsd(ssh_key));
-            if (!output) {
-                return false;
+            if (typeof output === "string" && output.includes("setenv")) {
+                output = await runCommandNoExpect(conn, commands.ssh.remove.linux(ssh_key));
+                if (!output) {
+                    return false;
+                }
             }
             break;
         case "windows":
@@ -73,8 +82,29 @@ async function testSSH(conn: SSH2Promise) {
         return false;
     }
 }
-async function getShellConnection(conn: SSH2Promise) {}
-
+async function testPassword(conn: SSH2Promise, password: string) {
+    const host = conn.config[0].host;
+    try {
+        log(`Testing Password on ${host}`, "info");
+        const sshConfig: SSHConfig = {
+            host: conn.config[0].host,
+            username: conn.config[0].username,
+            password: password,
+            authHandler: ["password"],
+            reconnect: false,
+            keepaliveInterval: 0,
+            readyTimeout: 2000,
+        };
+        const ssh = new SSH2Promise(sshConfig, true);
+        await ssh.connect();
+        await ssh.close();
+        log(`SSH Password active on ${host}`, "info");
+        return true;
+    } catch (error) {
+        log(`Unable to use Password on ${host}`, "info");
+        return false;
+    }
+}
 //eject ssh function
 //should check for ssh key in the folder, if it doesn't exist inject it.
 //will try to ssh using the key, if it cant it will eject one more time
@@ -240,4 +270,41 @@ async function pingSSH(ip: string, username: string, password: string): Promise<
     }
 }
 
-export { pingSSH, injectSSHkey as ejectSSHkey, makeConnection, makeConn, removeSSHkey, removeSSH, addSSH };
+async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
+    const conn = await makeConnection(server, true);
+    if (!conn) {
+        return false;
+    }
+    return new Promise(async (resolve, reject) => {
+        const connected_ssh: Channel = await conn.shell();
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+        });
+
+        let recent_input: string = "";
+        // Pipe remote server output to local stdout
+        connected_ssh.on("data", (data: string | Uint8Array) => {
+            if (recent_input != "" && data.toString().includes(recent_input)) {
+                recent_input = "";
+                return;
+            }
+            process.stdout.write(data);
+        });
+
+        rl.on("line", (input: string) => {
+            recent_input = input;
+            connected_ssh.write(input + "\r");
+        });
+        rl.on("close", () => {
+            connected_ssh.close();
+            connected_ssh.removeAllListeners();
+            resolve(true);
+        });
+        connected_ssh.on("end", async () => {
+            rl.close();
+            resolve(true);
+        });
+    });
+}
+export { pingSSH, injectSSHkey as ejectSSHkey, makeConnection, makeConn, removeSSHkey, removeSSH, addSSH, makeInteractiveShell, testPassword };
