@@ -24,7 +24,6 @@
         "node-pre-gyp": "^0.17.0",
         "node-ssh": "^13.1.0",
         "passwd": "^0.0.11",
-        "passwd-linux": "^2.0.0",
         "random-seed": "^0.3.0",
         "seed-random": "^2.2.0",
         "ssh-keygen": "^0.5.0",
@@ -33,7 +32,7 @@
         "ssh2-promise": "^1.0.3",
         "ssh2-streams": "^0.4.10",
         "ts-loader": "^9.5.0",
-        "underscore": "^1.12.1"
+        "underscore": "^1.13.6"
     },
     "name": "tortilla",
     "version": "1.0.0",
