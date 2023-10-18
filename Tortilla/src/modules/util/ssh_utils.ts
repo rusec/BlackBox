@@ -7,6 +7,7 @@ import { log } from "./debug";
 import { commands } from "./commands";
 import { Channel } from "ssh2";
 import readline from "readline";
+import { removeANSIColorCodes } from "./util";
 
 // SSH COMMANDS for ejections
 
@@ -273,18 +274,40 @@ async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
     }
     return new Promise(async (resolve, reject) => {
         const connected_ssh: Channel = await conn.shell();
+        let history: string[] = [];
+        var autoComplete = function completer(line: string) {
+            const com = line.split(" ");
+            let hits: string[] = [];
+            if (com.length == 1) {
+                hits = history.filter((c) => com[0].includes(c));
+            } else {
+                hits = history.filter((c) => c.includes(com[1]));
+                hits = hits.map((hit) => com[0] + " " + hit);
+            }
+
+            // show all completions if none found
+            return [hits.length ? hits : history, line];
+        };
         const rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout,
+            completer: autoComplete,
         });
 
         let recent_input: string = "";
+        let regex = new RegExp(/[\w.-]+(?:\.\w+)?/gm);
         // Pipe remote server output to local stdout
         connected_ssh.on("data", (data: string | Uint8Array) => {
             if (recent_input != "" && data.toString().includes(recent_input)) {
                 recent_input = "";
                 return;
             }
+            let matches = removeANSIColorCodes(data.toString()).match(regex);
+            if (matches) history.unshift(...matches);
+            while (history.length > 60) {
+                history.pop();
+            }
+
             process.stdout.write(data);
         });
 
