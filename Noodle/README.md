@@ -7,4 +7,6 @@ Tested on W10 VM, script as is prints history, CMD status, and PS execution poli
 Tested working on W10 VM but needs admin privelleges to run, not sure how run to regain CMD access if we've been locked out. 
 
 
-2.) NTP Script - Done (For windows - does not yet work for linux)
+2.) NTP Script - Done for Windows
+
+3.) NTP Script for Linux Started 10/22/2023
