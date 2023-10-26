@@ -1,0 +1,7 @@
+NMAP needs to be installed.
+
+python library dependancies:
+
+    python-pyfiglet
+    python-NMAP
+    
