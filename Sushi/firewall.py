@@ -1,7 +1,6 @@
 import subprocess
 import os_detection
 
-
 def check_iptables(port, protocol, state):
     if os_detection.detect() == "Linux":    
         try:
@@ -112,8 +111,64 @@ def check_iptables(port, protocol, state):
                     print("Rule removed : {}\n".format(rule_UDP_ACCEPT))
                 except subprocess.CalledProcessError as e:
                     print("Error {}".format(e))
+    
+    elif (os_detection.detect() == "Windows"):
+        command = f"""Get-NetFirewallRule | Where-Object {{ $_.Direction -eq 'Inbound' -and $_.Protocol -eq '{protocol}' -and $_.LocalPort -eq {port} -and $_.Action -eq '{state}' }} | ForEach-Object {{
+        Remove-NetFirewallRule -Name $_.Name"
+        }}
+        """
+        try:
+            subprocess.run(["powershell", "-Command", command], check=True)
+        except subprocess.CalledProcessError as e:
+            print("Error: {}".format(e))
+        except Exception as e:
+            print("Error: {}".format(e))
+        
+        command = f"""Get-NetFirewallRule | Where-Object {{ $_.Direction -eq 'Outbound' -and $_.Protocol -eq '{protocol}' -and $_.LocalPort -eq {port} -and $_.Action -eq '{state}' }} | ForEach-Object {{
+        Remove-NetFirewallRule -Name $_.Name"
+        }}
+        """
+        try:
+            subprocess.run(["powershell", "-Command", command], check=True)
+        except subprocess.CalledProcessError as e:
+            print("Error: {}".format(e))
+        except Exception as e:
+            print("Error: {}".format(e))
 
 
+    elif (os_detection.detect() == "freebsd"): #might be able to use for darwin as well
+        try:
+            result = subprocess.check_output(["pfctl", "-sr"], universal_newlines=True)
+            result = output.splitlines()
+        except subprocess.CalledProcessError as e:
+            print("Error: {}".format(e))
+
+        if (state == "pass"):
+            rule_inbound = "{} in quick on egress proto {} from any to any port = {}".format(state, protocol, port)
+        elif (state == "Block"):
+            rule_inbound = "{} drop in quick on egress proto {} from any to any port = {}".format(state, protocol, port)
+
+        if (state == "pass"):
+            rule_outbound = "{} out quick on egress proto {} from any to any port = {}".format(state, protocol, port)
+        elif (state == "Block"):
+            rule_outbound = "{} drop out quick on egress proto {} from any to any port = {}".format(state, protocol, port)
+
+
+
+        modified = False
+        new_pf_rules = []
+        for rule in result:
+            if rule.strip() == rule_inbound or rule.strip() == rule_outbound:
+                modified = True
+            else:
+                new_pf_rules.append(rule)
+        
+        if modified:
+            newRules = "\n".join(new_pf_rules)
+            with open("/etc/pf.conf", "w") as pfconfFile:
+                pfconfFile.write(newRules)
+
+            subprocess.call(["pfctl", "-f", "/etc/pf.conf"])
 
 
 
@@ -121,25 +176,58 @@ def port_DROP(port, protocol):
 
     if os_detection.detect() == "Linux":
            
-            try:
-                if (protocol == "tcp"):
-                    check_iptables(port,protocol, "ACCEPT")
-                    check_iptables(port,protocol, "DROP")
-                    command = "/sbin/iptables -A OUTPUT -p tcp --dport {} -j DROP && /sbin/iptables -A INPUT -p tcp --dport {} -j DROP && /sbin/service iptables save".format(port, port)
-                    output = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            if (protocol == "tcp"):
+                check_iptables(port,protocol, "ACCEPT")
+                check_iptables(port,protocol, "DROP")
+                command = "/sbin/iptables -A OUTPUT -p tcp --dport {} -j DROP && /sbin/iptables -A INPUT -p tcp --dport {} -j DROP && /sbin/service iptables save".format(port, port)
+                subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            
                 
-                    
 
-                if (protocol == "udp"):
-                    check_iptables(port,protocol, "ACCEPT")
-                    check_iptables(port,protocol, "DROP")
-                    command = "/sbin/iptables -A OUTPUT -p udp --dport {} -j DROP && /sbin/iptables -A INPUT -p udp --dport {} -j DROP && /sbin/service iptables save".format(port, port)
-                    output = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
-            except subprocess.CalledProcessError as e:
-                print ("ERROR: {}".format(e.stderr))
+            if (protocol == "udp"):
+                check_iptables(port,protocol, "ACCEPT")
+                check_iptables(port,protocol, "DROP")
+                command = "/sbin/iptables -A OUTPUT -p udp --dport {} -j DROP && /sbin/iptables -A INPUT -p udp --dport {} -j DROP && /sbin/service iptables save".format(port, port)
+                subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                
 
 
+        except subprocess.CalledProcessError as e:
+            print ("ERROR: {}".format(e.stderr))
+
+
+    if os_detection.detect() == "Windows":
+        try:
+            if protocol == "tcp":
+                check_iptables(port, protocol, "Allow")
+                check_iptables(port, protocol, "Block")
+                command = "New-NetFirewallRule -DisplayName \"Block Port {port}\" -Direction Inbound -Protocol TCP -Action Block -LocalPort {port}; New-NetFirewallRule -DisplayName \"Block Port {port}\" -Direction Outbound -Protocol TCP -Action Block -LocalPort {port}"
+                subprocess.run(["powershell", "-Command", command], check=True)
+
+            if protocol == "udp":
+                check_iptables(port, protocol, "Allow")
+                check_iptables(port, protocol, "Block")
+                command = "New-NetFirewallRule -DisplayName \"Block Port {port}\" -Direction Inbound -Protocol TCP -Action Block -LocalPort {port}; New-NetFirewallRule -DisplayName \"Block Port {port}\" -Direction Outbound -Protocol TCP -Action Block -LocalPort {port}"
+                subprocess.run(["powershell", "-Command", command], check=True)
+
+        except subprocess.CalledProcessError as e:
+            print ("ERROR: {}".format(e))
+
+    if os_detection.detect() == "freebsd": #might be able to use for darwin as well
+        try:
+            check_iptables(port, protocol, "pass")
+            check_iptables(port, protocol, "block")
+
+            subprocess.run(["pfctl", "-e"], check=True)
+            subprocess.run(["pfctl", "-f", "/etc/pf.conf"], check=True)
+
+            subprocess.run(["pfctl", "-t", "blocked-ports", "-T", "add", "{}/{}".format(port, protocol)], check=True)
+            subprocess.run(["pfctl", "-f", "/etc/pf.conf"], check=True)
+
+
+        except subprocess.CalledProcessError as e:
+            print ("ERROR: {}".format(e))
 
 
 def port_ACCEPT(port, protocol):
@@ -150,14 +238,57 @@ def port_ACCEPT(port, protocol):
                 check_iptables(port,protocol, "DROP")
                 check_iptables(port,protocol, "ACCEPT")
                 command = "/sbin/iptables -A OUTPUT -p tcp --dport {} -j ACCEPT && /sbin/iptables -A INPUT -p tcp --dport {} -j ACCEPT && /sbin/service iptables save".format(port, port)
-                output = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
                 
 
             if (protocol == "udp"):
                 check_iptables(port,protocol, "DROP")
                 check_iptables(port,protocol, "ACCEPT")
                 command = "/sbin/iptables -A OUTPUT -p udp --dport {} -j ACCEPT && /sbin/iptables -A INPUT -p udp --dport {} -j ACCEPT && /sbin/service iptables save".format(port, port)
-                output = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
         except subprocess.CalledProcessError as e:
             print ("ERROR: {}".format(e.stderr))
+
+
+    if os_detection.detect() == "Windows":
+        try:
+            if protocol == "tcp":
+                check_iptables(port, protocol, "Allow")
+                check_iptables(port, protocol, "Block")
+                command = "New-NetFirewallRule -DisplayName \"Allow Port {port}\" -Direction Inbound -Protocol TCP -Action Allow -LocalPort {port}; New-NetFirewallRule -DisplayName \"Allow Port {port}\" -Direction Outbound -Protocol TCP -Action Allow -LocalPort {port}"
+                subprocess.run(["powershell", "-Command", command], check=True)
+
+            if protocol == "udp":
+                check_iptables(port, protocol, "Allow")
+                check_iptables(port, protocol, "Block")
+                command = "New-NetFirewallRule -DisplayName \"Allow Port {port}\" -Direction Inbound -Protocol TCP -Action Allow -LocalPort {port}; New-NetFirewallRule -DisplayName \"Allow Port {port}\" -Direction Outbound -Protocol TCP -Action Allow -LocalPort {port}"
+                subprocess.run(["powershell", "-Command", command], check=True)
+
+        except subprocess.CalledProcessError as e:
+            print ("ERROR: {}".format(e))
+
+
+    if os_detection.detect() == "freebsd": #might be able to use for darwin as well
+        try:
+            if (protocol == "tcp"):
+                check_iptables(port, protocol, "pass")
+                check_iptables(port, protocol, "block")
+
+                subprocess.run(["pfctl", "-e"], check=True)
+                subprocess.run(["pfctl", "-f", "/etc/pf.conf"], check=True)
+
+                subprocess.run(["pfctl", "-a", "allow-ports", "-p", "tcp", "--dport",str(port), "-j", "pass"], check=True)
+                subprocess.run(["pfctl", "-f", "/etc/pf.conf"], check=True)
+            elif (protocol == "udp"):
+                check_iptables(port, protocol, "pass")
+                check_iptables(port, protocol, "block")
+
+                subprocess.run(["pfctl", "-e"], check=True)
+                subprocess.run(["pfctl", "-f", "/etc/pf.conf"], check=True)
+
+                subprocess.run(["pfctl", "-a", "allow-ports", "-p", "udp", "--dport",str(port), "-j", "pass"], check=True)
+                subprocess.run(["pfctl", "-f", "/etc/pf.conf"], check=True)
+            
+        except subprocess.CalledProcessError as e:
+            print ("ERROR: {}".format(e))

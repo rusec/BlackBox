@@ -7,7 +7,7 @@ def port_info(ip,port):
     
     try:
         scanner = PortScanner()
-        scanner.scan(ip, arguments='-p {} -A'.format(port))
+        scanner.scan(ip, arguments='-Pn -n -p {} -A'.format(port))
         
         service_info = scanner[ip]['tcp'][port]
         
