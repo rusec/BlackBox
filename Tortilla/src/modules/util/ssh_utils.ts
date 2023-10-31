@@ -15,20 +15,11 @@ async function removeSSHkey(conn: SSH2Promise, os_type: options): Promise<boolea
     const ssh_key = await runningDB.getSSHPublicKey();
     log(`Removing SSH Key ${conn.config[0].host}`, "log");
 
-    switch (os_type) {
+    switch (os_type.toLowerCase()) {
         case "linux":
             var output = await runCommandNoExpect(conn, commands.ssh.remove.linux(ssh_key));
             if (!output) {
                 return false;
-            }
-            break;
-        case "freeBSD":
-            var output = await runCommandNoExpect(conn, commands.ssh.remove.freebsd(ssh_key));
-            if (typeof output === "string" && output.includes("setenv")) {
-                output = await runCommandNoExpect(conn, commands.ssh.remove.linux(ssh_key));
-                if (!output) {
-                    return false;
-                }
             }
             break;
         case "freebsd":
@@ -115,7 +106,7 @@ async function injectSSHkey(conn: SSH2Promise, os_type: options, force?: undefin
         await injectKey();
         return await test();
     }
-    switch (os_type) {
+    switch (os_type.toLowerCase()) {
         case "linux":
             var ssh_keys = await getOutput(conn, commands.ssh.echo.linux);
             if (ssh_keys.includes(ssh_key)) {
@@ -123,12 +114,6 @@ async function injectSSHkey(conn: SSH2Promise, os_type: options, force?: undefin
             }
             break;
         case "freebsd":
-            var ssh_keys = await getOutput(conn, commands.ssh.echo.linux);
-            if (ssh_keys.includes(ssh_key)) {
-                return await test();
-            }
-            break;
-        case "freeBSD":
             var ssh_keys = await getOutput(conn, commands.ssh.echo.linux);
             if (ssh_keys.includes(ssh_key)) {
                 return await test();
@@ -285,7 +270,6 @@ async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
                 hits = hits.map((hit) => com[0] + " " + hit);
             }
 
-            // show all completions if none found
             return [hits.length ? hits : history, line];
         };
         const rl = readline.createInterface({

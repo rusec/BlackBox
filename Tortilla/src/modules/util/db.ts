@@ -1,7 +1,6 @@
 import fs from "fs";
 import crypto from "crypto";
 import csv from "csvtojson";
-
 import { log } from "./debug";
 import bcrypt from "bcryptjs";
 import inquirer from "inquirer";
@@ -10,6 +9,7 @@ import { machineIdSync } from "node-machine-id";
 import keygen from "ssh-keygen-lite";
 import { options } from "./options";
 import { password_result } from "../password/change_passwords";
+
 type DataBase = {
     master_password: string;
     ssh_private: string;
@@ -32,18 +32,83 @@ export type ServerInfo = {
     "OS Type": options;
     ssh_key: boolean;
 };
+export type app_config = {
+    master_hash: string;
+};
+class Encryption {
+    constructor() {}
+    async write(data: string, filePath: string, key: string) {
+        try {
+            const iv = crypto.randomBytes(16).toString("hex");
+            const cipher = crypto.createCipheriv("aes-256-cbc", Buffer.from(key, "hex"), Buffer.from(iv, "hex"));
+            let encryptedData = cipher.update(data, "utf8", "base64");
+            encryptedData += cipher.final("base64");
+            await fs.promises.writeFile(filePath, iv + encryptedData, "utf8");
+            return true;
+        } catch (error) {
+            throw new Error(`Error writing and encrypting file: ${error}`);
+        }
+    }
+    readSync(filePath: string, key: string) {
+        try {
+            let encryptedData = fs.readFileSync(filePath, "utf8");
+            let iv = encryptedData.substring(0, 32);
+            encryptedData = encryptedData.substring(32, encryptedData.length);
+            const decipher = crypto.createDecipheriv("aes-256-cbc", Buffer.from(key, "hex"), Buffer.from(iv, "hex"));
+            let decryptedData = decipher.update(encryptedData, "base64", "utf8");
+            decryptedData += decipher.final("utf8");
+            return decryptedData;
+        } catch (error) {
+            return false;
+        }
+    }
+    async read(filePath: string, key: string) {
+        try {
+            let encryptedData = await fs.promises.readFile(filePath, "utf8");
+            let iv = encryptedData.substring(0, 32);
+            encryptedData = encryptedData.substring(32, encryptedData.length);
+            const decipher = crypto.createDecipheriv("aes-256-cbc", Buffer.from(key, "hex"), Buffer.from(iv, "hex"));
+            let decryptedData = decipher.update(encryptedData, "base64", "utf8");
+            decryptedData += decipher.final("utf8");
+            return decryptedData;
+        } catch (error) {
+            return false;
+        }
+    }
+}
 
 class DB {
     filePath: string;
+    passwd: string;
+    configs: app_config;
+    ready: boolean;
+    encrypt: Encryption;
     constructor() {
+        this.encrypt = new Encryption();
         this.filePath = "./muffins";
+
+        // Adding password based encryption
+        this.passwd = "./pineapples";
+        try {
+            let data = this.encrypt.readSync(this.passwd, this._getPKey(""));
+            if (data === false) {
+                throw new Error("Unable to parse passwd");
+            }
+            this.configs = JSON.parse(data);
+            this.ready = true;
+        } catch (error) {
+            this.ready = false;
+            this.configs = {
+                master_hash: "",
+            };
+        }
     }
     _getPrivate() {}
 
-    _getPKey() {
+    _getPKey(password_hash: string) {
         var uuid = this._getUUID();
         var plat = process.platform;
-        let _encryptionKey = keccak256(uuid + plat + this._string() + "shrimp_key").toString("hex");
+        let _encryptionKey = keccak256(uuid + plat + this._string() + password_hash + "shrimp_key").toString("hex");
 
         return _encryptionKey;
     }
@@ -100,11 +165,11 @@ class DB {
     }
 
     async getSSHPublicKey() {
-        const db = await this._readJson();
+        const db = await this._readJson(this.configs.master_hash);
         return db.ssh_public;
     }
     async getSSHPrivateKey() {
-        const db = await this._readJson();
+        const db = await this._readJson(this.configs.master_hash);
         return db.ssh_private;
     }
 
@@ -159,17 +224,13 @@ class DB {
         return await this.writeComputers(computers);
     }
     /**
-     * Reads the master password from the running database or initializes it with a default value if not found.
+     * Reads the master password hash and returns it from the current instance.
      *
      * @returns {Promise<string>} A promise that resolves to the master password.
      */
     async readPassword(): Promise<string> {
-        const { master_password } = await this._readJson();
-        if (master_password === undefined) {
-            await this._writeJson(default_db);
-            return await this.readPassword();
-        }
-        return master_password;
+        const { master_hash } = this.configs;
+        return master_hash;
     }
     /**
      * Updates the password of a computer in the list of computers by its index.
@@ -221,7 +282,7 @@ class DB {
      */
 
     async readComputers(): Promise<Array<ServerInfo>> {
-        const { computers } = await this._readJson();
+        const { computers } = await this._readJson(this.configs.master_hash);
         return computers;
     }
     /**
@@ -279,9 +340,9 @@ class DB {
      * @returns {Promise<void>} A promise that resolves when the computer data is successfully written to the database.
      */
     async writeComputers(jsonData: Array<ServerInfo>): Promise<boolean> {
-        const db = await this._readJson();
+        const db = await this._readJson(this.configs.master_hash);
         db.computers = jsonData;
-        return await this._writeJson(db);
+        return await this._writeJson(db, this.configs.master_hash);
     }
 
     /**
@@ -292,9 +353,23 @@ class DB {
      */
     async writePassword(password_string: string): Promise<void> {
         const hash = await this._bcryptPassword(password_string);
-        const db = await this._readJson();
-        db.master_password = hash;
-        await this._writeJson(db);
+        if (!this.ready) {
+            this.configs.master_hash = hash;
+            this._writeJson(await this._resetDB(), this.configs.master_hash);
+            this.ready = true;
+        }
+        try {
+            const db = await this._readJson(this.configs.master_hash);
+            db.master_password = hash;
+            this.configs.master_hash = hash;
+            this.encrypt.write(JSON.stringify(this.configs), this.passwd, this._getPKey(""));
+            await this._writeJson(db, this.configs.master_hash);
+        } catch (error) {
+            this.configs.master_hash = hash;
+            this.encrypt.write(JSON.stringify(this.configs), this.passwd, this._getPKey(""));
+            this._writeJson(await this._resetDB(), this.configs.master_hash);
+            this.ready = true;
+        }
     }
     /**
      * Writes the provided `jsonData` to the database file after normalizing and encrypting it.
@@ -303,15 +378,10 @@ class DB {
      * @returns {Promise<boolean>} A promise that resolves to `true` if the write operation is successful.
      * @throws {Error} Throws an error if there is an issue with writing or encrypting the JSON data.
      */
-    async _writeJson(jsonData: DataBase): Promise<boolean> {
+    async _writeJson(jsonData: DataBase, password_hash: string): Promise<boolean> {
         try {
             const jsonStr = this._normalize(jsonData);
-            const iv = crypto.randomBytes(16).toString("hex");
-            const cipher = crypto.createCipheriv("aes-256-cbc", Buffer.from(this._getPKey(), "hex"), Buffer.from(iv, "hex"));
-            let encryptedData = cipher.update(jsonStr, "utf8", "base64");
-            encryptedData += cipher.final("base64");
-            await fs.promises.writeFile(this.filePath, iv + encryptedData, "utf8");
-            return true;
+            return await this.encrypt.write(jsonStr, this.filePath, this._getPKey(password_hash));
         } catch (error) {
             throw new Error(`Error writing and encrypting JSON file: ${error}`);
         }
@@ -322,19 +392,17 @@ class DB {
      *
      * @returns {Promise<DataBase>} A promise that resolves to a `DataBase` object containing the decrypted data.
      */
-    async _readJson(): Promise<DataBase> {
+    async _readJson(password_hash: string): Promise<DataBase> {
         try {
-            let encryptedData = await fs.promises.readFile(this.filePath, "utf8");
-            let iv = encryptedData.substring(0, 32);
-            encryptedData = encryptedData.substring(32, encryptedData.length);
-            const decipher = crypto.createDecipheriv("aes-256-cbc", Buffer.from(this._getPKey(), "hex"), Buffer.from(iv, "hex"));
-            let decryptedData = decipher.update(encryptedData, "base64", "utf8");
-            decryptedData += decipher.final("utf8");
+            let decryptedData = await this.encrypt.read(this.filePath, this._getPKey(password_hash));
+            if (decryptedData === false) {
+                throw new Error("Returned false");
+            }
             return JSON.parse(decryptedData);
         } catch (error) {
             log("UNABLE TO READ DB FILE RESETTING", "error");
-            await this._writeJson(await this._resetDB());
-            return await this._readJson();
+            await this._writeJson(await this._resetDB(), password_hash);
+            return await this._readJson(password_hash);
         }
     }
     async _resetDB() {
