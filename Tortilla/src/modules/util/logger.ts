@@ -25,6 +25,7 @@ class Logger {
     _format(message: string, type: options) {
         let now = new Date();
         let time = `[${now.toISOString()}]`;
+        let user = os.userInfo().username;
         let t;
         switch (type.toLowerCase()) {
             default:
@@ -47,7 +48,7 @@ class Logger {
                 t = "[SUCCESS]";
                 break;
         }
-        return `${time} ${t} ${message}\n`;
+        return `${time} [${user}] ${t} ${message}\n`;
     }
 }
 
