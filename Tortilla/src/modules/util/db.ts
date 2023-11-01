@@ -9,7 +9,9 @@ import { machineIdSync } from "node-machine-id";
 import keygen from "ssh-keygen-lite";
 import { options } from "./options";
 import { password_result } from "../password/change_passwords";
-
+import logger from "./logger";
+import path from "path";
+import os from "os";
 type DataBase = {
     master_password: string;
     ssh_private: string;
@@ -83,12 +85,15 @@ class DB {
     configs: app_config;
     ready: boolean;
     encrypt: Encryption;
+    process_dir: string;
     constructor() {
         this.encrypt = new Encryption();
-        this.filePath = "./muffins";
+        this.process_dir = path.join(os.homedir() + "/Tortilla");
+
+        this.filePath = path.join(this.process_dir, "muffins");
 
         // Adding password based encryption
-        this.passwd = "./pineapples";
+        this.passwd = path.join(this.process_dir, "pineapples");
         try {
             let data = this.encrypt.readSync(this.passwd, this._getPKey(""));
             if (data === false) {
@@ -182,6 +187,7 @@ class DB {
         try {
             let jsonArray = await csv().fromFile("./computers.csv");
             await this.writeComputers(normalizeServerInfo(jsonArray));
+            logger.log("Read computers from CSV", "info");
         } catch (error) {}
     }
     /**
@@ -208,6 +214,8 @@ class DB {
             "OS Type": os_type || "",
             ssh_key: false,
         });
+        logger.log(`Added Computer ${name} ${ip}`, "info");
+
         return await this.writeComputers(computers);
     }
     /**
@@ -221,6 +229,7 @@ class DB {
         computers = computers.filter((_, i) => {
             return !(i === index);
         });
+        logger.log(`Removed Computer ${index}`, "info");
         return await this.writeComputers(computers);
     }
     /**
@@ -247,6 +256,8 @@ class DB {
         try {
             const computers = await this.readComputers();
             computers[computer_id].Password = password;
+            logger.log(`Changed Computer Password in Database`, "info");
+
             return await this.writeComputers(computers);
         } catch (error) {
             return false;
@@ -255,6 +266,7 @@ class DB {
     async writeCompSSH(computer_id: number, result: boolean): Promise<boolean> {
         try {
             const computers = await this.readComputers();
+            logger.log(`${result ? "Added" : "Removed"} SSH`, "info");
             computers[computer_id].ssh_key = result;
             return await this.writeComputers(computers);
         } catch (error) {
@@ -270,6 +282,8 @@ class DB {
             computers[computer_id].Password = result.password;
             computers[computer_id].ssh_key = result.ssh;
             log(`Writing computer ${computers[computer_id]["IP Address"]}`, "info");
+            logger.log(`Writing Computer ${computers[computer_id]["IP Address"]} in Database`, "info");
+
             return await this.writeComputers(computers);
         } catch (error) {
             return false;
@@ -357,6 +371,8 @@ class DB {
             this.configs.master_hash = hash;
             this._writeJson(await this._resetDB(), this.configs.master_hash);
             this.ready = true;
+            logger.log(`Database ready`, "info");
+            logger.log(`Database init with password`, "info");
         }
         try {
             const db = await this._readJson(this.configs.master_hash);
@@ -364,10 +380,15 @@ class DB {
             this.configs.master_hash = hash;
             this.encrypt.write(JSON.stringify(this.configs), this.passwd, this._getPKey(""));
             await this._writeJson(db, this.configs.master_hash);
+            logger.log(`Updated Database with new password`, "info");
         } catch (error) {
+            logger.log(`Unable to Read Database while changing password`, "error");
             this.configs.master_hash = hash;
             this.encrypt.write(JSON.stringify(this.configs), this.passwd, this._getPKey(""));
             this._writeJson(await this._resetDB(), this.configs.master_hash);
+            logger.log(`Reset Database with new password`, "error");
+            logger.log(`Database ready`, "info");
+
             this.ready = true;
         }
     }
@@ -401,6 +422,7 @@ class DB {
             return JSON.parse(decryptedData);
         } catch (error) {
             log("UNABLE TO READ DB FILE RESETTING", "error");
+            logger.log(`Reset Database`, "error");
             await this._writeJson(await this._resetDB(), password_hash);
             return await this._readJson(password_hash);
         }

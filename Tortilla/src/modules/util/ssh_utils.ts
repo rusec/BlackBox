@@ -8,7 +8,7 @@ import { commands } from "./commands";
 import { Channel } from "ssh2";
 import readline from "readline";
 import { removeANSIColorCodes } from "./util";
-
+import logger from "./logger";
 // SSH COMMANDS for ejections
 
 async function removeSSHkey(conn: SSH2Promise, os_type: options): Promise<boolean> {
@@ -259,6 +259,7 @@ async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
     }
     return new Promise(async (resolve, reject) => {
         const connected_ssh: Channel = await conn.shell();
+        logger.log(`Made SSH interactive Shell for ${server["IP Address"]}`, "info");
         let history: string[] = [];
         var autoComplete = function completer(line: string) {
             const com = line.split(" ");

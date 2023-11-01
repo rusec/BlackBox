@@ -18,22 +18,7 @@ async function Home() {
             type: "list",
             pageSize: 60,
 
-            choices: [
-                new inquirer.Separator(),
-                new inquirer.Separator("Passwords"),
-                "Run Password Changer",
-                "Run Password TEST",
-                "Generate Passwords",
-                new inquirer.Separator(),
-                new inquirer.Separator("Computers"),
-                "Computers",
-                new inquirer.Separator(),
-                new inquirer.Separator("Navigation"),
-                "Settings",
-                new inquirer.Separator(),
-                "Home",
-                "Exit",
-            ],
+            choices: getHomeChoices(),
             message: "Please select the program you want to run:",
         },
     ]);
@@ -65,6 +50,42 @@ async function Home() {
             await clear();
             process.exit(0);
             break;
+    }
+    function getHomeChoices() {
+        if (process.env.DEV) {
+            return [
+                new inquirer.Separator(),
+                new inquirer.Separator("Passwords"),
+                "Run Password Changer",
+                "Run Password TEST",
+                "Generate Passwords",
+                new inquirer.Separator(),
+                new inquirer.Separator("Computers"),
+                "Computers",
+                new inquirer.Separator(),
+                new inquirer.Separator("Navigation"),
+                "Settings",
+                new inquirer.Separator(),
+                "Home",
+                "Exit",
+            ];
+        } else {
+            return [
+                new inquirer.Separator(),
+                new inquirer.Separator("Passwords"),
+                "Run Password Changer",
+                "Generate Passwords",
+                new inquirer.Separator(),
+                new inquirer.Separator("Computers"),
+                "Computers",
+                new inquirer.Separator(),
+                new inquirer.Separator("Navigation"),
+                "Settings",
+                new inquirer.Separator(),
+                "Home",
+                "Exit",
+            ];
+        }
     }
 }
 

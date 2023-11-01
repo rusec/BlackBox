@@ -9,6 +9,7 @@
         "delay": "^6.0.0",
         "inquirer": "^8.2.6",
         "keccak256": "^1.0.6",
+        "lockfile": "^1.0.4",
         "node-machine-id": "^1.1.12",
         "random-seed": "^0.3.0",
         "sha512crypt-node": "^1.0.2",
@@ -26,6 +27,7 @@
         "@types/chai": "^4.3.8",
         "@types/clear": "^0.1.2",
         "@types/inquirer": "^9.0.4",
+        "@types/lockfile": "^1.0.3",
         "@types/mocha": "^10.0.2",
         "@types/node": "^18.7.14",
         "@types/random-seed": "^0.3.3",
@@ -38,7 +40,7 @@
     },
     "scripts": {
         "test": "mocha -r ts-node/register test/**/*.spec.ts",
-        "start": "tsc && node ./dist/src/index.js",
+        "start": "tsc && cross-env DEV=true node ./dist/src/index.js",
         "build": "export SALT=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && export SALT_2=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && node ./build/prebuild.js $SALT $SALT_2 && tsc && pkg --out-path releases/latest -t node16-linux,node16-win,node16-macos,node16-linux-x64,node16-win-x64,node16-macos-x64 ./dist/src/index.js && node ./build/postbuild.js $SALT $SALT_2 && echo 'Binaries are located in releases/latest'",
         "clean": "rm index-linux && rm index-macos && rm index-win.exe"
     },
