@@ -1,6 +1,7 @@
 import runningDB from "./db";
 import inquirer from "inquirer";
 import clear from "clear";
+import logger from "./logger";
 
 /**
  * Checks and validates a master password stored in the running database or prompts the user to set it if not found.
@@ -36,12 +37,15 @@ async function checkPassword(): Promise<void> {
             validate: async function (value) {
                 const v = await runningDB.validateMasterPassword(value);
                 if (trials <= 0) {
+                    logger.log(`Log in Attempt Failed`, "info");
                     process.exit(0);
                 }
                 if (!v) {
                     trials--;
+                    logger.log(`Log in Attempt Failed Attempts Left ${trials + 1}`, "info");
                     return "Incorrect Password";
                 }
+                logger.log(`Log in Attempt Success`, "info");
                 return true;
             },
         },

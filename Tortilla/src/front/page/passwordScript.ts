@@ -8,6 +8,7 @@ import { generatePasses } from "../../modules/util/password-generator";
 import fs from "fs";
 import { removeANSIColorCodes } from "../../modules/util/util";
 import { Home } from "../menu/home";
+import logger from "../../modules/util/logger";
 async function runScript(debug?: boolean) {
     const originalConsoleLog = console.log;
     let capturedOutput = "";
@@ -51,6 +52,7 @@ async function runScript(debug?: boolean) {
         const numberOfSuccess = results
             .filter(({ status }) => status === "fulfilled")
             .map((p) => typeof (p as PromiseFulfilledResult<any>).value == "boolean" && (p as PromiseFulfilledResult<any>).value).length;
+        logger.log(`Successfully changed passwords on ${numberOfSuccess} of ${computers.length}`, "info");
 
         console.log(`Successfully changed passwords on ${numberOfSuccess} of ${computers.length}`.green);
 
@@ -109,8 +111,12 @@ async function runSingleScript(id: number) {
 
         if (typeof result == "string" || result.error) {
             log(`Error changing password Error: ${typeof result == "string" ? result : result.error ? result.error : ""}`, "error");
+            logger.log(`Error changing password on ${computers[id]["IP Address"]}`, "error");
+
             await delay(1000);
         } else {
+            logger.log(`Successfully changed passwords on ${computers[id]["IP Address"]}`, "info");
+
             log(`Successfully changed passwords on ${computers[id]["IP Address"]}`.green);
             await runningDB.writeCompResult(id, result);
         }
