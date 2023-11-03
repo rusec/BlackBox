@@ -298,6 +298,7 @@ async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
 
         rl.on("line", (input: string) => {
             recent_input = input;
+            logger.log(`Command sent to ${conn.config[0].host}`, "info");
             connected_ssh.write(input + "\r");
         });
         rl.on("close", () => {

@@ -12,8 +12,8 @@ function sendCommandExpect(socket: Channel, command: string, expected: string) {
             let parsedData = removeANSIColorCodes(data.toString());
             log += parsedData;
             if (log.includes(expected)) {
-                resolve(log);
                 cleanUp();
+                resolve(log);
             }
         };
         const cleanUp = () => {
@@ -25,8 +25,8 @@ function sendCommandExpect(socket: Channel, command: string, expected: string) {
         socket.write(`${command}\r`);
 
         const timeoutId = setTimeout(() => {
-            reject(log);
             cleanUp();
+            reject(log);
         }, TIMEOUT);
     });
 }
@@ -39,8 +39,8 @@ function sendCommandNoExpect(socket: Channel, command: string, not_expected: str
             let parsedData = removeANSIColorCodes(data.toString());
             log += parsedData;
             if (log.includes(not_expected)) {
-                reject(log);
                 cleanUp();
+                reject(log);
             }
         };
 
@@ -53,8 +53,8 @@ function sendCommandNoExpect(socket: Channel, command: string, not_expected: str
         socket.write(`${command}\r\r`);
 
         const timeout = setTimeout(() => {
-            resolve(log);
             cleanUp();
+            resolve(log);
         }, 6000);
     });
 }
@@ -67,8 +67,8 @@ function sendCommand(socket: Channel, command: string): Promise<string> {
             let parsedData = removeANSIColorCodes(data.toString());
             log += parsedData;
             if (log.includes(command)) {
-                resolve(log);
                 cleanUp();
+                resolve(log);
             }
         };
 
@@ -90,12 +90,12 @@ function sendCommand(socket: Channel, command: string): Promise<string> {
 function sendInput(socket: Channel, input: string): Promise<boolean> {
     return new Promise((resolve, reject) => {
         socket.stdin.write(`${input}\r`, (err) => {
+            clearTimeout(timerId);
             if (err) {
                 reject(err);
             } else {
                 resolve(true);
             }
-            clearTimeout(timerId);
         });
 
         const timerId = setTimeout(() => {

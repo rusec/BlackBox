@@ -1,0 +1,58 @@
+import clear from "clear";
+import inquirer from "inquirer";
+import { generatePasswords } from "../page/generate";
+import { Home } from "./home";
+import { bcryptPassword, encryptPassword } from "../../modules/util/util";
+
+async function utilsPage() {
+    await clear();
+
+    const { program } = await inquirer.prompt([
+        {
+            name: "program",
+            type: "list",
+            pageSize: 60,
+            choices: [new inquirer.Separator(), "Generate Passwords", "Encrypt", "Bcrypt", new inquirer.Separator(), "Back"],
+            message: "Please select a Program",
+        },
+    ]);
+
+    switch (program) {
+        case "Generate Passwords":
+            generatePasswords();
+            break;
+        case "Encrypt":
+            Encrypt(0);
+            break;
+        case "Bcrypt":
+            Encrypt(1);
+            break;
+        case "Back":
+            Home();
+            break;
+    }
+
+    async function Encrypt(algorithm: 0 | 1) {
+        const { password } = await inquirer.prompt([
+            {
+                name: "password",
+                message: "Please enter a password",
+                type: "input",
+            },
+        ]);
+
+        if (algorithm === 1) [console.log(await bcryptPassword(password))];
+        if (algorithm === 0) [console.log(await encryptPassword(password))];
+
+        await inquirer.prompt([
+            {
+                name: "confirm",
+                message: "please press enter to continue",
+                type: "input",
+            },
+        ]);
+        Home();
+    }
+}
+
+export { utilsPage };

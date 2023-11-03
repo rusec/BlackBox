@@ -6,6 +6,7 @@ import { pingSSH } from "../../modules/util/ssh_utils";
 import { log } from "../../modules/util/debug";
 import fs from "fs/promises";
 import util from "util";
+import logger from "../../modules/util/logger";
 
 const exec = util.promisify(require("node:child_process").exec);
 
@@ -75,6 +76,7 @@ async function sshMenu() {
         for (let session of users) {
             sessions.push(session);
         }
+    logger.log(`Attempt to Shotgun ${computers.length} Computers ${users_sessions.length} User Sessions`, "info");
 
     var promises = computers.map(async (computer: { ip: string; name: string }) => {
         var passed = false;
@@ -91,7 +93,8 @@ async function sshMenu() {
         }
         if (!passed) {
             log(`Unable to login, invalid user pass combo ${computer.ip}`, "error");
-        }
+        } else logger.log(`Successfully found User Session for ${computer.ip}`, "success");
+
         return passed;
     });
 

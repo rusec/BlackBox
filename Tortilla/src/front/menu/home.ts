@@ -7,6 +7,7 @@ import { generatePasswords } from "../page/generate";
 import { runScript } from "../page/passwordScript";
 import { checkPassword } from "../../modules/util/checkPassword";
 import { Settings } from "./settings";
+import { utilsPage } from "./utilsPage";
 
 async function Home() {
     await clear();
@@ -38,10 +39,12 @@ async function Home() {
             runScript(true);
             break;
         case "Generate Passwords":
-            generatePasswords();
             break;
         case "Computers":
             edit();
+            break;
+        case "Utils":
+            utilsPage();
             break;
         case "Settings":
             Settings();
@@ -52,13 +55,14 @@ async function Home() {
             break;
     }
     function getHomeChoices() {
-        if (process.env.DEV) {
+        if (process.env.DEV && process.pkg == undefined) {
             return [
                 new inquirer.Separator(),
                 new inquirer.Separator("Passwords"),
                 "Run Password Changer",
                 "Run Password TEST",
                 "Generate Passwords",
+                "Utils",
                 new inquirer.Separator(),
                 new inquirer.Separator("Computers"),
                 "Computers",
@@ -75,6 +79,7 @@ async function Home() {
                 new inquirer.Separator("Passwords"),
                 "Run Password Changer",
                 "Generate Passwords",
+                "Utils",
                 new inquirer.Separator(),
                 new inquirer.Separator("Computers"),
                 "Computers",

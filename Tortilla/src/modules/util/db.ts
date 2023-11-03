@@ -266,7 +266,7 @@ class DB {
     async writeCompSSH(computer_id: number, result: boolean): Promise<boolean> {
         try {
             const computers = await this.readComputers();
-            logger.log(`${result ? "Added" : "Removed"} SSH`, "info");
+            logger.log(`${result ? "Added" : "Removed"} SSH to Computer ${computers[computer_id]["IP Address"]}`, "info");
             computers[computer_id].ssh_key = result;
             return await this.writeComputers(computers);
         } catch (error) {
@@ -306,12 +306,17 @@ class DB {
      */
     async resetMasterPassword(): Promise<void> {
         const me = this;
+        let trails = 3;
         const { master_password } = await inquirer.prompt([
             {
                 name: "old",
                 type: "password",
                 validate: async function (value) {
-                    return await me.validateMasterPassword(value);
+                    if (trails <= 0) {
+                        process.exit(0);
+                    }
+                    trails--;
+                    return (await me.validateMasterPassword(value)) ? true : "Invalid Password";
                 },
             },
             {
@@ -366,6 +371,7 @@ class DB {
      * @returns {Promise<void>} A promise that resolves when the password is hashed and stored in the database.
      */
     async writePassword(password_string: string): Promise<void> {
+        logger.log(`Request to update Master Password`, "info");
         const hash = await this._bcryptPassword(password_string);
         if (!this.ready) {
             this.configs.master_hash = hash;
@@ -422,7 +428,7 @@ class DB {
             return JSON.parse(decryptedData);
         } catch (error) {
             log("UNABLE TO READ DB FILE RESETTING", "error");
-            logger.log(`Reset Database`, "error");
+            logger.log(`Resetting Database was unable to read DB using master password`, "error");
             await this._writeJson(await this._resetDB(), password_hash);
             return await this._readJson(password_hash);
         }
