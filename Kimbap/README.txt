@@ -2,6 +2,12 @@
 
 This is a fork of hardeningkitty with modified finding lists that don't break things. The original readme follows:
 
+
+#USAGE
+
+Invoke-HardeningKitty -Mode HailMary -Log -Report -FileFindingList ".\new lists\*insert list here*"
+
+
 # HardeningKitty
 
 This is the stable version of _HardeningKitty_ from the [Windows Hardening Project by Michael Schneider](https://github.com/0x6d69636b/windows_hardening). The stable version of _HardeningKitty_ is signed with the code signing certificate of _scip AG_. **Since this is the stable version, we do not accept pull requests in this repo, please send them to the [development repo](https://github.com/0x6d69636b/windows_hardening)**. 
