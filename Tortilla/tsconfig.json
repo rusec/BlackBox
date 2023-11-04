@@ -13,5 +13,5 @@
         "esModuleInterop": true
     },
     "include": ["**/*", "..webpack.config.js"],
-    "exclude": ["releases/**", "dist/**", "build/**", "misc/**"]
+    "exclude": ["releases/**", "dist/**", "build/**", "misc/**", "testing/**"]
 }

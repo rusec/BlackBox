@@ -30,24 +30,26 @@ async function checkPassword(): Promise<void> {
 
     await clear();
     let trials = 3;
+    function validateFunc(value: string) {
+        console.log("HELLO");
+        const v = runningDB.validateMasterPassword(value);
+        if (trials <= 0) {
+            logger.log(`Log in Attempt Failed`, "info");
+            process.exit(0);
+        }
+        if (!v) {
+            trials--;
+            logger.log(`Log in Attempt Failed Attempts Left ${trials + 1}`, "info");
+            return "Incorrect Password";
+        }
+        logger.log(`Log in Attempt Success`, "info");
+        return true;
+    }
     await inquirer.prompt([
         {
             name: "master_password",
             type: "password",
-            validate: async function (value) {
-                const v = await runningDB.validateMasterPassword(value);
-                if (trials <= 0) {
-                    logger.log(`Log in Attempt Failed`, "info");
-                    process.exit(0);
-                }
-                if (!v) {
-                    trials--;
-                    logger.log(`Log in Attempt Failed Attempts Left ${trials + 1}`, "info");
-                    return "Incorrect Password";
-                }
-                logger.log(`Log in Attempt Success`, "info");
-                return true;
-            },
+            validate: validateFunc,
         },
     ]);
 }

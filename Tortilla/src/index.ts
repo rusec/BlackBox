@@ -5,33 +5,30 @@ import { checkPassword } from "./modules/util/checkPassword";
 import os from "os";
 import path from "path";
 import logger from "./modules/util/logger";
+import SingleInstance from "single-instance";
 
-const lockFilePath = path.join(os.homedir(), "/Tortilla/Tortilla.lock");
-lockfile.lock(lockFilePath, { retries: 10, retryWait: 1000 }, (err) => {
-    if (err) {
-        console.error("Another instance is already running.");
-        logger.error("Another instance is already running.");
-        process.exit(1);
-    } else {
+const locker = new SingleInstance("tortilla");
+locker
+    .lock()
+    .then(() => {
         logger.log("Starting application");
 
         start();
 
         process.on("exit", () => {
-            lockfile.unlock(lockFilePath, (err) => {
-                if (err) {
-                    console.error("Error releasing lock:", err);
-                    logger.error("Error releasing lock");
-                } else {
-                    console.log("Lock released.");
-                    logger.log("Ending application.");
-                }
-            });
+            logger.log("Ending application.");
         });
-    }
-});
-const start = async function () {
+    })
+    .catch((err: any) => {
+        console.error("Another instance is already running.");
+        logger.error("Another instance is already running.");
+        process.exit(1);
+        // This block will be executed if the app is already running
+        console.log(err); // it will print out 'An application is already running'
+    });
+
+async function start() {
     await clear();
     await checkPassword();
-    await Home();
-};
+    Home();
+}

@@ -237,7 +237,7 @@ class DB {
      *
      * @returns {Promise<string>} A promise that resolves to the master password.
      */
-    async readPassword(): Promise<string> {
+    readPassword(): string {
         const { master_hash } = this.configs;
         return master_hash;
     }
@@ -311,12 +311,12 @@ class DB {
             {
                 name: "old",
                 type: "password",
-                validate: async function (value) {
+                validate: function (value) {
                     if (trails <= 0) {
                         process.exit(0);
                     }
                     trails--;
-                    return (await me.validateMasterPassword(value)) ? true : "Invalid Password";
+                    return me.validateMasterPassword(value) ? true : "Invalid Password";
                 },
             },
             {
@@ -336,20 +336,20 @@ class DB {
     /**
      * Validates the Master Password for the program ensuring that the password hash is the same.
      * @param {string} master_password
-     * @returns {Promise<boolean>} returns true if password is correct
+     * @returns {boolean} returns true if password is correct
      */
-    async validateMasterPassword(master_password: string): Promise<boolean> {
+    validateMasterPassword(master_password: string): boolean {
         if (typeof master_password != "string") {
             return false;
         }
-        const hash = await this.readPassword();
+        const hash = this.readPassword();
         if (hash === undefined) {
             return false;
         }
         if (hash === "") {
             return false;
         }
-        return await bcrypt.compare(master_password, hash);
+        return bcrypt.compareSync(master_password, hash);
     }
 
     /**

@@ -3,7 +3,6 @@ import clear from "clear";
 import "colors";
 import runningDB from "../../modules/util/db";
 import { edit } from "../page/editor";
-import { generatePasswords } from "../page/generate";
 import { runScript } from "../page/passwordScript";
 import { checkPassword } from "../../modules/util/checkPassword";
 import { Settings } from "./settings";

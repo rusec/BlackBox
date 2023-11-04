@@ -6,3 +6,4 @@ declare namespace NodeJS {
         };
     }
 }
+declare module "single-instance";
