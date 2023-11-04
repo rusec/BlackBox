@@ -1,14 +1,10 @@
-1.) PS Script to check and edit CMD perms check CMD history - Expected compleition 10/8 
-9/30/23
-First version finished
-10/1/23
-Tested on W10 VM, script as is prints history, CMD status, and PS execution policy but doesn't yet change CMD permissions and prints false positives even when CMD is restricted - currently troubleshooting.
-10/11/23
-Tested working on W10 VM but needs admin privelleges to run, not sure how run to regain CMD access if we've been locked out. 
+NTP Scripts:
+Execute the script and input desired NTP server when prompted, the script will return if the connection was sucessful and your new NTP address. 
+The power shell one in particular will turn on NTP if its not already on. 
 
+Bash Shell Reset:
+Returns an added alias commands and list of sudoers. 
+Erases the default bashrc file and resets bash permissions. 
 
-2.) NTP Script for Windows - Done for Windows
-
-3.) NTP Script for Linux - Done for Linux
-
-4.) Bash shell resetting script started, doesn't work yet. 10/22/2023
+CMD Reset:
+Chekcs resitrctions on CMD and resets permissions. 
