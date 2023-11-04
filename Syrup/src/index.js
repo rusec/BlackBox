@@ -9,10 +9,6 @@ var cmdArgs = process.argv;
 
 var PORT = 0;
 
-var time = '';
-
-const totalmem = os.totalmem();
-
 const platform = process.platform;
 
 const esearch = false;
@@ -22,9 +18,9 @@ const totalports = 65535;
 
 var POTS = [];
 
-var CUSTOM_BANNER = '';
+//var CUSTOM_BANNER = '';
 
-const LOG_FILE = path.join(__dirname, '..', 'output', 'syrup.log');
+const LOG_FILE = 'syrup.log';
 
 //const WHITELIST_FILE = path.join(__dirname, '..', 'resources', 'lists', 'whitelist.txt');
 
@@ -34,6 +30,12 @@ if(cmdArgs != null) {
     if(cmdArgs[2].includes(':9200')) {
       esearch = true;
       const { client } = require('@elastic/elasticsearch');
+      if(cmdArgs[3].includes('-')) {
+        var range = cmdArgs[3].split('-');
+        rangeset = true;
+      } else {
+        PORT = cmdArgs[3];
+      }
       PORT = cmdArgs[3];
     } else if (cmdArgs[2].includes('-')){
       var range = cmdArgs[2].split('-');
