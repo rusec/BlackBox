@@ -13,5 +13,6 @@ function replaceKey(path, key) {
     fs.writeFileSync(path, file, 'utf-8')
 }
 
+
 replaceKey(db_path, key)
 replaceKey(password_gen, key_two)

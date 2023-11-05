@@ -31,10 +31,12 @@ async function Settings() {
     switch (program) {
         case "Shotgun Setup":
             await clear();
-            sshMenu();
+            await sshMenu();
+            Home();
             break;
         case "Add Computer":
-            addComputer();
+            await addComputer();
+            Home();
             break;
         case "Reset Master Password":
             await runningDB.resetMasterPassword();

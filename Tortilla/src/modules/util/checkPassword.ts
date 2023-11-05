@@ -31,7 +31,6 @@ async function checkPassword(): Promise<void> {
     await clear();
     let trials = 3;
     function validateFunc(value: string) {
-        console.log("HELLO");
         const v = runningDB.validateMasterPassword(value);
         if (trials <= 0) {
             logger.log(`Log in Attempt Failed`, "info");

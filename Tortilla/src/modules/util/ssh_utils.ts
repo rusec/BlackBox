@@ -230,7 +230,7 @@ async function makeConnection(Server: ServerInfo, useKey?: boolean): Promise<SSH
     }
 }
 
-async function pingSSH(ip: string, username: string, password: string): Promise<options | boolean> {
+async function pingSSH(ip: string, username: string, password: string): Promise<{ operatingSystem: options; hostname: string } | boolean> {
     try {
         const sshConfig: SSHConfig = {
             host: ip,
@@ -244,10 +244,11 @@ async function pingSSH(ip: string, username: string, password: string): Promise<
         const ssh = new SSH2Promise(sshConfig);
         await ssh.connect();
         let os = await detect_os(ssh);
+        let hostname = await detect_hostname(ssh);
         await ssh.close();
-        return os || true;
-    } catch (error) {
-        console.log(error);
+        return { operatingSystem: os, hostname: hostname } || true;
+    } catch (error: any) {
+        log((error as Error).message + ` ${ip}`, "error");
         return false;
     }
 }
@@ -341,6 +342,12 @@ async function detect_os(conn: SSH2Promise): Promise<options> {
         return "Unknown";
     }
 }
+async function detect_hostname(conn: SSH2Promise) {
+    log(`checking for hostname ${conn.config[0].host}`, "log");
+    const system = await conn.exec(commands.hostname);
+    return system.trim();
+}
+
 export {
     pingSSH,
     injectSSHkey as ejectSSHkey,
@@ -352,4 +359,5 @@ export {
     makeInteractiveShell,
     testPassword,
     detect_os,
+    detect_hostname,
 };

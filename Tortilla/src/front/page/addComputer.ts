@@ -6,12 +6,7 @@ import { log } from "../../modules/util/debug";
 import { delay } from "../../modules/util/util";
 import { Home } from "../menu/home";
 const addComputer = async function () {
-    const { name, ip, user, pass } = await inquirer.prompt([
-        {
-            name: "name",
-            message: "please enter a name:",
-            type: "input",
-        },
+    const { ip, user, pass } = await inquirer.prompt([
         {
             name: "ip",
             message: "please enter an ip:",
@@ -33,17 +28,16 @@ const addComputer = async function () {
             type: "input",
         },
     ]);
-    var os_type = await pingSSH(ip, user, pass);
+    var computer_info = await pingSSH(ip, user, pass);
 
-    if (typeof os_type == "string") {
-        await runningDB.addComputer(name, ip, user, pass, os_type);
+    if (typeof computer_info == "object") {
+        await runningDB.addComputer(computer_info.hostname, ip, user, pass, computer_info.operatingSystem);
         log(`Added`, "success");
     } else {
         log(`Unable to reach computer, Not Added`, "error");
     }
 
     await delay(1000);
-    Home();
 };
 
 export { addComputer };

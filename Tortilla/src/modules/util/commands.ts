@@ -36,6 +36,7 @@ const commands = {
         windows: 'systeminfo | findstr /B /C:"OS Name" /B /C:"OS Version"',
         linux: "uname -a",
     },
+    hostname: "hostname",
 };
 
 export { commands };

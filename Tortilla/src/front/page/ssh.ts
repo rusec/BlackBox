@@ -9,57 +9,68 @@ import util from "util";
 import logger from "../../modules/util/logger";
 
 const exec = util.promisify(require("node:child_process").exec);
-
-async function sshMenu() {
-    const { computers_string, usernames_string, passwords_string } = await inquirer.prompt([
+function isNumeric(str: string) {
+    if (typeof str != "string") return false; // we only process strings!
+    return (
+        !isNaN(parseInt(str)) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+        !isNaN(parseFloat(str))
+    ); // ...and ensure strings of whitespace fail
+}
+async function ShotGun() {
+    const { ip_net, hosts_ids, usernames_string, passwords_string } = await inquirer.prompt([
         {
-            name: "computers_string",
+            name: "ip_net",
+            value: "input",
+            validate: (v: string) => {
+                return isValidIPAddress(v);
+            },
+            message: "ip range ex: 192.168.1.0",
+        },
+        {
+            name: "hosts_ids",
             value: "input",
             /**
              *
              * @param {string} v
              */
             validate: (v: string) => {
-                var strings = v.split(",");
-                var computers = strings.map((v) => {
-                    var filtered_string = v.trim().split(" ");
-                    return {
-                        name: filtered_string[0].trim() || "",
-                        ip: filtered_string[1].trim() || "",
-                    };
-                });
-                for (const computer of computers) {
-                    if (!(computer.name.length > 1 && isValidIPAddress(computer.ip))) {
-                        return "Please enter in format {Name} {IP},";
+                var strings = v.split(" ");
+                for (let i = 0; i < strings.length; i++) {
+                    if (isNaN(parseInt(strings[i].trim()))) {
+                        return "invalid number";
                     }
                 }
+
                 return true;
             },
-            message: "please enter a list of names and ips separated by commas (separated by commas)",
+            message: "host ids (the last digit of the ip)",
         },
         {
             name: "usernames_string",
             value: "input",
-            message: "please enter a list of usernames (separated by commas)",
+            message: "usernames (separated by spaces)",
         },
         {
             name: "passwords_string",
             value: "input",
-            message: "please enter a list of passwords (separated by commas)",
+            message: "passwords (separated by spaces)",
         },
     ]);
 
-    //construct computers names and ip object
-    var computers = computers_string.split(",").map((v: string) => {
-        var filtered_string = v.trim().split(" ");
-        return {
-            name: filtered_string[0].trim() || "",
-            ip: filtered_string[1].trim() || "",
-        };
+    //construct computers ips
+
+    let network_ip = ip_net.split(".");
+    network_ip.pop();
+    network_ip = network_ip.join(".").trim();
+    let hosts = hosts_ids.split(" ");
+    var computers = hosts.map((value: string) => {
+        value = value.trim();
+        return network_ip + "." + value;
     });
+
     //get usernames and passwords array
-    var usernames = usernames_string.split(",").map((v: string) => v.trim());
-    var passwords = passwords_string.split(",").map((v: string) => v.trim());
+    var usernames = usernames_string.split(" ").map((v: string) => v.trim());
+    var passwords = passwords_string.split(" ").map((v: string) => v.trim());
 
     var users_sessions = usernames.map((user: string) => {
         return passwords.map((pass: string) => {
@@ -76,24 +87,26 @@ async function sshMenu() {
         for (let session of users) {
             sessions.push(session);
         }
-    logger.log(`Attempt to Shotgun ${computers.length} Computers ${users_sessions.length} User Sessions`, "info");
+    logger.log(`Attempt to Shotgun ${computers.length} Computers , ${users_sessions.length} User Sessions`, "info");
 
-    var promises = computers.map(async (computer: { ip: string; name: string }) => {
+    var promises = computers.map(async (computer: string) => {
         var passed = false;
-        log(`Attempting to login ${computer.ip} using ${sessions.length} sessions`, "info");
+        log(`Attempting to login ${computer} using ${sessions.length} sessions`, "info");
 
         for (const session of sessions) {
-            var os_type = await pingSSH(computer.ip, session.user, session.pass);
-            if (typeof os_type == "string") {
-                log(`Found valid session for ${computer.ip} saving...`, "success");
-                await runningDB.addComputer(computer.name, computer.ip, session.user, session.pass, os_type);
+            log(`Attempting to login ${computer} using ${session.user}`, "info");
+
+            var computer_info = await pingSSH(computer, session.user, session.pass);
+            if (typeof computer_info == "object") {
+                log(`Found valid session for ${computer} saving...`, "success");
+                await runningDB.addComputer(computer_info.hostname, computer, session.user, session.pass, computer_info.operatingSystem);
                 passed = true;
                 break;
             }
         }
         if (!passed) {
-            log(`Unable to login, invalid user pass combo ${computer.ip}`, "error");
-        } else logger.log(`Successfully found User Session for ${computer.ip}`, "success");
+            log(`Unable to login, invalid user pass combo ${computer}`, "error");
+        } else logger.log(`Successfully found User Session for ${computer}`, "success");
 
         return passed;
     });
@@ -121,4 +134,4 @@ async function sshMenu() {
         }
     }
 }
-export { sshMenu };
+export { ShotGun as sshMenu };
