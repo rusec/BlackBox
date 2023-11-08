@@ -12,6 +12,8 @@ import { password_result } from "../password/change_passwords";
 import logger from "./logger";
 import path from "path";
 import os from "os";
+import EventEmitter from "events";
+import { delay } from "./util";
 type DataBase = {
     master_password: string;
     ssh_private: string;
@@ -78,6 +80,25 @@ class Encryption {
         }
     }
 }
+const createLock = () => {
+    let lockStatus = false;
+
+    const release = () => {
+        lockStatus = false;
+    };
+
+    const acquire = () => {
+        if (lockStatus == true) return false;
+        lockStatus = true;
+        return true;
+    };
+
+    return {
+        lockStatus: lockStatus,
+        acquire: acquire,
+        release: release,
+    };
+};
 
 class DB {
     filePath: string;
@@ -86,12 +107,13 @@ class DB {
     ready: boolean;
     encrypt: Encryption;
     process_dir: string;
+    lockDB: { lockStatus: boolean; acquire: () => boolean; release: () => void };
     constructor() {
         this.encrypt = new Encryption();
         this.process_dir = path.join(os.homedir() + "/Tortilla");
 
         this.filePath = path.join(this.process_dir, "muffins");
-
+        this.lockDB = createLock();
         // Adding password based encryption
         this.passwd = path.join(this.process_dir, "pineapples");
         try {
@@ -201,23 +223,45 @@ class DB {
      * @returns {Promise<void>} A promise that resolves when the computer entry is successfully added or updated.
      */
     async addComputer(name: string, ip: string, username: string, password: string, os_type: options): Promise<boolean> {
-        let computers = await this.readComputers();
-        let index = computers.findIndex((v) => v["IP Address"] === ip);
-        if (index != -1) {
-            await this.removeComputer(index);
+        if (!this.lockDB.acquire()) {
+            await delay(10);
+            return await this.addComputer(name, ip, username, password, os_type);
         }
-        computers.push({
-            Name: name || "",
-            "IP Address": ip || "",
-            Username: username || "",
-            Password: password || "",
-            "OS Type": os_type || "",
-            ssh_key: false,
-        });
-        logger.log(`Added Computer ${name} ${ip}`, "info");
+        let result = false;
+        try {
+            let computers = await this.readComputers();
+            let index = computers.findIndex((v) => v["IP Address"] === ip);
+            if (index !== -1) {
+                // If a computer with the same IP address exists, update its properties instead of removing it
+                computers[index] = {
+                    Name: name || computers[index].Name,
+                    "IP Address": ip || computers[index]["IP Address"],
+                    Username: username || computers[index].Username,
+                    Password: password || computers[index].Password,
+                    "OS Type": os_type || computers[index]["OS Type"],
+                    ssh_key: false || computers[index]["ssh_key"], // You can decide how to update this property
+                };
+            } else {
+                // If it doesn't exist, create a new entry
+                computers.push({
+                    Name: name || "",
+                    "IP Address": ip || "",
+                    Username: username || "",
+                    Password: password || "",
+                    "OS Type": os_type || "",
+                    ssh_key: false,
+                });
+            }
+            logger.log(`Added Computer ${name} ${ip}`, "info");
 
-        return await this.writeComputers(computers);
+            result = await this.writeComputers(computers);
+        } catch (error) {
+        } finally {
+            this.lockDB.release();
+            return result;
+        }
     }
+
     /**
      * Removes a computer entry from the list of computers by its index.
      *
@@ -253,14 +297,24 @@ class DB {
         if (!password) {
             throw new Error("Password cannot be undefined");
         }
+        if (!this.lockDB.acquire()) {
+            await delay(10);
+            return await this.writeCompPassword(computer_id, password);
+        }
+        let result = false;
         try {
-            const computers = await this.readComputers();
-            computers[computer_id].Password = password;
-            logger.log(`Changed Computer Password in Database`, "info");
+            try {
+                const computers = await this.readComputers();
+                computers[computer_id].Password = password;
+                logger.log(`Changed Computer Password in Database`, "info");
 
-            return await this.writeComputers(computers);
-        } catch (error) {
-            return false;
+                result = await this.writeComputers(computers);
+            } catch (error) {
+                result = false;
+            }
+        } finally {
+            this.lockDB.release();
+            return result;
         }
     }
     async writeCompSSH(computer_id: number, result: boolean): Promise<boolean> {
@@ -277,16 +331,27 @@ class DB {
         if (!result.password) {
             throw new Error("Password cannot be undefined");
         }
-        try {
-            const computers = await this.readComputers();
-            computers[computer_id].Password = result.password;
-            computers[computer_id].ssh_key = result.ssh;
-            log(`Writing computer ${computers[computer_id]["IP Address"]}`, "info");
-            logger.log(`Writing Computer ${computers[computer_id]["IP Address"]} in Database`, "info");
 
-            return await this.writeComputers(computers);
-        } catch (error) {
-            return false;
+        if (!this.lockDB.acquire()) {
+            await delay(10);
+            return await this.writeCompResult(computer_id, result);
+        }
+        let res = false;
+        try {
+            try {
+                const computers = await this.readComputers();
+                computers[computer_id].Password = result.password;
+                computers[computer_id].ssh_key = result.ssh;
+                log(`Writing computer ${computers[computer_id]["IP Address"]}`, "info");
+                logger.log(`Writing Computer ${computers[computer_id]["IP Address"]} in Database`, "info");
+
+                res = await this.writeComputers(computers);
+            } catch (error) {
+                res = false;
+            }
+        } finally {
+            this.lockDB.release();
+            return res;
         }
     }
     /**
@@ -361,6 +426,7 @@ class DB {
     async writeComputers(jsonData: Array<ServerInfo>): Promise<boolean> {
         const db = await this._readJson(this.configs.master_hash);
         db.computers = jsonData;
+        logger.log(`Saved ${db.computers.length} computers`);
         return await this._writeJson(db, this.configs.master_hash);
     }
 

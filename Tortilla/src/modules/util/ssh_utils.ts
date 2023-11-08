@@ -160,8 +160,31 @@ async function injectSSHkey(conn: SSH2Promise, os_type: options, force?: undefin
                 await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
                 break;
             case "darwin":
+                await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
                 break;
         }
+    }
+}
+
+async function injectCustomKey(conn: SSH2Promise, ssh_key: string, os_type: options) {
+    log(`Ejecting SSH Key ${conn.config[0].host}`, "log");
+
+    switch (os_type) {
+        case "windows":
+            await runCommandNoExpect(conn, commands.ssh.eject.windows(ssh_key));
+            break;
+        case "linux":
+            await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
+            break;
+        case "freebsd":
+            await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
+            break;
+        case "freeBSD":
+            await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
+            break;
+        case "darwin":
+            await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
+            break;
     }
 }
 async function addSSH(server: ServerInfo) {

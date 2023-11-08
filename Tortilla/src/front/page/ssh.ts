@@ -106,12 +106,22 @@ async function ShotGun() {
         }
         if (!passed) {
             log(`Unable to login, invalid user pass combo ${computer}`, "error");
+            throw new Error(`Unable to login, invalid user pass combo ${computer}`);
         } else logger.log(`Successfully found User Session for ${computer}`, "success");
 
         return passed;
     });
 
-    await Promise.allSettled(promises);
+    let results = await Promise.allSettled(promises);
+    log("Finished Scanning for Sessions", "log");
+    const numberOfSuccess = results
+        .filter(({ status }) => status === "fulfilled")
+        .map((p) => typeof (p as PromiseFulfilledResult<any>).value == "boolean" && (p as PromiseFulfilledResult<any>).value).length;
+
+    log(`Successfully Connected to ${numberOfSuccess} of ${computers.length} Computers`, "info");
+
+    const fails = results.filter(({ status }) => status === "rejected").map((p) => (p as PromiseRejectedResult).reason.message);
+    fails.forEach((value) => log(value, "error"));
 
     const { logHost } = await inquirer.prompt([
         {
@@ -134,4 +144,5 @@ async function ShotGun() {
         }
     }
 }
+
 export { ShotGun as sshMenu };

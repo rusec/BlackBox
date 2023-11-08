@@ -22,7 +22,7 @@
     },
     "name": "tortilla",
     "version": "1.0.0",
-    "main": "index.js",
+    "main": "Tortilla.js",
     "devDependencies": {
         "@types/bcryptjs": "^2.4.4",
         "@types/bn.js": "^5.1.2",
@@ -42,8 +42,8 @@
     },
     "scripts": {
         "test": "mocha -r ts-node/register test/**/*.spec.ts",
-        "start": "tsc && cross-env DEV=true node ./dist/src/index.js",
-        "build": "export SALT=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && export SALT_2=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && node ./build/prebuild.js $SALT $SALT_2 && tsc && pkg --out-path releases/latest -t node16-linux,node16-win,node16-macos,node16-linux-x64,node16-win-x64,node16-macos-x64 ./dist/src/index.js && node ./build/postbuild.js $SALT $SALT_2 && echo 'Binaries are located in releases/latest'",
+        "start": "tsc && cross-env DEV=true node ./dist/src/Tortilla.js",
+        "build": "export SALT=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && export SALT_2=$(node -e \"const crypto = require('crypto'); console.log(crypto.randomBytes(256).toString('hex'));\") && node ./build/prebuild.js $SALT $SALT_2 && tsc && pkg --out-path releases/latest/x64 -t \"node16-linux-x64,node16-win-x64,node16-macos-x64\" ./dist/src/Tortilla.js && pkg --out-path releases/latest/latest -t `\"node16-linux,node16-win,node16-macos\" ./dist/src/Tortilla.js && pkg --out-path releases/latest/arm -t \"node16-linux-arm64,node16-win-arm64,node16-macos-arm64\" && ./dist/src/Tortilla.js && node ./build/postbuild.js $SALT $SALT_2 && echo 'Binaries are located in releases/latest'",
         "build-win": "./build/build.ps1",
         "clean": "rm index-linux && rm index-macos && rm index-win.exe"
     },
