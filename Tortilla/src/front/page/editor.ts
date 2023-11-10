@@ -5,9 +5,10 @@ import { delay } from "../../modules/util/util";
 import { checkPassword } from "../../modules/util/checkPassword";
 import { runSingleScript } from "./passwordScript";
 import { Home } from "../menu/home";
-import { addSSH, makeInteractiveShell, removeSSH, removeSSHkey } from "../../modules/util/ssh_utils";
+import { addCustomSSH, addSSH, makeInteractiveShell, removeSSH, removeSSHkey } from "../../modules/util/ssh_utils";
 import { changePasswordOf } from "../../modules/password/change_passwords";
 import { log } from "../../modules/util/debug";
+import logger from "../../modules/util/logger";
 async function edit() {
     await clear();
     let json = await runningDB.readComputers();
@@ -52,6 +53,7 @@ async function edit() {
                 { name: "Remove Computer", value: "Remove" },
                 new inquirer.Separator("SSH"),
                 { name: "Inject SSH Key", value: "add_ssh" },
+                { name: "Inject Custom SSH Key", value: "add_custom_ssh" },
                 { name: "Remove SSH Key", value: "remove_ssh" },
                 new inquirer.Separator(),
                 new inquirer.Separator("Navigation"),
@@ -96,6 +98,11 @@ async function edit() {
             }
             edit();
             break;
+        case "add_custom_ssh":
+            await checkPassword();
+            await sshCustom();
+            edit();
+            break;
         case "remove_ssh":
             await checkPassword();
             let result = await removeSSH(json[id]);
@@ -132,12 +139,36 @@ async function edit() {
 
         await runningDB.removeComputer(id);
     }
+    async function sshCustom() {
+        const { ssh_key } = await inquirer.prompt([
+            {
+                name: "ssh_key",
+                message: "please enter an ssh key",
+                validate: function isValidSSHPublicKey(publicKey) {
+                    const sshPublicKeyRegex = /^(ssh-rsa|ssh-dss|ecdsa-[a-zA-Z0-9]+)\s+[A-Za-z0-9+/]+[=]{0,3}(\s+.+)?$/;
 
+                    return sshPublicKeyRegex.test(publicKey.trim()) ? true : "Invalid SSH KEY";
+                },
+                filter: (input) => {
+                    return input.trim();
+                },
+            },
+        ]);
+        let res = await addCustomSSH(json[id], ssh_key);
+        if (res) {
+            log(`INJECTED SSH KEY SUCCESS on ${json[id]["IP Address"]}`, "success");
+            logger.log(`injected ssh key to ${json[id]["IP Address"]}`);
+        } else {
+            log(`Unable to inject SSH KEY SUCCESS on ${json[id]["IP Address"]}`, "error");
+            logger.log(`Unable to inject ssh key to ${json[id]["IP Address"]}`);
+        }
+        await delay(1000);
+    }
     async function changePassword() {
         let { newPassword, confirm } = await inquirer.prompt([
             {
                 name: "newPassword",
-                message: "new password",
+                message: "new password if manually changed",
                 type: "input",
             },
             {

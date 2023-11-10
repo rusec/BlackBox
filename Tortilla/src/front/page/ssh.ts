@@ -48,7 +48,7 @@ async function ShotGun() {
         {
             name: "usernames_string",
             value: "input",
-            message: "usernames (separated by spaces)",
+            message: "usernames (separated by spaces) type default for root admin Administrator",
         },
         {
             name: "passwords_string",
@@ -69,7 +69,8 @@ async function ShotGun() {
     });
 
     //get usernames and passwords array
-    var usernames = usernames_string.split(" ").map((v: string) => v.trim());
+    var usernames =
+        usernames_string.trim() === "default" ? ["root", "Administrator", "admin"] : usernames_string.split(" ").map((v: string) => v.trim());
     var passwords = passwords_string.split(" ").map((v: string) => v.trim());
 
     var users_sessions = usernames.map((user: string) => {

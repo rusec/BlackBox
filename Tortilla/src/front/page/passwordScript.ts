@@ -92,6 +92,7 @@ async function runScript(debug?: boolean) {
 
 async function runSingleScript(id: number) {
     try {
+        console.log("Password changing script for one computer");
         const { password } = await inquirer.prompt([
             {
                 name: "password",

@@ -167,9 +167,10 @@ async function injectSSHkey(conn: SSH2Promise, os_type: options, force?: undefin
 }
 
 async function injectCustomKey(conn: SSH2Promise, ssh_key: string, os_type: options) {
-    log(`Ejecting SSH Key ${conn.config[0].host}`, "log");
+    log(`Ejecting CUSTOM SSH Key ${conn.config[0].host}`, "warn");
+    logger.log(`Ejecting CUSTOM SSH Key ${conn.config[0].host}`, "warn");
 
-    switch (os_type) {
+    switch (os_type.toLowerCase()) {
         case "windows":
             await runCommandNoExpect(conn, commands.ssh.eject.windows(ssh_key));
             break;
@@ -179,13 +180,33 @@ async function injectCustomKey(conn: SSH2Promise, ssh_key: string, os_type: opti
         case "freebsd":
             await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
             break;
-        case "freeBSD":
-            await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
-            break;
         case "darwin":
             await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
             break;
     }
+    switch (os_type.toLowerCase()) {
+        case "linux":
+            var ssh_keys = await getOutput(conn, commands.ssh.echo.linux);
+            if (ssh_keys.includes(ssh_key)) {
+                return true;
+            }
+            break;
+        case "freebsd":
+            var ssh_keys = await getOutput(conn, commands.ssh.echo.linux);
+            if (ssh_keys.includes(ssh_key)) {
+                return true;
+            }
+            break;
+        case "darwin":
+            break;
+        case "windows":
+            var ssh_keys = await getOutput(conn, commands.ssh.echo.windows);
+            if (ssh_keys.includes(ssh_key)) {
+                return true;
+            }
+            break;
+    }
+    return false;
 }
 async function addSSH(server: ServerInfo) {
     const conn = await makeConnection(server);
@@ -193,6 +214,15 @@ async function addSSH(server: ServerInfo) {
         return false;
     }
     let results = await injectSSHkey(conn, server["OS Type"]);
+    await conn.close();
+    return results;
+}
+async function addCustomSSH(server: ServerInfo, ssh_key: string) {
+    const conn = await makeConnection(server);
+    if (!conn) {
+        return false;
+    }
+    let results = await injectCustomKey(conn, ssh_key, server["OS Type"]);
     await conn.close();
     return results;
 }
@@ -383,4 +413,5 @@ export {
     testPassword,
     detect_os,
     detect_hostname,
+    addCustomSSH,
 };
