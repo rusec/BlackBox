@@ -16,13 +16,15 @@ async function runScript(debug?: boolean) {
     try {
         const computers = await runningDB.readComputers();
 
-        const { seed } = await inquirer.prompt([
-            {
-                name: "seed",
-                type: "input",
-                message: "Please enter a seed",
-            },
-        ]);
+        const { seed } = debug
+            ? { seed: "" }
+            : await inquirer.prompt([
+                  {
+                      name: "seed",
+                      type: "input",
+                      message: "Please enter a seed",
+                  },
+              ]);
 
         //Hold Original Log for later
         console.log = function (...args) {
@@ -33,7 +35,7 @@ async function runScript(debug?: boolean) {
 
         //Clear and print status
         await clear();
-        log(`Running script on ${computers.length} computers`);
+        log(debug ? `Running DEBUG script on ${computers.length} computers` : `Running script on ${computers.length} computers`);
 
         //Generate values
 

@@ -2,8 +2,8 @@ import delay from "delay";
 import { removeANSIColorCodes } from "./util";
 import { Channel } from "ssh2";
 const TIMEOUT = 4000;
-/** THIS FILE IS FOR COMMANDS SENT BY A SOCKET CONNECTION */
 
+/** THIS FILE IS FOR COMMANDS SENT BY A SOCKET CONNECTION */
 function sendCommandExpect(socket: Channel, command: string, expected: string) {
     return new Promise((resolve, reject) => {
         let log = "";
@@ -58,8 +58,11 @@ function sendCommandNoExpect(socket: Channel, command: string, not_expected: str
         }, 6000);
     });
 }
-
-function sendCommand(socket: Channel, command: string): Promise<string> {
+/**
+ * Sends a command to the client.
+ *  The reason for the exit boolean is because the socket will close after exit is sent meaning the client will not receive validation of exit
+ */
+function sendCommand(socket: Channel, command: string, exit?: boolean): Promise<string> {
     return new Promise((resolve, reject) => {
         let log = "";
 
@@ -79,6 +82,10 @@ function sendCommand(socket: Channel, command: string): Promise<string> {
 
         socket.stdout.on("data", onData);
         socket.write(`${command}\r\n\r`, "utf8");
+        if (exit) {
+            resolve(log);
+            return;
+        }
 
         const timerId = setTimeout(() => {
             reject(log);
@@ -112,8 +119,8 @@ function sendInputExpect(socket: Channel, input: string, expect: string): Promis
             let parsedData = removeANSIColorCodes(data.toString());
             log += parsedData;
             if (log.includes(expect)) {
-                resolve(log);
                 cleanUp();
+                resolve(log);
             }
         };
 
@@ -126,8 +133,8 @@ function sendInputExpect(socket: Channel, input: string, expect: string): Promis
         socket.stdin.write(`${input}\r`, "utf8");
 
         const timeoutId = setTimeout(() => {
-            reject(log);
             cleanUp();
+            reject(log);
         }, TIMEOUT);
     });
 }

@@ -7,6 +7,7 @@ const target_freebsd: ServerInfo = {
     Password: "password",
     Username: "root",
     ssh_key: false,
+    password_changes: 0,
 };
 const target_rocky: ServerInfo = {
     "IP Address": "192.168.1.154",
@@ -15,6 +16,7 @@ const target_rocky: ServerInfo = {
     Password: "password",
     Username: "root",
     ssh_key: false,
+    password_changes: 0,
 };
 const target_linux: ServerInfo = {
     "IP Address": "192.168.64.3",
@@ -23,6 +25,7 @@ const target_linux: ServerInfo = {
     Password: "Password123",
     Username: "ubuntu",
     ssh_key: false,
+    password_changes: 0,
 };
 const target_win: ServerInfo = {
     "IP Address": "192.168.1.165",
@@ -31,6 +34,7 @@ const target_win: ServerInfo = {
     Password: "Password123",
     Username: "Administrator",
     ssh_key: false,
+    password_changes: 0,
 };
 const target_win_12: ServerInfo = {
     "IP Address": "192.168.1.166",
@@ -39,5 +43,6 @@ const target_win_12: ServerInfo = {
     Password: "Password123",
     Username: "Administrator",
     ssh_key: false,
+    password_changes: 0,
 };
 export { target_freebsd, target_linux, target_rocky, target_win, target_win_12 };

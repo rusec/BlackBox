@@ -32,7 +32,8 @@ async function changePasswordWin(conn: SSH2Promise, username: string, password: 
             return !error.message ? error.toString() : error.message;
         }
 
-        await socket_commands.sendCommand(shellSocket, "exit");
+        await socket_commands.sendCommand(shellSocket, "exit", true);
+
         shellSocket.close();
 
         return true;

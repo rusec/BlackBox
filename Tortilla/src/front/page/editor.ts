@@ -29,12 +29,12 @@ async function edit() {
             message: "Please select a computer:",
         },
     ]);
-    const head = `> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${blankPassword(json[id].Password)} ${
+    const header = `> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${blankPassword(json[id].Password)} ${
         json[id]["OS Type"]
-    } | pub_key: ${json[id].ssh_key ? "true" : "false"}`.bgBlue;
+    } | pub_key: ${json[id].ssh_key ? "true" : "false"} password changes: ${json[id].password_changes}`.bgBlue;
 
     await clear();
-    console.log(head);
+    console.log(header);
 
     const { section } = await inquirer.prompt([
         {
@@ -124,7 +124,7 @@ async function edit() {
     async function Remove() {
         await clear();
         await checkPassword();
-        console.log(head);
+        console.log(header);
 
         let { confirm } = await inquirer.prompt([
             {

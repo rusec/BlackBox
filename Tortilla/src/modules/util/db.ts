@@ -35,6 +35,7 @@ export type ServerInfo = {
     Password: string;
     "OS Type": options;
     ssh_key: boolean;
+    password_changes: number;
 };
 export type app_config = {
     master_hash: string;
@@ -240,6 +241,7 @@ class DB {
                     Password: password || computers[index].Password,
                     "OS Type": os_type || computers[index]["OS Type"],
                     ssh_key: false || computers[index]["ssh_key"], // You can decide how to update this property
+                    password_changes: 0 || computers[index]["password_changes"],
                 };
             } else {
                 // If it doesn't exist, create a new entry
@@ -250,6 +252,7 @@ class DB {
                     Password: password || "",
                     "OS Type": os_type || "",
                     ssh_key: false,
+                    password_changes: 0,
                 });
             }
             logger.log(`Added Computer ${name} ${ip}`, "info");
@@ -342,6 +345,7 @@ class DB {
                 const computers = await this.readComputers();
                 computers[computer_id].Password = result.password;
                 computers[computer_id].ssh_key = result.ssh;
+                computers[computer_id].password_changes = computers[computer_id].password_changes + 1;
                 log(`Writing computer ${computers[computer_id]["IP Address"]}`, "info");
                 logger.log(`Writing Computer ${computers[computer_id]["IP Address"]} in Database`, "info");
 
@@ -548,6 +552,7 @@ function normalizeServerInfo(jsonArr: Array<ServerInfo>): Array<ServerInfo> {
             Password: jsonObj.Password || "",
             "OS Type": jsonObj["OS Type"] || "",
             ssh_key: false,
+            password_changes: 0,
         };
 
         normalizedArr.push(serverInfo);
