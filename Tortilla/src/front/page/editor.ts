@@ -1,14 +1,15 @@
 import inquirer from "inquirer";
-import runningDB from "../../modules/util/db";
+import runningDB, { ServerInfo } from "../../modules/util/db";
 import clear from "clear";
 import { delay } from "../../modules/util/util";
 import { checkPassword } from "../../modules/util/checkPassword";
 import { runSingleScript } from "./passwordScript";
 import { Home } from "../menu/home";
-import { addCustomSSH, addSSH, makeInteractiveShell, removeSSH, removeSSHkey } from "../../modules/util/ssh_utils";
+import { addCustomSSH, addSSH, makeConnection, makeInteractiveShell, removeSSH, removeSSHkey } from "../../modules/util/ssh_utils";
 import { changePasswordOf } from "../../modules/password/change_passwords";
 import { log } from "../../modules/util/debug";
 import logger from "../../modules/util/logger";
+import { getFailedLogins, getNetwork, getProcess, getUsers } from "../../modules/computer_utils/compUtils";
 async function edit() {
     await clear();
     let json = await runningDB.readComputers();
@@ -25,10 +26,14 @@ async function edit() {
             type: "list",
             pageSize: 50,
 
-            choices: ipAddressesChoices,
+            choices: [...ipAddressesChoices, { name: "Home", value: "home" }],
             message: "Please select a computer:",
         },
     ]);
+    if (id === "home") {
+        Home();
+        return;
+    }
     const header = `> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${blankPassword(json[id].Password)} ${
         json[id]["OS Type"]
     } | pub_key: ${json[id].ssh_key ? "true" : "false"} password changes: ${json[id].password_changes}`.bgBlue;
@@ -46,6 +51,7 @@ async function edit() {
                 new inquirer.Separator("Connect"),
                 { name: "Start Shell", value: "shell" },
                 { name: "Change Password", value: "change_pass_man" },
+                { name: "Utils", value: "utils" },
                 new inquirer.Separator("Data"),
                 { name: "Change Password (if changed from target)", value: "Change Password" },
                 "Change Username",
@@ -57,7 +63,6 @@ async function edit() {
                 { name: "Remove SSH Key", value: "remove_ssh" },
                 new inquirer.Separator(),
                 new inquirer.Separator("Navigation"),
-                "Home",
                 "Back",
                 new inquirer.Separator(),
             ],
@@ -85,6 +90,9 @@ async function edit() {
         case "Remove":
             await Remove();
             edit();
+            break;
+        case "utils":
+            computerUtils(json[id]);
             break;
         case "change_pass_man":
             await checkPassword();
@@ -233,6 +241,52 @@ async function edit() {
         console.log("OS updated!");
         await delay(300);
     }
+}
+async function computerUtils(server: ServerInfo) {
+    await clear();
+    const header = `> ${server.Name} ${server["IP Address"]} ${server.Username} ${blankPassword(server.Password)} ${server["OS Type"]} | pub_key: ${
+        server.ssh_key ? "true" : "false"
+    } password changes: ${server.password_changes}`.bgBlue;
+    console.log(header);
+    const { program } = await inquirer.prompt([
+        {
+            name: "program",
+            type: "list",
+            pageSize: 50,
+            message: "Please select a command to run",
+            choices: [
+                { name: "Get Computers Users", value: "users" },
+                { name: "Get Failed Logins Event", value: "failedLogins" },
+                { name: "Get Current Network Connections", value: "network" },
+                { name: "Get Current Process", value: "processes" },
+            ],
+        },
+    ]);
+    let conn = await makeConnection(server);
+    if (!conn) {
+        console.log("Unable to connect to server");
+        await delay(1000);
+        return edit();
+    }
+    switch (program) {
+        case "users":
+            await getUsers(conn, server["OS Type"]);
+            break;
+        case "failedLogins":
+            await getFailedLogins(conn, server["OS Type"]);
+            break;
+        case "network":
+            await getNetwork(conn, server["OS Type"]);
+            break;
+        case "processes":
+            await getProcess(conn, server["OS Type"]);
+            break;
+        default:
+            break;
+    }
+    await conn.close();
+
+    edit();
 }
 
 function blankPassword(password: string) {

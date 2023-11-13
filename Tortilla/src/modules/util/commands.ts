@@ -37,6 +37,24 @@ const commands = {
         linux: "uname -a",
     },
     hostname: "hostname",
+    users: {
+        windows: "net user",
+        linux: `cat /etc/passwd | awk -F: '{print $1 " ID:" $3 " GID:" $4 " dir:" $6 "  Comment:" $5}'`,
+        darwin: 'dscl . list /Users | grep -v "^_"',
+    },
+    network: {
+        windows: `powershell "Get-NetTCPConnection | Where-Object { $_.State -eq 'Established' }"`,
+        linux: `netstat -an | grep "ESTABLISHED"`,
+    },
+    processes: {
+        windows: "powershell Get-Process",
+        linux: "ps aux",
+    },
+    failedLogins: {
+        linux: `grep "Failed password" /var/log/auth.log`,
+        windows: `powershell "Get-WinEvent -FilterHashTable @{LogName='Security'; ID=4625} | Format-Table TimeCreated, Message -AutoSize"`,
+        darwin: `log show --predicate 'eventMessage contains "failed"'`,
+    },
 };
 
 export { commands };

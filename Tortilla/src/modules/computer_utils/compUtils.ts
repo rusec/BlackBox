@@ -1,0 +1,137 @@
+import SSH2Promise from "ssh2-promise";
+import { options } from "../util/options";
+import { commands } from "../util/commands";
+import inquirer from "inquirer";
+import fs from "fs";
+import { getOutput } from "../util/run_command";
+
+async function getUsers(conn: SSH2Promise, os_type: options) {
+    let users = "";
+    switch (os_type.toLowerCase()) {
+        case "freebsd":
+            users = await getOutput(conn, commands.users.linux);
+            break;
+        case "windows":
+            users = await getOutput(conn, commands.users.windows);
+            break;
+        case "darwin":
+            users = await getOutput(conn, commands.users.darwin);
+            break;
+        case "linux":
+            users = await getOutput(conn, commands.users.linux);
+            break;
+        default:
+            users = "Unable to get Unknown OS";
+            break;
+    }
+    console.log(users);
+    const { logToFile } = await inquirer.prompt([
+        {
+            name: "logToFile",
+            type: "confirm",
+            message: "Would you like to log users to file?",
+        },
+    ]);
+    if (logToFile) {
+        users = `Users for ${conn.config[0].host}\n` + users;
+        fs.writeFileSync("log.log", users, "utf8");
+    }
+}
+async function getNetwork(conn: SSH2Promise, os_type: options) {
+    let network = "";
+    switch (os_type.toLowerCase()) {
+        case "freebsd":
+            network = await getOutput(conn, commands.network.linux);
+            break;
+        case "windows":
+            network = await getOutput(conn, commands.network.windows);
+            break;
+        case "darwin":
+            network = await getOutput(conn, commands.network.linux);
+            break;
+        case "linux":
+            network = await getOutput(conn, commands.network.linux);
+            break;
+        default:
+            network = "Unable to get Unknown OS";
+            break;
+    }
+    console.log(network);
+    const { logToFile } = await inquirer.prompt([
+        {
+            name: "logToFile",
+            type: "confirm",
+            message: "Would you like to log users to file?",
+        },
+    ]);
+    if (logToFile) {
+        network = `Current Connections for ${conn.config[0].host}\n` + network;
+        fs.writeFileSync("log.log", network, "utf8");
+    }
+}
+async function getProcess(conn: SSH2Promise, os_type: options) {
+    let processes = "";
+    switch (os_type.toLowerCase()) {
+        case "freebsd":
+            processes = await getOutput(conn, commands.processes.linux);
+            break;
+        case "windows":
+            processes = await getOutput(conn, commands.processes.windows);
+            break;
+        case "darwin":
+            processes = await getOutput(conn, commands.processes.linux);
+            break;
+        case "linux":
+            processes = await getOutput(conn, commands.processes.linux);
+            break;
+        default:
+            processes = "Unable to get Unknown OS";
+            break;
+    }
+    console.log(processes);
+    const { logToFile } = await inquirer.prompt([
+        {
+            name: "logToFile",
+            type: "confirm",
+            message: "Would you like to log users to file?",
+        },
+    ]);
+    if (logToFile) {
+        processes = `Current processes for ${conn.config[0].host}\n` + processes;
+        fs.writeFileSync("log.log", processes, "utf8");
+    }
+}
+async function getFailedLogins(conn: SSH2Promise, os_type: options) {
+    let failedLogins = "";
+    switch (os_type.toLowerCase()) {
+        case "freebsd":
+            failedLogins = await getOutput(conn, commands.failedLogins.linux);
+            break;
+        case "windows":
+            failedLogins = await getOutput(conn, commands.failedLogins.windows);
+            break;
+        case "darwin":
+            failedLogins = await getOutput(conn, commands.failedLogins.darwin);
+            break;
+        case "linux":
+            failedLogins = await getOutput(conn, commands.failedLogins.linux);
+            break;
+        default:
+            failedLogins = "Unable to get Unknown OS";
+            break;
+    }
+    console.log(failedLogins);
+    const { logToFile } = await inquirer.prompt([
+        {
+            name: "logToFile",
+            type: "confirm",
+            message: "Would you like to log users to file?",
+        },
+    ]);
+    if (logToFile) {
+        failedLogins = `Current Failed Login Events for ${conn.config[0].host}\n` + failedLogins;
+        fs.writeFileSync("log.log", failedLogins, "utf8");
+    }
+}
+
+export { getUsers, getNetwork, getFailedLogins, getProcess };
