@@ -114,13 +114,13 @@ async function runSingleScript(id: number) {
 
         if (typeof result == "string" || result.error) {
             log(`Error changing password Error: ${typeof result == "string" ? result : result.error ? result.error : ""}`, "error");
-            logger.log(`Error changing password on ${computers[id]["IP Address"]}`, "error");
+            logger.log(`${computers[id]["IP Address"]} Error changing password `, "error");
 
             await delay(1000);
         } else {
-            logger.log(`Successfully changed passwords on ${computers[id]["IP Address"]}`, "info");
+            logger.log(`${computers[id]["IP Address"]} Successfully changed passwords`, "info");
 
-            log(`Successfully changed passwords on ${computers[id]["IP Address"]}`.green);
+            log(`${computers[id]["IP Address"]} Successfully changed passwords`.green);
             await runningDB.writeCompResult(id, result);
         }
     } catch (error) {

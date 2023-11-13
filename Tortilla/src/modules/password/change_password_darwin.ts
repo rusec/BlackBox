@@ -9,15 +9,15 @@ async function changePasswordDarwin(conn: SSH2Promise, username: string, oldPass
     try {
         const result = await conn.exec(commands.password.darwin.step_1(username, oldPassword, password));
         if (!result.trim().includes("error")) {
-            log(`Changed password on ${conn.config[0].host}`, "success");
+            log(`${conn.config[0].host} Changed password`, "success");
             return true;
         } else {
-            const error = `Unable to change password on ${conn.config[0].host}. Got: ${result.trim()}. Please check for alias or no implementation.`;
+            const error = `${conn.config[0].host} Unable to change password. Got: ${result.trim()}. Please check for alias or no implementation.`;
             log(error, "error");
             return error;
         }
     } catch (error: any) {
-        log(`Error while changing password on ${conn.config[0].host}: ${error}`, "error");
+        log(`${conn.config[0].host} Error while changing password: ${error}`, "error");
         return error.message || error.toString();
     }
 }

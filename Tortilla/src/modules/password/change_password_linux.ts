@@ -18,29 +18,29 @@ async function changePasswordLinux(conn: SSH2Promise, username: string, password
     // Try changing the password without inputting the sudo password first.
     let changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_1(string));
     if (typeof changedPassword != "string") {
-        log(`Changed password on ${host}`, "success");
+        log(`${host} Changed password`, "success");
         return true;
     }
-    error = `Unable to use chpasswd on ${host}. Got: ${changedPassword}. Please check for alias or no implementation.`;
+    error = `${host} Unable to use chpasswd. Got: ${changedPassword}. Please check for alias or no implementation.`;
     log(error, "warn");
 
     // If the first attempt fails, try with sudo chpasswd.
     changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_2(string));
     if (typeof changedPassword !== "string") {
-        log(`Changed password on ${host}`, "success");
+        log(`${host} Changed password`, "success");
         return true;
     }
 
-    error = `Unable to use sudo chpasswd on ${host}. Got: ${changedPassword}. Please check for alias or no implementation.`;
+    error = `${host} Unable to use sudo chpasswd. Got: ${changedPassword}. Please check for alias or no implementation.`;
     log(error, "warn");
 
     // Try with inputting the sudo password.
     changedPassword = await runCommandNotExpect(conn, commands.password.linux.step_3(sudoPassword, string), "sorry");
     if (typeof changedPassword !== "string") {
-        log(`Changed password on ${host}`, "success");
+        log(`${host} Changed password`, "success");
         return true;
     }
-    error = `Unable to use sudo chpasswd on ${host}. Got: ${changedPassword}. Please check for alias or no implementation.`;
+    error = `${host} Unable to use sudo chpasswd. Got: ${changedPassword}. Please check for alias or no implementation.`;
     log(error, "error");
 
     return error;
@@ -56,7 +56,7 @@ export { changePasswordLinux };
 async function checks(conn: SSH2Promise) {
     let passed = 7;
     const host = conn.config[0].host;
-    log(`running security checks on ${host}`, "log");
+    log(`${host} running security checks`, "log");
     const checkedForShadow = await runCommand(
         conn,
         `if test -f ${shadow}; then
@@ -65,7 +65,7 @@ async function checks(conn: SSH2Promise) {
         "file exists"
     );
     if (typeof checkedForShadow === "string") {
-        log(`/etc/shadow check error on ${host} GOT ${checkedForShadow} WANTED file exists, Please check for /etc/shadow`, "error");
+        log(`${host} /etc/shadow check error GOT ${checkedForShadow} WANTED file exists, Please check for /etc/shadow`, "error");
         passed--;
     }
 
@@ -73,7 +73,7 @@ async function checks(conn: SSH2Promise) {
         const result = await runCommand(conn, `ls -l ${path}`, expectedPermissions);
         if (typeof result === "string") {
             log(
-                `${path} permissions check failed on ${host} GOT ${result
+                `${host} ${path} permissions check failed GOT ${result
                     .trim()
                     .substring(0, 11)} WANTED ${expectedPermissions}, Please check permissions`,
                 logType
@@ -88,7 +88,7 @@ async function checks(conn: SSH2Promise) {
     const checkCommand = async (command: string, expected: string, logType: options) => {
         const result = await runCommand(conn, command, expected);
         if (typeof result === "string") {
-            log(`${command} check error on ${host} GOT ${result} WANTED ${expected}, Please check for alias or no implementation`, logType);
+            log(`${host} ${command} check error GOT ${result} WANTED ${expected}, Please check for alias or no implementation`, logType);
             passed--;
         }
     };
@@ -98,7 +98,7 @@ async function checks(conn: SSH2Promise) {
     await checkCommand("type -t chpasswd", "file", "error");
     await checkCommand("type -t passwd", "file", "error");
 
-    log(`Passed ${passed} of 7 tests on ${host}`, "info");
+    log(`${host} Passed ${passed} of 7 tests`, "info");
 
     return;
 }

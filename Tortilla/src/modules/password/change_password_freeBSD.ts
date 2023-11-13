@@ -13,19 +13,19 @@ async function changePasswordFreeBSD(conn: SSH2Promise, username: string, passwo
 
     let changedPassword = await runCommand(conn, commands.password.freebsd.step_1(bcrypt_password, username), `user information updated`);
     if (typeof changedPassword != "string") {
-        log(`Changed password on ${host}`, "success");
+        log(`${host} Changed password`, "success");
         return true;
     }
-    let error = `Unable to use chpass on ${host}. Got: ${changedPassword.trim()}. Please check for alias or no implementation.`;
+    let error = `${host} Unable to use chpass. Got: ${changedPassword.trim()}. Please check for alias or no implementation.`;
     log(error, "warn");
 
     changedPassword = await runCommandNoExpect(conn, commands.password.freebsd.step_2(bcrypt_password, username));
     if (typeof changedPassword != "string") {
-        log(`Changed password on ${host}`, "success");
+        log(`${host} Changed password`, "success");
         return true;
     }
 
-    error = `Unable to use usermod on ${host}. Got: ${changedPassword.trim()}. Please check for alias or no implementation.`;
+    error = `${host} Unable to use usermod. Got: ${changedPassword.trim()}. Please check for alias or no implementation.`;
     log(error, "error");
     return error;
 }

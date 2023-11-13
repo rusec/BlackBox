@@ -21,14 +21,12 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
 
     const conn = await makeConnection(computer, true);
 
-    log(`Attempting connection to ${computer["IP Address"]} `, "log");
     try {
         if (!conn) {
-            throw new Error(`Unable to connect to host ${computer["IP Address"]}`);
+            throw new Error(`${computer["IP Address"]} Unable to connect to host`);
         }
 
         let res;
-        log(`Connected to ${computer["IP Address"]}`, "log");
         if (!options.includes(computer["OS Type"])) {
             let os = await detect_os(conn);
             if (os) computer["OS Type"] = os;

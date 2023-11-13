@@ -11,7 +11,7 @@ async function changePasswordWin(conn: SSH2Promise, username: string, password: 
         const host = conn.config[0].host;
 
         try {
-            log(`Using ${useLocalUser ? "Get-Local" : "net user"} on ${host}`, "info");
+            log(`${host} Using ${useLocalUser ? "Get-Local" : "net user"}`, "info");
             if (useLocalUser) {
                 await socket_commands.sendCommandExpect(shellSocket, `PowerShell`, `Windows PowerShell`);
                 await delay(2000);
@@ -25,10 +25,10 @@ async function changePasswordWin(conn: SSH2Promise, username: string, password: 
                 await socket_commands.sendInputExpect(shellSocket, `${password}`, "Retype the password to confirm:");
                 await socket_commands.sendInputExpect(shellSocket, `${password}`, "The command completed successfully");
             }
-            log(`Changed password on ${host}`, "success");
+            log(`${host} Changed password`, "success");
         } catch (error: any) {
             shellSocket.close();
-            log(`Unable to change password on ${host}`, "error");
+            log(`${host} Unable to change password`, "error");
             return !error.message ? error.toString() : error.message;
         }
 
@@ -50,7 +50,7 @@ async function check(conn: SSH2Promise) {
     var useLocalUser = true;
     let os_check = await conn.exec("echo %OS%");
     if (os_check.trim() != "Windows_NT") {
-        log(`Windows check error on ${conn.config[0].host} GOT ${os_check} WANTED Windows_NT, Please check for environment vars`, "error");
+        log(`${conn.config[0].host} Windows check error GOT ${os_check} WANTED Windows_NT, Please check for environment vars`, "error");
         passed--;
     }
     let get_local_check;
@@ -60,10 +60,7 @@ async function check(conn: SSH2Promise) {
     } catch (error: any) {
         if (error.trim().includes("is not recognized")) {
             log(
-                `Windows check error on ${conn.config[0].host} GOT ${error.substring(
-                    0,
-                    30
-                )} WANTED User List, Powershell version might be out of date`,
+                `${conn.config[0].host} Windows check error GOT ${error.substring(0, 30)} WANTED User List, Powershell version might be out of date`,
                 "warn"
             );
             passed--;
@@ -71,6 +68,6 @@ async function check(conn: SSH2Promise) {
         }
     }
 
-    log(`Passed ${passed} of 2 tests on ${conn.config[0].host}`, "info");
+    log(`${conn.config[0].host} Passed ${passed} of 2 tests`, "info");
     return useLocalUser;
 }
