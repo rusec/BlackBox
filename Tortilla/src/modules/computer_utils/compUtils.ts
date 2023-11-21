@@ -61,7 +61,7 @@ async function getNetwork(conn: SSH2Promise, os_type: options) {
         {
             name: "logToFile",
             type: "confirm",
-            message: "Would you like to log users to file?",
+            message: "Would you like to log Current Connections to file?",
         },
     ]);
     if (logToFile) {
@@ -69,11 +69,43 @@ async function getNetwork(conn: SSH2Promise, os_type: options) {
         fs.writeFileSync("log.log", network, "utf8");
     }
 }
+async function getEVariables(conn: SSH2Promise, os_type: options){
+    let variables = "";
+    switch (os_type.toLowerCase()) {
+        case "freebsd":
+            variables = await getOutput(conn, commands.variables.freebsd);
+            break;
+        case "windows":
+            variables = await getOutput(conn, commands.variables.windows);
+            break;
+        case "darwin":
+            variables = await getOutput(conn, commands.variables.linux);
+            break;
+        case "linux":
+            variables = await getOutput(conn, commands.variables.linux);
+            break;
+        default:
+            variables = "Unable to get Unknown OS";
+            break;
+    }
+    console.log(variables);
+    const { logToFile } = await inquirer.prompt([
+        {
+            name: "logToFile",
+            type: "confirm",
+            message: "Would you like to log Current variables to file?",
+        },
+    ]);
+    if (logToFile) {
+        variables = `Current variables for ${conn.config[0].host}\n` + variables;
+        fs.writeFileSync("log.log", variables, "utf8");
+    }
+}
 async function getProcess(conn: SSH2Promise, os_type: options) {
     let processes = "";
     switch (os_type.toLowerCase()) {
         case "freebsd":
-            processes = await getOutput(conn, commands.processes.linux);
+            processes = await getOutput(conn, commands.processes.freebsd);
             break;
         case "windows":
             processes = await getOutput(conn, commands.processes.windows);
@@ -93,7 +125,7 @@ async function getProcess(conn: SSH2Promise, os_type: options) {
         {
             name: "logToFile",
             type: "confirm",
-            message: "Would you like to log users to file?",
+            message: "Would you like to log Current processes to file?",
         },
     ]);
     if (logToFile) {
@@ -134,4 +166,5 @@ async function getFailedLogins(conn: SSH2Promise, os_type: options) {
     }
 }
 
-export { getUsers, getNetwork, getFailedLogins, getProcess };
+
+export { getUsers, getNetwork, getFailedLogins, getProcess,getEVariables };

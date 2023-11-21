@@ -112,9 +112,9 @@ class DB {
     constructor() {
         this.encrypt = new Encryption();
         this.process_dir = path.join(os.homedir() + "/Tortilla");
-
         this.filePath = path.join(this.process_dir, "muffins");
         this.lockDB = createLock();
+
         // Adding password based encryption
         this.passwd = path.join(this.process_dir, "pineapples");
         try {
@@ -241,7 +241,7 @@ class DB {
                     Password: password || computers[index].Password,
                     "OS Type": os_type || computers[index]["OS Type"],
                     ssh_key: false || computers[index]["ssh_key"], // You can decide how to update this property
-                    password_changes: 0 || computers[index]["password_changes"],
+                    password_changes: computers[index]["password_changes"] || 0,
                 };
             } else {
                 // If it doesn't exist, create a new entry
@@ -264,7 +264,15 @@ class DB {
             return result;
         }
     }
-
+    async getPasswordChanges(){
+        let computers = await this.readComputers();
+        let result = 0;
+        for (let cid = 0; cid < computers.length; cid++) {
+            let element = computers[cid];
+            result += element.password_changes
+        }
+        return result
+    }
     /**
      * Removes a computer entry from the list of computers by its index.
      *

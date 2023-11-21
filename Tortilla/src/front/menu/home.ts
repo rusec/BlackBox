@@ -10,7 +10,7 @@ import { utilsPage } from "./utilsPage";
 
 async function Home() {
     await clear();
-    console.log(`Current Computers : ${(await runningDB.readComputers()).length}`.bgGreen);
+    console.log(`Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())}`.bgGreen);
 
     const { program } = await inquirer.prompt([
         {

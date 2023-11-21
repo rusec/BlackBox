@@ -48,13 +48,19 @@ const commands = {
     },
     processes: {
         windows: "powershell Get-Process",
-        linux: "ps aux",
+        linux: "ps -aux --forest",
+        freebsd: "ps aux"
     },
     failedLogins: {
         linux: `grep "Failed password" /var/log/auth.log`,
         windows: `powershell "Get-WinEvent -FilterHashTable @{LogName='Security'; ID=4625} | Format-Table TimeCreated, Message -AutoSize"`,
         darwin: `log show --predicate 'eventMessage contains "failed"'`,
     },
+    variables:{
+        linux: `printenv`,
+        windows: "set",
+        freebsd: "env",
+    }
 };
 
 export { commands };

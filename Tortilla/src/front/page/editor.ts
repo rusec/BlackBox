@@ -5,17 +5,20 @@ import { delay } from "../../modules/util/util";
 import { checkPassword } from "../../modules/util/checkPassword";
 import { runSingleScript } from "./passwordScript";
 import { Home } from "../menu/home";
-import { addCustomSSH, addSSH, makeConnection, makeInteractiveShell, removeSSH, removeSSHkey } from "../../modules/util/ssh_utils";
+import { addCustomSSH, addSSH, getStatus, makeConnection, makeInteractiveShell, pingSSH, removeSSH, removeSSHkey } from "../../modules/util/ssh_utils";
 import { changePasswordOf } from "../../modules/password/change_passwords";
 import { log } from "../../modules/util/debug";
 import logger from "../../modules/util/logger";
-import { getFailedLogins, getNetwork, getProcess, getUsers } from "../../modules/computer_utils/compUtils";
+import { getEVariables, getFailedLogins, getNetwork, getProcess, getUsers } from "../../modules/computer_utils/compUtils";
 async function edit() {
     await clear();
     let json = await runningDB.readComputers();
-    var ipAddressesChoices = json.map((v, k) => {
+
+
+    var ipAddressesChoices = json.map( (v, k) => {
         return { name: v["IP Address"] + "  " + v["OS Type"] + " " + v.Name, value: k };
     });
+
     if (ipAddressesChoices.length === 0) {
         return Home();
     }
@@ -36,7 +39,7 @@ async function edit() {
     }
     const header = `> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${blankPassword(json[id].Password)} ${
         json[id]["OS Type"]
-    } | pub_key: ${json[id].ssh_key ? "true" : "false"} password changes: ${json[id].password_changes}`.bgBlue;
+    } | pub_key: ${json[id].ssh_key ? "true" : "false"} password changes: ${json[id].password_changes} | Online: ${(await getStatus(json[id])) ? "Live" : "unable to connect"}`.bgBlue;
 
     await clear();
     console.log(header);
@@ -259,6 +262,8 @@ async function computerUtils(server: ServerInfo) {
                 { name: "Get Failed Logins Event", value: "failedLogins" },
                 { name: "Get Current Network Connections", value: "network" },
                 { name: "Get Current Process", value: "processes" },
+                { name: "Get Current Environment Variables", value: "variables" },
+
             ],
         },
     ]);
@@ -280,6 +285,9 @@ async function computerUtils(server: ServerInfo) {
             break;
         case "processes":
             await getProcess(conn, server["OS Type"]);
+            break;
+        case "variables":
+            await getEVariables(conn, server["OS Type"]);
             break;
         default:
             break;

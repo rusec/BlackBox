@@ -218,7 +218,7 @@ async function addSSH(server: ServerInfo) {
     return results;
 }
 async function addCustomSSH(server: ServerInfo, ssh_key: string) {
-    const conn = await makeConnection(server);
+    const conn = await makeConnection(server, true);
     if (!conn) {
         return false;
     }
@@ -259,7 +259,7 @@ async function makeConn(ip: string, username: string, password: string, useKey?:
         return false;
     }
 }
-async function makeConnection(Server: ServerInfo, useKey?: boolean): Promise<SSH2Promise | false> {
+async function makeConnection(Server: ServerInfo, useKey?: boolean, statusLog = true, timeout = 3000): Promise<SSH2Promise | false> {
     try {
         const sshConfig: SSHConfig = {
             host: Server["IP Address"],
@@ -269,16 +269,28 @@ async function makeConnection(Server: ServerInfo, useKey?: boolean): Promise<SSH
             authHandler: useKey ? ["publickey", "password"] : ["password"],
             reconnect: false,
             keepaliveInterval: 0,
-            readyTimeout: 2000,
+            readyTimeout: timeout,
         };
         const ssh = new SSH2Promise(sshConfig);
-        log(`${Server["IP Address"]}  Attempting connection`, "log");
+        statusLog && log(`${Server["IP Address"]}  Attempting connection`, "log");
         await ssh.connect();
-        log(`${Server["IP Address"]} Connected`, "log");
+        statusLog && log(`${Server["IP Address"]} Connected`, "log");
 
         return ssh;
     } catch (error) {
-        log(`${Server["IP Address"]} Unable to connect`, "error");
+        statusLog && log(`${Server["IP Address"]} Unable to connect: ${error}`, "error");
+        return false;
+    }
+}
+async function getStatus(Server:ServerInfo){
+    try {
+        const ssh =await makeConnection(Server, true, false, 1500);
+        if(ssh == false){
+            return false
+        }
+        await ssh.close();
+        return true;
+    } catch (error: any) {
         return false;
     }
 }
@@ -356,9 +368,7 @@ async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
             connected_ssh.write(input + "\r");
         });
         rl.on("close", () => {
-            connected_ssh.close();
             connected_ssh.removeAllListeners();
-            resolve(true);
         });
         connected_ssh.on("end", async () => {
             rl.close();
@@ -406,6 +416,7 @@ export {
     injectSSHkey as ejectSSHkey,
     makeConnection,
     makeConn,
+    getStatus,
     removeSSHkey,
     removeSSH,
     addSSH,
