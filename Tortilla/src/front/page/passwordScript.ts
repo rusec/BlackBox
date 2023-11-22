@@ -123,6 +123,15 @@ async function runSingleScript(id: number) {
             log(`${computers[id]["IP Address"]} Successfully changed passwords`.green);
             await runningDB.writeCompResult(id, result);
         }
+
+        await inquirer.prompt([
+            {
+                name: "logToFile",
+                type: "confirm",
+                message: "Press Enter to continue?",
+            },
+        ]);
+        
     } catch (error) {
         console.log(`Error while updating passwords ${error}`);
         await delay(1000);

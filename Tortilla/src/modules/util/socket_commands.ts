@@ -81,7 +81,7 @@ function sendCommand(socket: Channel, command: string, exit?: boolean): Promise<
         };
 
         socket.stdout.on("data", onData);
-        socket.write(`${command}\r\n\r`, "utf8");
+        socket.write(`${command}\r`, "utf8");
         if (exit) {
             resolve(log);
             return;
