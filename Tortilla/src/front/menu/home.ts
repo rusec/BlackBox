@@ -7,6 +7,7 @@ import { runScript } from "../page/passwordScript";
 import { checkPassword } from "../../modules/util/checkPassword";
 import { Settings } from "./settings";
 import { utilsPage } from "./utilsPage";
+import { Commands } from "../page/commands";
 
 async function Home() {
     await clear();
@@ -42,6 +43,9 @@ async function Home() {
         case "Computers":
             edit();
             break;
+        case "Commands":
+            Commands();
+            break;
         case "Utils":
             utilsPage();
             break;
@@ -64,6 +68,7 @@ async function Home() {
                 new inquirer.Separator(),
                 new inquirer.Separator("Computers"),
                 "Computers",
+                {name:"Run Commands", value: "Commands"},
                 new inquirer.Separator(),
                 new inquirer.Separator("Navigation"),
                 "Settings",
@@ -80,6 +85,7 @@ async function Home() {
                 new inquirer.Separator(),
                 new inquirer.Separator("Computers"),
                 "Computers",
+                {name:"Run Commands", value: "Commands"},
                 new inquirer.Separator(),
                 new inquirer.Separator("Navigation"),
                 "Settings",

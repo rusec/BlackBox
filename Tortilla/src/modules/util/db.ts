@@ -384,6 +384,8 @@ class DB {
     async resetMasterPassword(): Promise<void> {
         const me = this;
         let trails = 3;
+        let new_password = "";
+        let trails_password = 3;
         const { master_password } = await inquirer.prompt([
             {
                 name: "old",
@@ -398,16 +400,33 @@ class DB {
             },
             {
                 name: "master_password",
-                type: "input",
+                type: "password",
                 validate: function (value) {
                     if (value.length > 8) {
+                        new_password = value;
                         return true;
                     }
                     return "Password must be longer then 8 characters";
                 },
                 message: "please enter a master password",
             },
+            {
+                name: "confirm",
+                type: 'password',
+                validate: function (value) {
+                    if(trails_password <= 0){
+                        process.exit(0);
+                    }
+                    if (value == new_password) {
+                        return true;
+                    }
+                    trails_password--;
+                    return "Password must match";
+                },
+                message: "please confirm new password",
+            }
         ]);
+        
         await this.writePassword(master_password);
     }
     /**

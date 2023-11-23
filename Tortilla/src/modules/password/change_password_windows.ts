@@ -3,20 +3,19 @@ import { log } from "../util/debug";
 
 import { delay } from "../util/util";
 import socket_commands from "../util/socket_commands";
+import { detect_hostname } from "../util/ssh_utils";
 
 async function changePasswordWin(conn: SSH2Promise, username: string, password: string) {
     try {
         let checkReport = await check(conn);
         let useLocalUser = checkReport.useLocal
         const host = conn.config[0].host;
-        if(!(stripDomain(username) == username)){
-            if(!checkReport.domainController){
-                return "UNABLE TO CHANGE PASSWORD OF DOMAIN ACCOUNT ON NON-DOMAIN-CONTROLLER"
-            }
-            log(`${host} Change Domain Level Account`, 'info');
+        if(checkReport.isDomainUser && checkReport.domainController){
 
             return await changePasswordWinAD(conn,stripDomain(username), password);
-
+        }
+        if(checkReport.isDomainUser){
+            return "UNABLE TO CHANGE PASSWORD OF DOMAIN ACCOUNT ON NON-DOMAIN-CONTROLLER"
         }
         return await changePasswordWindowsLocal(conn, username, password,useLocalUser);
     } catch (error: any) {
@@ -60,21 +59,21 @@ async function changePasswordWindowsLocal(conn:SSH2Promise, username:string, pas
 
 
 async function changePasswordWinAD(conn: SSH2Promise, username: string, password: string) {
+    const host = conn.config[0].host;
+
+    log(`${host} Changing Domain Controller Account`, 'info');
+
     try {
         // let useLocalUser = await check(conn);
         let shellSocket = await conn.shell();
-        const host = conn.config[0].host;
 
         try {
             log(`${host} Resetting Active Directory User`, "info");
 
-            let log_script = await socket_commands.sendCommandExpect(shellSocket, `PowerShell`, `PS`);
-            console.log(log_script)
-
+            await socket_commands.sendCommandExpect(shellSocket, `PowerShell`, `PS`);
             await delay(2000);
-             log_script = await socket_commands.sendCommand(shellSocket, "$pass = Read-Host -AsSecureString");
-            console.log(log_script)
-            await delay(1000);
+            await socket_commands.sendCommand(shellSocket, "$pass = Read-Host -AsSecureString");
+            await delay(500);
             await socket_commands.sendInput(shellSocket, `${password}`);
             await socket_commands.sendCommandNoExpect(
                 shellSocket,
@@ -106,6 +105,7 @@ export { changePasswordWin };
 type check_report = {
     domainController: boolean,
     useLocal:boolean,
+    isDomainUser:boolean,
 
 }
 async function check(conn: SSH2Promise):Promise<check_report> {
@@ -137,11 +137,24 @@ async function check(conn: SSH2Promise):Promise<check_report> {
     } catch (error) {
 
     }
+    let isDomainUser = false;
+    try {
+        let whoamiString = await conn.exec('whoami');
+        let hostname = await detect_hostname(conn);
+
+        if(!whoamiString.includes(hostname.toLowerCase())){
+            isDomainUser = true;
+        }
+
+    } catch (error) {
+        
+    }
 
     log(`${conn.config[0].host} Passed ${passed} of 2 tests`, "info");
     return {
         useLocal: get_local_check,
         domainController: isDomainController,
+        isDomainUser:isDomainUser
     };
 }
 

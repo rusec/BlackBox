@@ -5,7 +5,7 @@ import { delay } from "../../modules/util/util";
 import { checkPassword } from "../../modules/util/checkPassword";
 import { runSingleScript } from "./passwordScript";
 import { Home } from "../menu/home";
-import { addCustomSSH, addSSH, getStatus, makeConnection, makeInteractiveShell, pingSSH, removeSSH, removeSSHkey } from "../../modules/util/ssh_utils";
+import { addCustomSSH, addSSH, getStatus, makeConnection, makeInteractiveShell, pingSSH, removeSSH, removeSSHkey, testPassword } from "../../modules/util/ssh_utils";
 import { changePasswordOf } from "../../modules/password/change_passwords";
 import { log } from "../../modules/util/debug";
 import logger from "../../modules/util/logger";
@@ -54,11 +54,13 @@ async function edit() {
                 new inquirer.Separator("Connect"),
                 { name: "Start Shell", value: "shell" },
                 { name: "Change Password", value: "change_pass_man" },
+                {name: "Test Password", value: "test_pass"},
                 { name: "Utils", value: "utils" },
                 new inquirer.Separator("Data"),
                 { name: "Change Password (if changed from target)", value: "Change Password" },
                 "Change Username",
                 "Change OS",
+                {name: "Show Password", value: "show_pass"},
                 { name: "Remove Computer", value: "Remove" },
                 new inquirer.Separator("SSH"),
                 { name: "Inject SSH Key", value: "add_ssh" },
@@ -109,6 +111,14 @@ async function edit() {
             }
             edit();
             break;
+        case "test_pass":
+            await passwordTest(json[id]);
+            break;
+        case "show_pass":
+            await checkPassword();
+            await showPassword();
+            
+            break;
         case "add_custom_ssh":
             await checkPassword();
             await sshCustom();
@@ -131,7 +141,6 @@ async function edit() {
             Home();
             break;
     }
-
     async function Remove() {
         await clear();
         await checkPassword();
@@ -244,7 +253,49 @@ async function edit() {
         console.log("OS updated!");
         await delay(300);
     }
+    async function showPassword(){
+        console.log(`> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${json[id].Password} ${
+            json[id]["OS Type"]
+        } | pub_key: ${json[id].ssh_key ? "true" : "false"} password changes: ${json[id].password_changes}`.bgBlue)
+        await inquirer.prompt([
+            {
+                name: "logToFile",
+                type: "confirm",
+                message: "Press Enter to continue?",
+            },
+        ]);
+        return edit();
+
+    }
+    
 }
+async function passwordTest(server:ServerInfo){
+    await clear();
+    const header = `> ${server.Name} ${server["IP Address"]} ${server.Username} ${blankPassword(server.Password)} ${server["OS Type"]} | pub_key: ${
+        server.ssh_key ? "true" : "false"
+    } password changes: ${server.password_changes}`.bgBlue;
+    console.log(header);
+    let conn = await makeConnection(server);
+    if (!conn) {
+        console.log("Unable to connect to server");
+        await delay(1000);
+        return edit();
+    }
+    let pass_success = await testPassword(conn, server.Password);
+    pass_success ? log("Password Active",'success'): log("Unable to use Password", 'error');
+    await conn.close();
+
+    await inquirer.prompt([
+        {
+            name: "logToFile",
+            type: "confirm",
+            message: "Press Enter to Continue",
+        },
+    ]);
+
+    edit();
+}
+
 async function computerUtils(server: ServerInfo) {
     await clear();
     const header = `> ${server.Name} ${server["IP Address"]} ${server.Username} ${blankPassword(server.Password)} ${server["OS Type"]} | pub_key: ${
@@ -263,10 +314,14 @@ async function computerUtils(server: ServerInfo) {
                 { name: "Get Current Network Connections", value: "network" },
                 { name: "Get Current Process", value: "processes" },
                 { name: "Get Current Environment Variables", value: "variables" },
+                "Back"
 
             ],
         },
     ]);
+    if(program == "Back"){
+        return edit();
+    }
     let conn = await makeConnection(server);
     if (!conn) {
         console.log("Unable to connect to server");
