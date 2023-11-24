@@ -8,6 +8,7 @@ import delay from "delay";
 import { log } from "../../modules/util/debug";
 import { getOutput } from "../../modules/util/run_command";
 import fs from 'fs'
+import { logToFile } from "../../modules/console/enddingModules";
 async function Commands() {
     await clear();
     await checkPassword();
@@ -57,17 +58,17 @@ async function shotgunCommands(servers: ServerInfo[], command: string) {
         } catch (error) {}
         log(`${id +1} of ${servers.length} Done`);
     }
-
-    const { logToFile } = await inquirer.prompt([
-        {
-            name: "logToFile",
-            type: "confirm",
-            message: "Would you like to log to file?",
-        },
-    ]);
-    if (logToFile) {
-        fs.writeFileSync("log.log", fileLOG, "utf8");
-    }
+    await logToFile(fileLOG)
+    // const { logToFile } = await inquirer.prompt([
+    //     {
+    //         name: "logToFile",
+    //         type: "confirm",
+    //         message: "Would you like to log to file?",
+    //     },
+    // ]);
+    // if (logToFile) {
+    //     fs.writeFileSync("log.log", fileLOG, "utf8");
+    // }
 
 
 

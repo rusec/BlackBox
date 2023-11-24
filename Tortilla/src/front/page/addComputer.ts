@@ -5,6 +5,7 @@ import { pingSSH } from "../../modules/util/ssh_utils";
 import { log } from "../../modules/util/debug";
 import { delay } from "../../modules/util/util";
 import { Home } from "../menu/home";
+import { pressEnter } from "../../modules/console/enddingModules";
 const addComputer = async function () {
     const { ip, user, pass } = await inquirer.prompt([
         {
@@ -37,7 +38,7 @@ const addComputer = async function () {
         log(`Unable to reach computer, Not Added`, "error");
     }
 
-    await delay(1000);
+    await pressEnter();
 };
 
 export { addComputer };

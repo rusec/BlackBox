@@ -9,6 +9,7 @@ import fs from "fs";
 import { removeANSIColorCodes } from "../../modules/util/util";
 import { Home } from "../menu/home";
 import logger from "../../modules/util/logger";
+import { logToFile, pressEnter } from "../../modules/console/enddingModules";
 async function runScript(debug?: boolean) {
     const originalConsoleLog = console.log;
     let capturedOutput = "";
@@ -58,26 +59,17 @@ async function runScript(debug?: boolean) {
 
         console.log(`Successfully changed passwords on ${numberOfSuccess} of ${computers.length}`.green);
 
-        const { logToFile } = await inquirer.prompt([
-            {
-                name: "logToFile",
-                type: "confirm",
-                message: "Would you like to generate a report?",
-            },
-        ]);
-        if (logToFile) {
-            const runningLog = results
-                .map((element, i) => {
-                    if (typeof (element as PromiseFulfilledResult<any>).value === "boolean" && (element as PromiseFulfilledResult<any>).value) {
-                        return `Changed password of ${computers[i]["IP Address"]}`;
-                    } else {
-                        return `Error on ${computers[i]["IP Address"]} ${(element as PromiseFulfilledResult<any>).value}`;
-                    }
-                })
-                .join("\n");
+        const runningLog = results
+        .map((element, i) => {
+            if (typeof (element as PromiseFulfilledResult<any>).value === "boolean" && (element as PromiseFulfilledResult<any>).value) {
+                return `Changed password of ${computers[i]["IP Address"]}`;
+            } else {
+                return `Error on ${computers[i]["IP Address"]} ${(element as PromiseFulfilledResult<any>).value}`;
+            }
+        })
+        .join("\n");
 
-            fs.writeFileSync("log.log", removeANSIColorCodes(runningLog + "\n\nLOG:\n" + capturedOutput), "utf8");
-        }
+        await logToFile(removeANSIColorCodes(runningLog + "\n\nLOG:\n" + capturedOutput))
 
         await delay(1000);
     } catch (error) {
@@ -124,13 +116,7 @@ async function runSingleScript(id: number) {
             await runningDB.writeCompResult(id, result);
         }
 
-        await inquirer.prompt([
-            {
-                name: "logToFile",
-                type: "confirm",
-                message: "Press Enter to continue?",
-            },
-        ]);
+        await pressEnter()
         
     } catch (error) {
         console.log(`Error while updating passwords ${error}`);

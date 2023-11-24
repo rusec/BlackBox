@@ -41,16 +41,19 @@ async function getNetwork(conn: SSH2Promise, os_type: options) {
     let network = "";
     switch (os_type.toLowerCase()) {
         case "freebsd":
-            network = await getOutput(conn, commands.network.linux);
+            network = await getOutput(conn, commands.network.linux.step_1);
             break;
         case "windows":
             network = await getOutput(conn, commands.network.windows);
             break;
         case "darwin":
-            network = await getOutput(conn, commands.network.linux);
+            network = await getOutput(conn, commands.network.linux.step_1);
             break;
         case "linux":
-            network = await getOutput(conn, commands.network.linux);
+            network = await getOutput(conn, commands.network.linux.step_1);
+            if(network.includes("netstat")){
+                network = await getOutput(conn,commands.network.linux.step_2)
+            }
             break;
         default:
             network = "Unable to get Unknown OS";

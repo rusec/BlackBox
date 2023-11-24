@@ -2,6 +2,7 @@
     "dependencies": {
         "@types/ssh2-streams": "^0.1.10",
         "an-array-of-english-words": "^2.0.0",
+        "as-table": "^1.0.55",
         "bcryptjs": "^2.4.3",
         "clear": "^0.1.0",
         "colors": "^1.4.0",

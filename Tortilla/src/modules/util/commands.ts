@@ -41,12 +41,41 @@ const commands = {
         windows: "net user",
         linux: `cat /etc/passwd | awk -F: '{print $1 " ID:" $3 " GID:" $4 " dir:" $6 "  Comment:" $5}'`,
         darwin: 'dscl . list /Users | grep -v "^_"',
+        parsing: {
+            linux: `cat /etc/passwd | awk -F: '{print $1 " " $3 " " $4 " " $6 " " $5}'`,
+            windows: `wmic useraccount get name,sid,domain,description,Caption /format:csv`
+        }
     },
     network: {
+        ports: {
+            linux: {
+                step_1: `netstat -tuan | grep "LISTEN"|awk '/^tcp/ {print "TCP", $4} /^udp/ {print "UDP", $4}'`,
+                step_2: `ss -tuan | grep "LISTEN" | awk '/^tcp/ {print "TCP", $5} /^udp/ {print "UDP", $5}'`
+            },
+            freebsd: `netstat -an | grep "LISTEN"|awk '/^tcp/ {print "TCP", $4} /^udp/ {print "UDP", $4}'`,
+            windows: `powershell "Get-NetTCPConnection | Where-Object { $_.State -eq 'Listen' } | ForEach-Object {$($_.LocalPort)}"`
+        },
         windows: `powershell "Get-NetTCPConnection | Where-Object { $_.State -eq 'Established' }"`,
-        linux: `netstat -an | grep "ESTABLISHED"`,
+        linux: {
+            step_1: `netstat -an | grep "ESTABLISHED"`,
+            step_2: `ss -tan | grep ESTAB`
+        },
     },
     processes: {
+        installed:{
+            windows:{
+                step_1:`powershell "Get-ItemProperty HKLM:/Software/Microsoft/Windows/CurrentVersion/Uninstall/*, HKLM:/Software/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/*, HKCU:/Software/Microsoft/Windows/CurrentVersion/Uninstall/* |Select-Object DisplayName, Publisher, InstallDate | Format-Table -AutoSize"`,
+                step_2: `powershell "Get-ItemProperty HKLM:/Software/Microsoft/Windows/CurrentVersion/Uninstall/*, HKLM:/Software/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/* |Select-Object DisplayName, Publisher, InstallDate | Format-Table -AutoSize"`
+            },
+            linux: {
+                step_1:`for x in $(ls -1t /var/log/dpkg.log*); do zcat -f $x |tac |grep -e " install " -e " upgrade "; done |awk -F ":a" '{print $1}'`,
+                step_2:`rpm -qa --qf '%{INSTALLTIME} %{NAME}\n' | sort -n`
+            },
+            freebsd: {
+                step_1: `pkg info`,
+                step_2: 'pkg_info'
+            }
+        },
         windows: "powershell Get-Process",
         linux: "ps -aux --forest",
         freebsd: "ps aux"
@@ -60,7 +89,13 @@ const commands = {
         linux: `printenv`,
         windows: "set",
         freebsd: "env",
+    },
+    os_info: {
+        windows:"systeminfo.exe /FO csv",
+        linux: "uname -osnpr | awk '{print $2, $1, $3, $4}'",
+        linux_name: "uname -v"
     }
+  
 };
 
 export { commands };

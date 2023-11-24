@@ -9,7 +9,9 @@ import { addCustomSSH, addSSH, getStatus, makeConnection, makeInteractiveShell, 
 import { changePasswordOf } from "../../modules/password/change_passwords";
 import { log } from "../../modules/util/debug";
 import logger from "../../modules/util/logger";
-import { getEVariables, getFailedLogins, getNetwork, getProcess, getUsers } from "../../modules/computer_utils/compUtils";
+import { getEVariables, getFailedLogins, getNetwork, getProcess, getUsers } from "../../modules/computer/compUtils";
+import { pressEnter } from "../../modules/console/enddingModules";
+import { scanComputer } from "../../modules/computer/scan";
 async function edit() {
     await clear();
     let json = await runningDB.readComputers();
@@ -49,7 +51,6 @@ async function edit() {
             name: "section",
             type: "list",
             pageSize: 50,
-
             choices: [
                 new inquirer.Separator("Connect"),
                 { name: "Start Shell", value: "shell" },
@@ -71,7 +72,7 @@ async function edit() {
                 "Back",
                 new inquirer.Separator(),
             ],
-            message: "Please select a computer:",
+            message: "Please select one of the following options:",
         },
     ]);
 
@@ -257,13 +258,7 @@ async function edit() {
         console.log(`> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${json[id].Password} ${
             json[id]["OS Type"]
         } | pub_key: ${json[id].ssh_key ? "true" : "false"} password changes: ${json[id].password_changes}`.bgBlue)
-        await inquirer.prompt([
-            {
-                name: "logToFile",
-                type: "confirm",
-                message: "Press Enter to continue?",
-            },
-        ]);
+        await pressEnter();
         return edit();
 
     }
@@ -285,13 +280,7 @@ async function passwordTest(server:ServerInfo){
     pass_success ? log("Password Active",'success'): log("Unable to use Password", 'error');
     await conn.close();
 
-    await inquirer.prompt([
-        {
-            name: "logToFile",
-            type: "confirm",
-            message: "Press Enter to Continue",
-        },
-    ]);
+    await pressEnter();
 
     edit();
 }
@@ -314,6 +303,8 @@ async function computerUtils(server: ServerInfo) {
                 { name: "Get Current Network Connections", value: "network" },
                 { name: "Get Current Process", value: "processes" },
                 { name: "Get Current Environment Variables", value: "variables" },
+                { name: "Scan Computer", value: "scan" },
+
                 "Back"
 
             ],
@@ -329,6 +320,9 @@ async function computerUtils(server: ServerInfo) {
         return edit();
     }
     switch (program) {
+        case "scan":
+            await scanComputer(conn, server['OS Type']);
+            break;
         case "users":
             await getUsers(conn, server["OS Type"]);
             break;
