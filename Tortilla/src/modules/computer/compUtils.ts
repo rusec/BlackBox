@@ -4,12 +4,16 @@ import { commands } from "../util/commands";
 import inquirer from "inquirer";
 import fs from "fs";
 import { getOutput } from "../util/run_command";
-
+import { parseUsersLinux } from "./scan";
+import asTable from 'as-table'
 async function getUsers(conn: SSH2Promise, os_type: options) {
     let users = "";
+    let users_array  = []
     switch (os_type.toLowerCase()) {
         case "freebsd":
-            users = await getOutput(conn, commands.users.linux);
+            users = await getOutput(conn, commands.users.parsing.linux);
+            users_array = parseUsersLinux(users)
+            users = asTable(users_array)
             break;
         case "windows":
             users = await getOutput(conn, commands.users.windows);
@@ -18,7 +22,9 @@ async function getUsers(conn: SSH2Promise, os_type: options) {
             users = await getOutput(conn, commands.users.darwin);
             break;
         case "linux":
-            users = await getOutput(conn, commands.users.linux);
+            users = await getOutput(conn, commands.users.parsing.linux);
+            users_array = parseUsersLinux(users)
+            users = asTable(users_array)
             break;
         default:
             users = "Unable to get Unknown OS";

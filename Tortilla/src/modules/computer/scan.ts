@@ -326,6 +326,7 @@ function parseUsersLinux(str:string){
     return users
 }
 
+//OS info
 
 async function getOsInfoWindows(conn:SSH2Promise){
     let os_infoOutput;
@@ -637,4 +638,4 @@ function splitTable(object:any[]){
 
 
 }
-export { scanComputer };
+export { scanComputer,parseUsersLinux };

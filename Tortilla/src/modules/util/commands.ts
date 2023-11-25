@@ -38,7 +38,7 @@ const commands = {
     },
     hostname: "hostname",
     users: {
-        windows: "net user",
+        windows: `wmic.exe useraccount get name,sid,disabled,domain,fullname,status,passwordexpires,passwordrequired,description`,
         linux: `cat /etc/passwd | awk -F: '{print $1 " ID:" $3 " GID:" $4 " dir:" $6 "  Comment:" $5}'`,
         darwin: 'dscl . list /Users | grep -v "^_"',
         parsing: {
