@@ -8,12 +8,14 @@ import { commands } from "./commands";
 import { Channel } from "ssh2";
 import readline from "readline";
 import { removeANSIColorCodes } from "./util";
-import logger from "./logger";
+import logger, { log_options } from "./logger";
 // SSH COMMANDS for ejections
 
-async function removeSSHkey(conn: SSH2Promise, os_type: options): Promise<boolean> {
+
+
+async function removeSSHkey(conn: SSH2CONN, os_type: options): Promise<boolean> {
     const ssh_key = await runningDB.getSSHPublicKey();
-    log(`${conn.config[0].host} Removing SSH Key`, "log");
+    conn.log("Removing SSH Key")
 
     switch (os_type.toLowerCase()) {
         case "linux":
@@ -38,8 +40,8 @@ async function removeSSHkey(conn: SSH2Promise, os_type: options): Promise<boolea
             }
             break;
     }
+    conn.log("Removed SSH Key")
 
-    log(`${conn.config[0].host} Removed SSH Key`, "log");
     return !(await testSSH(conn));
 }
 /**
@@ -47,10 +49,9 @@ async function removeSSHkey(conn: SSH2Promise, os_type: options): Promise<boolea
  * @param conn
  * @returns Should return true if it can connect using the public key
  */
-async function testSSH(conn: SSH2Promise) {
-    const host = conn.config[0].host;
+async function testSSH(conn: SSH2CONN) {
     try {
-        log(`${host} Testing SSH Private Key`, "info");
+        conn.info("Testing SSH Private Key")
         const sshConfig: SSHConfig = {
             host: conn.config[0].host,
             username: conn.config[0].username,
@@ -63,17 +64,18 @@ async function testSSH(conn: SSH2Promise) {
         const ssh = new SSH2Promise(sshConfig, true);
         await ssh.connect();
         await ssh.close();
-        log(`${host} SSH Private Key active`, "info");
+        conn.info("Testing SSH Private Key active")
         return true;
     } catch (error) {
-        log(`${host} Unable to use SSH Private Key`, "info");
+        conn.error("Unable to use SSH Private Key")
         return false;
     }
 }
-async function testPassword(conn: SSH2Promise, password: string) {
+async function testPassword(conn: SSH2CONN, password: string) {
     const host = conn.config[0].host;
     try {
-        log(`${host} Testing Password`, "info");
+        conn.info("Testing Password")
+        
         const sshConfig: SSHConfig = {
             host: conn.config[0].host,
             username: conn.config[0].username,
@@ -86,10 +88,10 @@ async function testPassword(conn: SSH2Promise, password: string) {
         const ssh = new SSH2Promise(sshConfig, true);
         await ssh.connect();
         await ssh.close();
-        log(`${host} SSH Password active`, "info");
+        conn.info("SSH Password active")
         return true;
     } catch (error) {
-        log(`${host} Unable to use Password`, "info");
+        conn.info("Unable to use Password")
         return false;
     }
 }
@@ -97,7 +99,7 @@ async function testPassword(conn: SSH2Promise, password: string) {
 //should check for ssh key in the folder, if it doesn't exist inject it.
 //will try to ssh using the key, if it cant it will eject one more time
 //TO DO DARWIN
-async function injectSSHkey(conn: SSH2Promise, os_type: options, force?: undefined | boolean, trials: number = 0): Promise<boolean> {
+async function injectSSHkey(conn: SSH2CONN, os_type: options, force?: undefined | boolean, trials: number = 0): Promise<boolean> {
     if (trials > 2) {
         return false;
     }
@@ -128,7 +130,7 @@ async function injectSSHkey(conn: SSH2Promise, os_type: options, force?: undefin
             }
             break;
     }
-    log(`${conn.config[0].host} Ejecting SSH Key`, "log");
+    conn.log("Ejecting SSH Key")
     await injectKey();
     return await test();
 
@@ -166,8 +168,8 @@ async function injectSSHkey(conn: SSH2Promise, os_type: options, force?: undefin
     }
 }
 
-async function injectCustomKey(conn: SSH2Promise, ssh_key: string, os_type: options) {
-    log(`${conn.config[0].host} Ejecting CUSTOM SSH Key`, "warn");
+async function injectCustomKey(conn: SSH2CONN, ssh_key: string, os_type: options) {
+    conn.warn('Ejecting CUSTOM SSH Key')
     logger.log(`${conn.config[0].host} Ejecting CUSTOM SSH Key`, "warn");
 
     switch (os_type.toLowerCase()) {
@@ -237,7 +239,7 @@ async function removeSSH(server: ServerInfo) {
     return results;
 }
 
-async function makeConn(ip: string, username: string, password: string, useKey?: boolean): Promise<SSH2Promise | false> {
+async function makeConn(ip: string, username: string, password: string, useKey?: boolean): Promise<SSH2CONN | false> {
     try {
         const sshConfig: SSHConfig = {
             host: ip,
@@ -249,7 +251,7 @@ async function makeConn(ip: string, username: string, password: string, useKey?:
             keepaliveInterval: 0,
             readyTimeout: 2000,
         };
-        const ssh = new SSH2Promise(sshConfig);
+        const ssh = new SSH2CONN("", sshConfig);
         log(`${ip} Attempting connection`, "log");
         await ssh.connect();
         log(`${ip} Connected`, "log");
@@ -259,7 +261,7 @@ async function makeConn(ip: string, username: string, password: string, useKey?:
         return false;
     }
 }
-async function makeConnection(Server: ServerInfo, useKey?: boolean, statusLog = true, timeout = 3000): Promise<SSH2Promise | false> {
+async function makeConnection(Server: ServerInfo, useKey?: boolean, statusLog = true, timeout = 3000): Promise<SSH2CONN | false> {
     try {
         const sshConfig: SSHConfig = {
             host: Server["IP Address"],
@@ -271,14 +273,18 @@ async function makeConnection(Server: ServerInfo, useKey?: boolean, statusLog = 
             keepaliveInterval: 0,
             readyTimeout: timeout,
         };
-        const ssh = new SSH2Promise(sshConfig);
-        statusLog && log(`${Server["IP Address"]}  Attempting connection`, "log");
+        const ssh = new SSH2CONN(Server.Name, sshConfig);
+
+        
+
+        statusLog && ssh.log('Attempting Connection');
         await ssh.connect();
-        statusLog && log(`${Server["IP Address"]} Connected`, "log");
+        statusLog && ssh.log('Connected');
+
 
         return ssh;
     } catch (error) {
-        statusLog && log(`${Server["IP Address"]} Unable to connect: ${error}`, "error");
+        statusLog && log(`[${Server["IP Address"]}] [${Server.Name}] Unable to connect: ${error}`, "error");
         return false;
     }
 }
@@ -306,7 +312,7 @@ async function pingSSH(ip: string, username: string, password: string): Promise<
             keepaliveInterval: 0,
             readyTimeout: 2000,
         };
-        const ssh = new SSH2Promise(sshConfig);
+        const ssh = new SSH2CONN("", sshConfig);
         await ssh.connect();
         let os = await detect_os(ssh);
         let hostname = await detect_hostname(ssh);
@@ -376,8 +382,8 @@ async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
         });
     });
 }
-async function detect_os(conn: SSH2Promise): Promise<options> {
-    log(`${conn.config[0].host} checking for os`, "log");
+async function detect_os(conn: SSH2CONN): Promise<options> {
+    conn.log("Checking For Os")
     try {
         const system = await conn.exec(commands.detect.linux);
         const name = system.toLowerCase();
@@ -405,17 +411,51 @@ async function detect_os(conn: SSH2Promise): Promise<options> {
         return "Unknown";
     }
 }
-async function detect_hostname(conn: SSH2Promise) {
-    log(`${conn.config[0].host} checking for hostname`, "log");
+async function detect_hostname(conn: SSH2CONN) {
+    conn.log("Checking For Hostname")
     const system = await conn.exec(commands.hostname);
     return system.trim();
 }
 
+class SSH2CONN extends SSH2Promise {
+    hostname: string;
+    ipaddress: string | undefined;
+    constructor(hostname:string, options: Array<SSHConfig> | SSHConfig, disableCache?: boolean){
+        super(options, disableCache);
+        this.hostname = hostname;
+        this.ipaddress = this.config[0].host
+    }
+    _getTag(){
+        return `[${this.ipaddress}]`.bgGreen + ` ` +`[${this.hostname}]`.bgWhite + ' '; 
+    }
+    info(str:string){
+        log(this._getTag()+ `${str}`,'info')
+    }
+    log(str:string){
+        log(this._getTag()+ `${str}`,'log')
+    }
+    error(str:string){
+        log(this._getTag()+ `${str}`,'error')
+    }
+    warn(str:string){
+        log(this._getTag()+ `${str}`,'warn')
+    }
+    success(str:string){
+        log(this._getTag()+ `${str}`,'success')
+
+    }
+    updateHostname(hostname:string){
+        this.hostname = hostname
+    }
+
+
+}
+
 export {
+    SSH2CONN,
     pingSSH,
     injectSSHkey as ejectSSHkey,
     makeConnection,
-    makeConn,
     getStatus,
     removeSSHkey,
     removeSSH,

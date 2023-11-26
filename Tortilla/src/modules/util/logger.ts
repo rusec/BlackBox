@@ -2,7 +2,7 @@ import os from "os";
 import path from "path";
 import fs from "fs";
 
-export type options = "warn" | "debug" | "info" | "error" | "log" | "success";
+export type log_options = "warn" | "debug" | "info" | "error" | "log" | "success";
 
 class Logger {
     process_dir: string;
@@ -13,7 +13,7 @@ class Logger {
         if (!fs.existsSync(this.process_dir)) fs.mkdirSync(this.process_dir, { recursive: true });
         if (!fs.existsSync(this.logFile)) fs.writeFileSync(this.logFile, "");
     }
-    log(message: string, type: options = "log") {
+    log(message: string, type: log_options = "log") {
         fs.appendFileSync(this.logFile, this._format(message, type));
     }
     error(message: string) {
@@ -22,7 +22,7 @@ class Logger {
     clear() {
         fs.writeFileSync(this.logFile, "");
     }
-    _format(message: string, type: options) {
+    _format(message: string, type: log_options) {
         let now = new Date();
         let time = `[${now.toISOString()}]`;
         let user = os.userInfo().username;

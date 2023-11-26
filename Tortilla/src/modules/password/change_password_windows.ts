@@ -3,13 +3,12 @@ import { log } from "../util/debug";
 
 import { delay } from "../util/util";
 import socket_commands from "../util/socket_commands";
-import { detect_hostname } from "../util/ssh_utils";
+import { SSH2CONN, detect_hostname } from "../util/ssh_utils";
 
-async function changePasswordWin(conn: SSH2Promise, username: string, password: string) {
+async function changePasswordWin(conn: SSH2CONN, username: string, password: string) {
     try {
         let checkReport = await check(conn);
         let useLocalUser = checkReport.useLocal
-        const host = conn.config[0].host;
         if(checkReport.isDomainUser && checkReport.domainController){
 
             return await changePasswordWinAD(conn,stripDomain(username), password);
@@ -23,13 +22,13 @@ async function changePasswordWin(conn: SSH2Promise, username: string, password: 
         return error.message ? error : error.message;
     }
 }
-async function changePasswordWindowsLocal(conn:SSH2Promise, username:string, password:string, useLocalUser:boolean){
+async function changePasswordWindowsLocal(conn:SSH2CONN, username:string, password:string, useLocalUser:boolean){
     let shellSocket = await conn.shell();
     const host = conn.config[0].host;
 
     try {
-    
-        log(`${host} Using ${useLocalUser ? "Get-Local" : "net user"}`, "info");
+        conn.info(`Using ${useLocalUser ? "Get-Local" : "net user"}`)
+
         if (useLocalUser) {
             await socket_commands.sendCommandExpect(shellSocket, `PowerShell`, `Windows PowerShell`);
             await delay(2000);
@@ -43,10 +42,10 @@ async function changePasswordWindowsLocal(conn:SSH2Promise, username:string, pas
             await socket_commands.sendInputExpect(shellSocket, `${password}`, "Retype the password to confirm:");
             await socket_commands.sendInputExpect(shellSocket, `${password}`, "The command completed successfully");
         }
-        log(`${host} Changed password`, "success");
+        conn.success("Changed Password")
     } catch (error: any) {
         shellSocket.close();
-        log(`${host} Unable to change password`, "error");
+        conn.error("Unable to change password")
         return !error.message ? error.toString() : error.message;
     }
 
@@ -58,17 +57,16 @@ async function changePasswordWindowsLocal(conn:SSH2Promise, username:string, pas
 }
 
 
-async function changePasswordWinAD(conn: SSH2Promise, username: string, password: string) {
+async function changePasswordWinAD(conn: SSH2CONN, username: string, password: string) {
     const host = conn.config[0].host;
 
-    log(`${host} Changing Domain Controller Account`, 'info');
-
+    conn.info("Changing Domain Controller Account")
     try {
         // let useLocalUser = await check(conn);
         let shellSocket = await conn.shell();
 
         try {
-            log(`${host} Resetting Active Directory User`, "info");
+            conn.info("Resetting Active Directory User")
 
             await socket_commands.sendCommandExpect(shellSocket, `PowerShell`, `PS`);
             await delay(2000);
@@ -80,11 +78,10 @@ async function changePasswordWinAD(conn: SSH2Promise, username: string, password
                 `Set-ADAccountPassword –Identity "${username}" –Reset –NewPassword $pass`,
                 "CategoryInfo"
             );
-
-            log(`${host} Changed password`, "success");
+            conn.success("Changed password");
         } catch (error: any) {
             shellSocket.close();
-            log(`${host} Unable to change password`, "error");
+            conn.error("Unable to change password")
             return !error.message ? error.toString() : error.message;
         }
 
@@ -108,12 +105,12 @@ type check_report = {
     isDomainUser:boolean,
 
 }
-async function check(conn: SSH2Promise):Promise<check_report> {
+async function check(conn: SSH2CONN):Promise<check_report> {
     var passed = 2;
     var useLocalUser = true;
     let os_check = await conn.exec("echo %OS%");
     if (os_check.trim() != "Windows_NT") {
-        log(`${conn.config[0].host} Windows check error GOT ${os_check} WANTED Windows_NT, Please check for environment vars`, "error");
+        conn.error(`Windows check error GOT ${os_check} WANTED Windows_NT, Please check for environment vars`)
         passed--;
     }
     let get_local_check;
@@ -122,10 +119,7 @@ async function check(conn: SSH2Promise):Promise<check_report> {
         get_local_check = await conn.exec(`PowerShell -Command "& {Get-LocalUser}"`);
     } catch (error: any) {
         if (error.trim().includes("is not recognized")) {
-            log(
-                `${conn.config[0].host} Windows check error GOT ${error.substring(0, 30)} WANTED User List, Powershell version might be out of date`,
-                "warn"
-            );
+            conn.warn(`Windows check error GOT ${error.substring(0, 30)} WANTED User List, Powershell version might be out of date`)
             passed--;
             useLocalUser = false;
         }
@@ -133,6 +127,7 @@ async function check(conn: SSH2Promise):Promise<check_report> {
     let isDomainController = false;
     try {
         isDomainController = await conn.exec(`PowerShell -Command "& {Get-ADDefaultDomainPasswordPolicy}`)
+        conn.log("Computer is a Domain Controller")
         isDomainController = true;
     } catch (error) {
 
@@ -149,8 +144,7 @@ async function check(conn: SSH2Promise):Promise<check_report> {
     } catch (error) {
         
     }
-
-    log(`${conn.config[0].host} Passed ${passed} of 2 tests`, "info");
+    conn.info(`Passed ${passed} of 2 tests`)
     return {
         useLocal: get_local_check,
         domainController: isDomainController,

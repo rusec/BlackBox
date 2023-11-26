@@ -9,13 +9,7 @@ import util from "util";
 import logger from "../../modules/util/logger";
 
 const exec = util.promisify(require("node:child_process").exec);
-function isNumeric(str: string) {
-    if (typeof str != "string") return false; // we only process strings!
-    return (
-        !isNaN(parseInt(str)) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
-        !isNaN(parseFloat(str))
-    ); // ...and ensure strings of whitespace fail
-}
+
 async function ShotGun() {
     const { ip_net, hosts_ids, usernames_string, passwords_string } = await inquirer.prompt([
         {
@@ -141,7 +135,7 @@ async function ShotGun() {
         }
         if (process.platform === "win32") {
             // add windows host input
-            // await exec(`echo '${string}' | tee -a /etc/hosts`)
+            await exec(`Powershell.exe -Command "& {Start-Process Powershell.exe 'echo ${string} >> C:/Windows/System32/drivers/etc/hosts' -Verb RunAs}`)
         }
     }
 }

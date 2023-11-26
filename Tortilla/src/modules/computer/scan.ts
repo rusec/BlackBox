@@ -3,13 +3,13 @@ import { options } from "../util/options";
 import { getOutput } from "../util/run_command";
 import { commands } from "../util/commands";
 import { log } from "../util/debug";
-import { detect_hostname, detect_os, pingSSH } from "../util/ssh_utils";
+import { SSH2CONN, detect_hostname, detect_os, pingSSH } from "../util/ssh_utils";
 import { pressEnter } from "../console/enddingModules";
 import csv from "csvtojson";
 import fs from 'fs';
 import asTable from 'as-table';
 
-async function scanComputer(conn: SSH2Promise, os_type: options) {
+async function scanComputer(conn: SSH2CONN, os_type: options) {
     let hostname = await detect_hostname(conn);
     let os = await detect_os(conn);
     let openPorts: port[] = [];
@@ -234,6 +234,7 @@ function createTextFile(hostname:string, os:string, ports:port[], applications:a
     file.text(`Network configurations:`)
     file.text('')
     file.text(`${asTable(mappedPorts)}`)
+    file.text('')
     file.text(`Number of Listening Ports: ${ports.length}`)
 
 

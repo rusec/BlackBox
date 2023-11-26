@@ -23,7 +23,7 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
 
     try {
         if (!conn) {
-            throw new Error(`${computer["IP Address"]} Unable to connect to host`);
+            throw new Error(`${computer["IP Address"]} ${computer.Name} Unable to connect to host`);
         }
 
         let res;
@@ -60,7 +60,10 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
 
         return { password: pass_success ? new_password : computer.Password, ssh: ssh_key, error: pass_success ? false : res };
     } catch (error: any) {
-        log(`${conn && conn.config[0].host} Got Error: ${error.message ? error.message : error}`, "error");
+        if (conn) {
+            conn.error(`Got Error: ${error.message ? error.message : error}`);
+            conn.close();
+        } else log(`[${computer["IP Address"]}] [${computer.Name}] Got Error: ${error.message ? error.message : error}`);
         return `Got Error: ${error.message ? error.message : error}`;
     }
 }

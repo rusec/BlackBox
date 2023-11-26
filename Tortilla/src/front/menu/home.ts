@@ -11,7 +11,7 @@ import { Commands } from "../page/commands";
 
 async function Home() {
     await clear();
-    console.log(`Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())}`.bgGreen);
+    console.log(`${process.env.DEV && "DEV MODE"} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())}`.bgGreen);
 
     const { program } = await inquirer.prompt([
         {
