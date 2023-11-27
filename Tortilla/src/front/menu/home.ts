@@ -8,6 +8,7 @@ import { checkPassword } from "../../modules/util/checkPassword";
 import { Settings } from "./settings";
 import { utilsPage } from "./utilsPage";
 import { Commands } from "../page/commands";
+import { scanComputers } from "../page/scanComputers";
 
 async function Home() {
     await clear();
@@ -52,6 +53,9 @@ async function Home() {
         case "Settings":
             Settings();
             break;
+        case "Scan":
+            scanComputers();
+            break;
         case "Exit":
             await clear();
             process.exit(0);
@@ -68,6 +72,7 @@ async function Home() {
                 new inquirer.Separator(),
                 new inquirer.Separator("Computers"),
                 "Computers",
+                {name: "Scan All Computers",value:"Scan" },
                 {name:"Run Commands", value: "Commands"},
                 new inquirer.Separator(),
                 new inquirer.Separator("Navigation"),

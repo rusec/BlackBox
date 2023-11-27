@@ -9,7 +9,7 @@ import csv from "csvtojson";
 import fs from 'fs';
 import asTable from 'as-table';
 
-async function scanComputer(conn: SSH2CONN, os_type: options) {
+async function scanComputer(conn: SSH2CONN, os_type: options, wait_for_enter:boolean = true) {
     let hostname = await detect_hostname(conn);
     let os = await detect_os(conn);
     let openPorts: port[] = [];
@@ -80,7 +80,7 @@ async function scanComputer(conn: SSH2CONN, os_type: options) {
 
 
     createTextFile(hostname, os, openPorts, installedApplications, osInfo,users)
-    await pressEnter()
+    wait_for_enter && await pressEnter()
 }
 type application = {
     name: string;
@@ -203,6 +203,7 @@ const portMappings = new Map([
 
 function createTextFile(hostname:string, os:string, ports:port[], applications:application[], osInfo:os_info, users:user[]){
   
+   
     let date = new Date();
     let mappedPorts = ports.map(v =>{
         return {...v, description: portMappings.get(parseInt(v.port))}
@@ -237,9 +238,11 @@ function createTextFile(hostname:string, os:string, ports:port[], applications:a
     file.text('')
     file.text(`Number of Listening Ports: ${ports.length}`)
 
-
-    fs.writeFileSync(`./${hostname}.txt`, file.finish())
-    log("Created Text File "  + `./${hostname}.txt`, 'success')
+    if(!fs.existsSync("./scans")){
+        fs.mkdirSync("./scans")
+    }
+    fs.writeFileSync(`./scans/${hostname}.txt`, file.finish())
+    log("Created Text File "  + `./scans/${hostname}.txt`, 'success')
 
 }
 async function getUsersWindows(conn:SSH2Promise){
