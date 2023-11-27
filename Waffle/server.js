@@ -302,7 +302,7 @@ const rl = readline.createInterface({
 
 
 // Listen for key presses
-rl.input.on('data', (key) => {
+rl.on('line', (key) => {
     // Call the function when a key is pressed
     onKeyPress(key.toString().trim());
 });
