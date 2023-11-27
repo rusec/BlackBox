@@ -5,7 +5,7 @@ const isbot = require('isbot')
 const app = express();
 const readline = require('readline')
 const fs = require('fs')
-const port = 3000;
+const port = 80;
 const Table = require('table');
 
 
@@ -234,9 +234,30 @@ app.use((err, req, res) => {
     </body>
     </html>`);
 });
+
+
+
+// HTTP SET UP
 app.listen(port, () => {
     console.log(`Server is running on port ${port}, Press P to print logs`);
 });
+
+if(fs.existsSync("sslcert/server.key")){
+    var privateKey = fs.readFileSync('sslcert/server.key').toString();
+    var certificate = fs.readFileSync('sslcert/server.crt').toString();
+    
+    var credentials = {key: privateKey, cert: certificate};
+    
+    var server = http.createServer(credentials,app);
+    
+    server.listen(443);
+    console.log(`Server is running on port ${443} HTTPS, Press P to print logs`);
+    
+}
+
+
+
+
 
 
 setInterval(function () {

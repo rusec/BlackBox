@@ -16,17 +16,22 @@ async function scanComputers(){
     let done = 1;
     let numberOfComputers = servers.length
     for(let server of servers){
-        log(`${done} of ${numberOfComputers} computers`, 'info')
-        let conn = await makeConnection(server);
-        if(!conn){
+        try {
+            log(`${done} of ${numberOfComputers} computers`, 'info')
+            let conn = await makeConnection(server);
+            if(!conn){
+                done++;
+                log(`[${server["IP Address"]}] [${server.Name}] Unable to connect to server`,'error');
+                continue;
+            }
+            await scanComputer(conn, server["OS Type"], false);
+            success++;
             done++;
-            log(`[${server["IP Address"]}] [${server.Name}] Unable to connect to server`,'error');
-            continue;
+            await conn.close();
+        } catch (error) {
+            
         }
-        await scanComputer(conn, server["OS Type"], false);
-        success++;
-        done++;
-        await conn.close();
+     
     }
     await pressEnter();
     Home();
