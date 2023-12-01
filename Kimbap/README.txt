@@ -5,6 +5,10 @@ This is a fork of hardeningkitty with modified finding lists that don't break th
 
 #USAGE
 
+Make sure to open Admin powershell!!!
+
+Copy paste the script don't double click it!!!
+
 Invoke-HardeningKitty -Mode HailMary -Log -Report -FileFindingList ".\new lists\*insert list here*"
 
 
