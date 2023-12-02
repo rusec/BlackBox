@@ -12,7 +12,7 @@ import { scanComputers } from "../page/scanComputers";
 
 async function Home() {
     await clear();
-    console.log(`${process.env.DEV && "DEV MODE"} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())}`.bgGreen);
+    console.log(`${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())}`.bgGreen);
 
     const { program } = await inquirer.prompt([
         {
@@ -90,6 +90,7 @@ async function Home() {
                 new inquirer.Separator(),
                 new inquirer.Separator("Computers"),
                 "Computers",
+                {name: "Scan All Computers",value:"Scan" },
                 {name:"Run Commands", value: "Commands"},
                 new inquirer.Separator(),
                 new inquirer.Separator("Navigation"),
