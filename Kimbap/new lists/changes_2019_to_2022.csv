@@ -1,0 +1,22 @@
+ID,Category,Name,Method,MethodArgument,RegistryPath,RegistryItem,ClassName,Namespace,Property,DefaultValue,RecommendedValue,Operator,Severity,WAS
+1.1.3,"Account Policies","Minimum password age",accountpolicy,,,,,,,0,1,>=,Low,ADDED
+1.1.6,"Account Policies","Relax minimum password length limits",Registry,,HKLM:\System\CurrentControlSet\Control\SAM,RelaxMinimumPasswordLengthLimits,,,,0,1,=,Medium,ADDED
+2.2.21,"User Rights Assignment","Deny access to this computer from the network (Member)",accesschk,SeDenyNetworkLogonRight,,,,,,BUILTIN\Guests,"BUILTIN\Guests;NT AUTHORITY\Local account and member of Administrators group",=,Medium,ADDED
+2.2.26,"User Rights Assignment","Deny log on through Remote Desktop Services (Member)",accesschk,SeDenyRemoteInteractiveLogonRight,,,,,,,"BUILTIN\Guests;NT AUTHORITY\Local account",=,Medium,ADDED
+2.3.7.6,"Security Options","Interactive logon: Number of previous logons to cache (in case domain controller is not available)",Registry,,"HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon",CachedLogonsCount,,,,10,4,<=,Medium,ADDED
+5.2.1,"System Services","Print Spooler (Spooler) (MS only)",Registry,,HKLM:\SYSTEM\CurrentControlSet\Services\Spooler,Start,,,,2,4,=,Medium,ADDED
+5.2.2,"System Services","Print Spooler (Spooler) (Service Startup type) (MS only)",service,Spooler,,,,,,Automatic,Disabled,=,Medium,ADDED
+18.6.4.1,"Administrative Templates: Network","DNS Client: Configure DNS over HTTPS (DoH) name resolution",Registry,,"HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient",DoHPolicy,,,,,2,>=,Medium,ADDED
+18.6.19.2.1,"Administrative Templates: Network","Disable IPv6",Registry,,HKLM:\SYSTEM\CurrentControlSet\Services\TCPIP6\Parameters,DisabledComponents,,,,0,255,=,Medium,ADDED
+18.9.25.1,"Administrative Templates: System","Local Security Authority: Allow Custom SSPs and APs to be loaded into LSASS",Registry,,HKLM:\Software\Policies\Microsoft\Windows\System,AllowCustomSSPsAPs,,,,,0,=,Medium,ADDED
+18.10.10.1,"Administrative Templates: Windows Components","Camera: Allow Use of Camera",Registry,,HKLM:\SOFTWARE\Policies\Microsoft\Camera,AllowCamera,,,,1,0,=,Medium,ADDED
+18.10.12.1,"Administrative Templates: Windows Components","Cloud Content: Turn off cloud consumer account state content",Registry,,HKLM:\Software\Policies\Microsoft\Windows\CloudContent,DisableConsumerAccountStateContent,,,,,1,=,Medium,ADDED
+18.10.14.1,"Administrative Templates: Windows Components","Credential User Interface: Do not display the password reveal button",Registry,,HKLM:\Software\Policies\Microsoft\Windows\CredUI,DisablePasswordReveal,,,,0,1,=,Medium,ADDED
+18.10.57.3.3.1,"Administrative Templates: Windows Components","Remote Desktop Session Host: Device and Resource Redirection: Allow UI Automation redirection",Registry,,"HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services",EnableUiaRedirection,,,,,0,=,Medium,ADDED
+18.10.57.3.3.4,"Administrative Templates: Windows Components","Remote Desktop Session Host: Device and Resource Redirection: Do not allow location redirection",Registry,,"HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services",fDisableLocationRedir,,,,,1,=,Medium,ADDED
+18.10.57.3.3.5,"Administrative Templates: Windows Components","Remote Desktop Session Host: Device and Resource Redirection: Do not allow LPT port redirection",Registry,,"HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services",fDisableLPT,,,,0,1,=,Medium,ADDED
+18.10.57.3.3.7,"Administrative Templates: Windows Components","Remote Desktop Session Host: Do not allow WebAuthn redirection",Registry,,"HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services",fDisableWebAuthn,,,,,1,=,Medium,ADDED
+18.10.57.3.10.1,"Administrative Templates: Windows Components","Remote Desktop Session Host: Session Time Limits: Set time limit for active but idle Remote Desktop Services sessions",Registry,,"HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services",MaxIdleTime,,,,0,900000,<=!0,Medium,ADDED
+18.10.59.4,"Administrative Templates: Windows Components","Search: Allow search highlights",Registry,,"HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search",EnableDynamicContentInWSB,,,,,0,=,Medium,ADDED
+18.10.82.1,"Administrative Templates: Windows Components","Windows Logon Options: Enable MPR notifications for the system",Registry,,HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System,EnableMPR,,,,,0,=,Medium,ADDED
+
