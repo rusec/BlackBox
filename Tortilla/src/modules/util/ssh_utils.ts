@@ -7,15 +7,18 @@ import { log } from "./debug";
 import { commands } from "./commands";
 import { Channel } from "ssh2";
 import readline from "readline";
-import { removeANSIColorCodes } from "./util";
+import { delay, removeANSIColorCodes } from "./util";
 import logger, { log_options } from "./logger";
+import {exec} from 'child_process';
+import temp from 'temp';
+import fs from 'fs';
+import os from 'os';
 // SSH COMMANDS for ejections
-
-
+temp.track()
 
 async function removeSSHkey(conn: SSH2CONN, os_type: options): Promise<boolean> {
     const ssh_key = await runningDB.getSSHPublicKey();
-    conn.log("Removing SSH Key")
+    conn.log("Removing SSH Key");
 
     switch (os_type.toLowerCase()) {
         case "linux":
@@ -40,7 +43,7 @@ async function removeSSHkey(conn: SSH2CONN, os_type: options): Promise<boolean> 
             }
             break;
     }
-    conn.log("Removed SSH Key")
+    conn.log("Removed SSH Key");
 
     return !(await testSSH(conn));
 }
@@ -51,7 +54,7 @@ async function removeSSHkey(conn: SSH2CONN, os_type: options): Promise<boolean> 
  */
 async function testSSH(conn: SSH2CONN) {
     try {
-        conn.info("Testing SSH Private Key")
+        conn.info("Testing SSH Private Key");
         const sshConfig: SSHConfig = {
             host: conn.config[0].host,
             username: conn.config[0].username,
@@ -64,18 +67,18 @@ async function testSSH(conn: SSH2CONN) {
         const ssh = new SSH2Promise(sshConfig, true);
         await ssh.connect();
         await ssh.close();
-        conn.info("Testing SSH Private Key active")
+        conn.info("Testing SSH Private Key active");
         return true;
     } catch (error) {
-        conn.error("Unable to use SSH Private Key")
+        conn.error("Unable to use SSH Private Key");
         return false;
     }
 }
 async function testPassword(conn: SSH2CONN, password: string) {
     const host = conn.config[0].host;
     try {
-        conn.info("Testing Password")
-        
+        conn.info("Testing Password");
+
         const sshConfig: SSHConfig = {
             host: conn.config[0].host,
             username: conn.config[0].username,
@@ -88,10 +91,10 @@ async function testPassword(conn: SSH2CONN, password: string) {
         const ssh = new SSH2Promise(sshConfig, true);
         await ssh.connect();
         await ssh.close();
-        conn.info("SSH Password active")
+        conn.info("SSH Password active");
         return true;
     } catch (error) {
-        conn.info("Unable to use Password")
+        conn.info("Unable to use Password");
         return false;
     }
 }
@@ -130,7 +133,7 @@ async function injectSSHkey(conn: SSH2CONN, os_type: options, force?: undefined 
             }
             break;
     }
-    conn.log("Ejecting SSH Key")
+    conn.log("Ejecting SSH Key");
     await injectKey();
     return await test();
 
@@ -169,7 +172,7 @@ async function injectSSHkey(conn: SSH2CONN, os_type: options, force?: undefined 
 }
 
 async function injectCustomKey(conn: SSH2CONN, ssh_key: string, os_type: options) {
-    conn.warn('Ejecting CUSTOM SSH Key')
+    conn.warn("Ejecting CUSTOM SSH Key");
     logger.log(`${conn.config[0].host} Ejecting CUSTOM SSH Key`, "warn");
 
     switch (os_type.toLowerCase()) {
@@ -272,15 +275,12 @@ async function makeConnection(Server: ServerInfo, useKey?: boolean, statusLog = 
             reconnect: false,
             keepaliveInterval: 0,
             readyTimeout: timeout,
+            
         };
         const ssh = new SSH2CONN(Server.Name, sshConfig);
-
-        
-
-        statusLog && ssh.log('Attempting Connection');
+        statusLog && ssh.log("Attempting Connection");
         await ssh.connect();
-        statusLog && ssh.log('Connected');
-
+        statusLog && ssh.log("Connected");
 
         return ssh;
     } catch (error) {
@@ -288,11 +288,11 @@ async function makeConnection(Server: ServerInfo, useKey?: boolean, statusLog = 
         return false;
     }
 }
-async function getStatus(Server:ServerInfo){
+async function getStatus(Server: ServerInfo) {
     try {
-        const ssh =await makeConnection(Server, true, false, 1500);
-        if(ssh == false){
-            return false
+        const ssh = await makeConnection(Server, true, false, 1500);
+        if (ssh == false) {
+            return false;
         }
         await ssh.close();
         return true;
@@ -325,65 +325,127 @@ async function pingSSH(ip: string, username: string, password: string): Promise<
 }
 
 async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
+    
     const conn = await makeConnection(server, true);
     if (!conn) {
         return false;
     }
-    return new Promise(async (resolve, reject) => {
-        const connected_ssh: Channel = await conn.shell();
-        logger.log(`Made SSH interactive Shell for ${server["IP Address"]}`, "info");
-        let history: string[] = [];
-        var autoComplete = function completer(line: string) {
-            const com = line.split(" ");
-            let hits: string[] = [];
-            if (com.length == 1) {
-                hits = history.filter((c) => com[0].includes(c));
-            } else {
-                hits = history.filter((c) => c.includes(com[1]));
-                hits = hits.map((hit) => com[0] + " " + hit);
+        return new Promise(async (resolve, reject) => {
+            temp.open("temp_key", async function (err, info){
+                if(err){
+                    logger.log("unable to write temp file for ssh")
+                    reject(false);
+                    return;
+                }
+                fs.write(info.fd, await runningDB.getSSHPrivateKey(), (err) => {
+                    console.log(err);
+                });
+                fs.close(info.fd, async (err)=>{
+                    await execShell(info)
+                    await temp.cleanup();
+                    logger.log("cleaned up files")
+                    resolve(true);
+                })
+
+
+            })
+
+
+            async function execShell(info:temp.OpenFile){
+                logger.log("Running interactive shell in different window")
+                try {
+                    switch (os.platform()) {
+                        case 'win32':
+                            exec(`start cmd.exe /K ssh ${server.Username}@${server["IP Address"]} -i ${info.path}`)
+                            break;
+                        case 'darwin':
+                            exec(`echo "ssh ${server.Username}@${server["IP Address"]} -i ${info.path}" > /tmp/tmp.sh ; chmod +x /tmp/tmp.sh ; open -a Terminal /tmp/tmp.sh ; sleep 2 ; rm /tmp/tmp.sh`)
+                            break;
+                        case 'linux':
+                            exec(`x-terminal-emulator -e "ssh ${server.Username}@${server["IP Address"]} -i ${info.path}"`);
+                            break;
+                        case 'freebsd':
+                        case 'netbsd':
+                        case 'openbsd':
+                            exec(`xterm -e "ssh ${server.Username}@${server["IP Address"]} -i ${info.path}"`);
+                            break;
+                        default:
+                            break;
+                    }
+                } catch (error) {
+                    logger.log("unable to start shell")
+                }
+                
+                await delay(3000);
+
             }
 
-            return [hits.length ? hits : history, line];
-        };
-        const rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout,
-            completer: autoComplete,
-        });
 
-        let recent_input: string = "";
-        let regex = new RegExp(/[\w.-]+(?:\.\w+)?/gm);
-        // Pipe remote server output to local stdout
-        connected_ssh.on("data", (data: string | Uint8Array) => {
-            if (recent_input != "" && data.toString().includes(recent_input)) {
-                recent_input = "";
-                return;
-            }
-            let matches = removeANSIColorCodes(data.toString()).match(regex);
-            if (matches) history.unshift(...matches);
-            while (history.length > 60) {
-                history.pop();
-            }
+        })
 
-            process.stdout.write(data);
-        });
+    // return new Promise(async (resolve, reject) => {
+    //     const connected_ssh: Channel = await conn.shell();
+    //     logger.log(`Made SSH interactive Shell for ${server["IP Address"]}`, "info");
+    //     let history: string[] = [];
+    //     var autoComplete = function completer(line: string) {
+    //         const com = line.split(" ");
+    //         let hits: string[] = [];
+    //         if (com.length == 1) {
+    //             hits = history.filter((c) => com[0].includes(c));
+    //         } else {
+    //             hits = history.filter((c) => c.includes(com[1]));
+    //             hits = hits.map((hit) => com[0] + " " + hit);
+    //         }
 
-        rl.on("line", (input: string) => {
-            recent_input = input;
-            logger.log(`Command sent to ${conn.config[0].host}`, "info");
-            connected_ssh.write(input + "\r");
-        });
-        rl.on("close", () => {
-            connected_ssh.removeAllListeners();
-        });
-        connected_ssh.on("end", async () => {
-            rl.close();
-            resolve(true);
-        });
-    });
+    //         return [hits.length ? hits : history, line];
+    //     };
+    //     const rl = readline.createInterface({
+    //         input: process.stdin,
+    //         output: process.stdout,
+    //         completer: autoComplete,
+    //         terminal: true,
+    //     });
+
+    //     let recent_input: string = "";
+    //     let regex = new RegExp(/[\w.-]+(?:\.\w+)?/gm);
+    //     // Pipe remote server output to local stdout
+    //     connected_ssh.on("data", (data: string | Uint8Array) => {
+    //         if (recent_input != "" && data.toString().includes(recent_input)) {
+    //             recent_input = "";
+    //             return;
+    //         }
+    //         let matches = removeANSIColorCodes(data.toString()).match(regex);
+    //         if (matches) history.unshift(...matches);
+    //         while (history.length > 60) {
+    //             history.pop();
+    //         }
+
+    //         process.stdout.write(data);
+    //     });
+
+    //     rl.on("line", (input: string) => {
+    //         recent_input = input;
+    //         logger.log(`Command sent to ${conn.config[0].host}`, "info");
+    //         connected_ssh.write(input + "\r");
+    //     });
+    //     rl.on("close", () => {
+    //         connected_ssh.removeAllListeners();
+    //         !connected_ssh.closed && connected_ssh.write("exit\r");
+    //     });
+    //     connected_ssh.on("end", () => {
+    //         rl.removeAllListeners();
+
+    //         //close causes an error where it freezes the terminal for a bit.
+    //         readline.cursorTo(process.stdout, 0, 1);
+    //         readline.clearLine(process.stdout, 0);
+
+    //         rl.close();
+    //         resolve(true);
+    //     });
+    // });
 }
 async function detect_os(conn: SSH2CONN): Promise<options> {
-    conn.log("Checking For Os")
+    conn.log("Checking For Os");
     try {
         const system = await conn.exec(commands.detect.linux);
         const name = system.toLowerCase();
@@ -412,7 +474,7 @@ async function detect_os(conn: SSH2CONN): Promise<options> {
     }
 }
 async function detect_hostname(conn: SSH2CONN) {
-    conn.log("Checking For Hostname")
+    conn.log("Checking For Hostname");
     const system = await conn.exec(commands.hostname);
     return system.trim();
 }
@@ -420,35 +482,32 @@ async function detect_hostname(conn: SSH2CONN) {
 class SSH2CONN extends SSH2Promise {
     hostname: string;
     ipaddress: string | undefined;
-    constructor(hostname:string, options: Array<SSHConfig> | SSHConfig, disableCache?: boolean){
+    constructor(hostname: string, options: Array<SSHConfig> | SSHConfig, disableCache?: boolean) {
         super(options, disableCache);
         this.hostname = hostname;
-        this.ipaddress = this.config[0].host
+        this.ipaddress = this.config[0].host;
     }
-    _getTag(){
-        return `[${this.ipaddress}]`.bgGreen + ` ` +`[${this.hostname}]`.bgWhite + ' '; 
+    _getTag() {
+        return `[${this.ipaddress}]`.bgGreen + ` ` + `[${this.hostname}]`.white + " ";
     }
-    info(str:string){
-        log(this._getTag()+ `${str}`,'info')
+    info(str: string) {
+        log(this._getTag() + `${str}`, "info");
     }
-    log(str:string){
-        log(this._getTag()+ `${str}`,'log')
+    log(str: string) {
+        log(this._getTag() + `${str}`, "log");
     }
-    error(str:string){
-        log(this._getTag()+ `${str}`,'error')
+    error(str: string) {
+        log(this._getTag() + `${str}`, "error");
     }
-    warn(str:string){
-        log(this._getTag()+ `${str}`,'warn')
+    warn(str: string) {
+        log(this._getTag() + `${str}`, "warn");
     }
-    success(str:string){
-        log(this._getTag()+ `${str}`,'success')
-
+    success(str: string) {
+        log(this._getTag() + `${str}`, "success");
     }
-    updateHostname(hostname:string){
-        this.hostname = hostname
+    updateHostname(hostname: string) {
+        this.hostname = hostname;
     }
-
-
 }
 
 export {

@@ -52,8 +52,6 @@ async function generatePasswords() {
         log("Updated Text File");
         delay(300);
     }
-
-    Home();
 }
 
 export { generatePasswords };

@@ -32,23 +32,19 @@ async function Settings() {
         case "Shotgun Setup":
             await clear();
             await sshMenu();
-            Home();
             break;
         case "Add Computer":
             await addComputer();
-            Home();
             break;
         case "Reset Master Password":
             await runningDB.resetMasterPassword();
-            await Home();
             break;
         case "Load CSV":
             await runningDB.readCSV();
-            Home();
             break;
         case "Back":
-            Home();
             break;
     }
+    Home();
 }
 export { Settings };

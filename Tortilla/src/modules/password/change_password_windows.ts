@@ -126,7 +126,7 @@ async function check(conn: SSH2CONN):Promise<check_report> {
     }
     let isDomainController = false;
     try {
-        isDomainController = await conn.exec(`PowerShell -Command "& {Get-ADDefaultDomainPasswordPolicy}`)
+        isDomainController = await conn.exec(`PowerShell -Command "& {Get-ADDefaultDomainPasswordPolicy}"`)
         conn.log("Computer is a Domain Controller")
         isDomainController = true;
     } catch (error) {
@@ -137,6 +137,7 @@ async function check(conn: SSH2CONN):Promise<check_report> {
         let whoamiString = await conn.exec('whoami');
         let hostname = await detect_hostname(conn);
 
+        // if hostname is not included in whoami then its a domain user
         if(!whoamiString.includes(hostname.toLowerCase())){
             isDomainUser = true;
         }

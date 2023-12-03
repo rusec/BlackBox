@@ -78,9 +78,6 @@ async function runScript(debug?: boolean) {
     } finally {
         console.log = originalConsoleLog;
     }
-
-    Home();
-
     //Set up reporting
 }
 
@@ -122,7 +119,6 @@ async function runSingleScript(id: number) {
         console.log(`Error while updating passwords ${error}`);
         await delay(1000);
     }
-    Home();
 }
 
 export { runScript, runSingleScript };

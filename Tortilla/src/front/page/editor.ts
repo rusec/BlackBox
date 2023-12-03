@@ -12,7 +12,7 @@ import logger from "../../modules/util/logger";
 import { getEVariables, getFailedLogins, getNetwork, getProcess, getUsers } from "../../modules/computer/compUtils";
 import { pressEnter } from "../../modules/console/enddingModules";
 import { scanComputer } from "../../modules/computer/scan";
-async function edit() {
+async function edit(id = -1):Promise<void> {
     await clear();
     let json = await runningDB.readComputers();
 
@@ -25,23 +25,29 @@ async function edit() {
         return Home();
     }
 
-    const { id } = await inquirer.prompt([
-        {
-            name: "id",
-            type: "list",
-            pageSize: 50,
+    let selected_id = id;
 
-            choices: [...ipAddressesChoices, { name: "Home", value: "home" }],
-            message: "Please select a computer:",
-        },
-    ]);
-    if (id === "home") {
-        Home();
-        return;
+    if(selected_id == -1 || selected_id >= ipAddressesChoices.length){
+        const { json_id } = await inquirer.prompt([
+            {
+                name: "json_id",
+                type: "list",
+                pageSize: 50,
+    
+                choices: [...ipAddressesChoices, { name: "Home", value: "home" }],
+                message: "Please select a computer:",
+            },
+        ]);
+        if (json_id === "home") {
+            return Home();
+
+        }
+        selected_id = json_id;
     }
-    const header = `> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${blankPassword(json[id].Password)} ${
-        json[id]["OS Type"]
-    } | pub_key: ${json[id].ssh_key ? "true" : "false"} password changes: ${json[id].password_changes} | Online: ${(await getStatus(json[id])) ? "Live" : "unable to connect"}`.bgBlue;
+    const computer = json[selected_id];
+    const header = `> ${computer.Name} ${computer["IP Address"]} ${computer.Username} ${blankPassword(computer.Password)} ${
+        computer["OS Type"]
+    } | pub_key: ${computer.ssh_key ? "true" : "false"} password changes: ${computer.password_changes} | Online: ${(await getStatus(computer)) ? "Live" : "unable to connect"}`.bgBlue;
 
     await clear();
     console.log(header);
@@ -78,70 +84,63 @@ async function edit() {
 
     switch (section) {
         case "Back":
-            edit();
-            break;
+            return edit();
         case "Change Password":
             await checkPassword();
             await changePassword();
-            edit();
             break;
         case "Change Username":
             await changeUsername();
-            edit();
             break;
         case "Change OS":
             await changeOS();
-            edit();
             break;
         case "Remove":
             await Remove();
-            edit();
             break;
         case "utils":
-            computerUtils(json[id]);
+            await computerUtils(computer);
             break;
         case "change_pass_man":
             await checkPassword();
-            await runSingleScript(id);
+            await runSingleScript(selected_id);
             break;
         case "add_ssh":
             await checkPassword();
-            let r = await addSSH(json[id]);
+            let r = await addSSH(computer);
             if (r) {
-                await runningDB.writeCompSSH(id, r);
+                await runningDB.writeCompSSH(selected_id, r);
             }
-            edit();
             break;
         case "test_pass":
-            await passwordTest(json[id]);
+            await passwordTest(computer);
             break;
         case "show_pass":
             await checkPassword();
             await showPassword();
-            
             break;
         case "add_custom_ssh":
             await checkPassword();
             await sshCustom();
-            edit();
             break;
         case "remove_ssh":
             await checkPassword();
-            let result = await removeSSH(json[id]);
+            let result = await removeSSH(computer);
             if (result) {
-                await runningDB.writeCompSSH(id, !result);
+                await runningDB.writeCompSSH(selected_id, !result);
             }
-            edit();
             break;
         case "shell":
             await checkPassword();
-            await makeInteractiveShell(json[id]);
-            Home();
+            await makeInteractiveShell(computer);
             break;
         case "Home":
-            Home();
-            break;
+            return Home();
     }
+    return edit(selected_id);
+    
+
+
     async function Remove() {
         await clear();
         await checkPassword();
@@ -150,15 +149,15 @@ async function edit() {
         let { confirm } = await inquirer.prompt([
             {
                 name: `confirm`,
-                message: `confirm removing ${json[id].Name} ${json[id]["IP Address"]}`,
+                message: `confirm removing ${computer.Name} ${computer["IP Address"]}`,
                 type: "confirm",
             },
         ]);
         if (!confirm) {
-            return edit();
+            return;
         }
 
-        await runningDB.removeComputer(id);
+        await runningDB.removeComputer(selected_id);
     }
     async function sshCustom() {
         const { ssh_key } = await inquirer.prompt([
@@ -175,13 +174,13 @@ async function edit() {
                 },
             },
         ]);
-        let res = await addCustomSSH(json[id], ssh_key);
+        let res = await addCustomSSH(computer, ssh_key);
         if (res) {
-            log(`INJECTED SSH KEY SUCCESS on ${json[id]["IP Address"]}`, "success");
-            logger.log(`injected ssh key to ${json[id]["IP Address"]}`);
+            log(`INJECTED SSH KEY SUCCESS on ${computer["IP Address"]}`, "success");
+            logger.log(`injected ssh key to ${computer["IP Address"]}`);
         } else {
-            log(`Unable to inject SSH KEY SUCCESS on ${json[id]["IP Address"]}`, "error");
-            logger.log(`Unable to inject ssh key to ${json[id]["IP Address"]}`);
+            log(`Unable to inject SSH KEY SUCCESS on ${computer["IP Address"]}`, "error");
+            logger.log(`Unable to inject ssh key to ${computer["IP Address"]}`);
         }
         await delay(1000);
     }
@@ -198,10 +197,10 @@ async function edit() {
             },
         ]);
         if (!confirm) {
-            return Home();
+            return;
         }
 
-        await runningDB.writeCompPassword(id, newPassword);
+        await runningDB.writeCompPassword(selected_id, newPassword);
 
         console.log("password updated!");
         await delay(300);
@@ -218,10 +217,10 @@ async function edit() {
             },
         ]);
         if (!confirm) {
-            return Home();
+            return;
         }
 
-        json[id].Username = newUsername;
+        json[selected_id].Username = newUsername;
         await runningDB.writeComputers(json);
 
         console.log("username updated!");
@@ -245,21 +244,21 @@ async function edit() {
             },
         ]);
         if (!confirm) {
-            return Home();
+            return;
         }
 
-        json[id]["OS Type"] = newOSType;
+        json[selected_id]["OS Type"] = newOSType;
         await runningDB.writeComputers(json);
 
         console.log("OS updated!");
         await delay(300);
     }
     async function showPassword(){
-        console.log(`> ${json[id].Name} ${json[id]["IP Address"]} ${json[id].Username} ${json[id].Password} ${
-            json[id]["OS Type"]
-        } | pub_key: ${json[id].ssh_key ? "true" : "false"} password changes: ${json[id].password_changes}`.bgBlue)
+        console.log(`> ${computer.Name} ${computer["IP Address"]} ${computer.Username} ${computer.Password} ${
+            computer["OS Type"]
+        } | pub_key: ${computer.ssh_key ? "true" : "false"} password changes: ${computer.password_changes}`.bgBlue)
         await pressEnter();
-        return edit();
+        return;
 
     }
     
@@ -274,15 +273,13 @@ async function passwordTest(server:ServerInfo){
     if (!conn) {
         console.log("Unable to connect to server");
         await delay(1000);
-        return edit();
+        return;
     }
     let pass_success = await testPassword(conn, server.Password);
     pass_success ? log("Password Active",'success'): log("Unable to use Password", 'error');
     await conn.close();
 
     await pressEnter();
-
-    edit();
 }
 
 async function computerUtils(server: ServerInfo) {
@@ -311,13 +308,13 @@ async function computerUtils(server: ServerInfo) {
         },
     ]);
     if(program == "Back"){
-        return edit();
+        return;
     }
     let conn = await makeConnection(server);
     if (!conn) {
         console.log("Unable to connect to server");
         await delay(1000);
-        return edit();
+        return;
     }
     switch (program) {
         case "scan":
@@ -342,8 +339,6 @@ async function computerUtils(server: ServerInfo) {
             break;
     }
     await conn.close();
-
-    edit();
 }
 
 function blankPassword(password: string) {

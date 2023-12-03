@@ -3,6 +3,7 @@ import inquirer from "inquirer";
 import clear from "clear";
 import logger from "./logger";
 
+
 /**
  * Checks and validates a master password stored in the running database or prompts the user to set it if not found.
  * After validating the master password, it allows access to protected functionality.
@@ -51,6 +52,9 @@ async function checkPassword(): Promise<void> {
             validate: validateFunc,
         },
     ]);
+
 }
+
+
 
 export { checkPassword };

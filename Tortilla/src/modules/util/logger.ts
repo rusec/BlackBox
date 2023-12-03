@@ -7,9 +7,11 @@ export type log_options = "warn" | "debug" | "info" | "error" | "log" | "success
 class Logger {
     process_dir: string;
     logFile: string;
+    user: string;
     constructor() {
         this.process_dir = path.join(os.homedir() + "/Tortilla");
         this.logFile = path.join(this.process_dir, "tortilla.log");
+        this.user = os.userInfo().username;
         if (!fs.existsSync(this.process_dir)) fs.mkdirSync(this.process_dir, { recursive: true });
         if (!fs.existsSync(this.logFile)) fs.writeFileSync(this.logFile, "");
     }
@@ -22,7 +24,8 @@ class Logger {
     clear() {
         fs.writeFileSync(this.logFile, "");
     }
-    _format(message: string, type: log_options) {
+    ssh_log(message:string, type:log_options = 'log'){
+
         let now = new Date();
         let time = `[${now.toISOString()}]`;
         let user = os.userInfo().username;
@@ -48,7 +51,35 @@ class Logger {
                 t = "[SUCCESS]";
                 break;
         }
-        return `${time} [${user}] ${t} ${message}\n`;
+
+        fs.appendFileSync(this.logFile, `${time} [${user}] ${t} ${message}\n`);
+    }
+    _format(message: string, type: log_options) {
+        let now = new Date();
+        let time = `[${now.toISOString()}]`;
+        let t;
+        switch (type.toLowerCase()) {
+            default:
+            case "log":
+                t = "[LOG] ";
+                break;
+            case "debug":
+                t = "[DEBUG] ";
+                break;
+            case "warn":
+                t = "[WARNING] ";
+                break;
+            case "error":
+                t = "[ERROR] ";
+                break;
+            case "info":
+                t = "[MESSAGE] ";
+                break;
+            case "success":
+                t = "[SUCCESS]";
+                break;
+        }
+        return `${time} [${this.user}] ${t} ${message}\n`;
     }
 }
 

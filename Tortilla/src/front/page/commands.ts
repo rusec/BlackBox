@@ -59,17 +59,6 @@ async function shotgunCommands(servers: ServerInfo[], command: string) {
         log(`${id +1} of ${servers.length} Done`);
     }
     await logToFile(fileLOG)
-    // const { logToFile } = await inquirer.prompt([
-    //     {
-    //         name: "logToFile",
-    //         type: "confirm",
-    //         message: "Would you like to log to file?",
-    //     },
-    // ]);
-    // if (logToFile) {
-    //     fs.writeFileSync("log.log", fileLOG, "utf8");
-    // }
-
 
 
 }

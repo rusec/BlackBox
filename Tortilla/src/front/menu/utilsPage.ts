@@ -19,18 +19,19 @@ async function utilsPage() {
 
     switch (program) {
         case "Generate Passwords":
-            generatePasswords();
+            await generatePasswords();
             break;
         case "Encrypt":
-            Encrypt(0);
+            await Encrypt(0);
             break;
         case "Bcrypt":
-            Encrypt(1);
+            await Encrypt(1);
             break;
         case "Back":
-            Home();
             break;
     }
+    // RETURN HOME ONCE DONE
+    Home()
 
     async function Encrypt(algorithm: 0 | 1) {
         const { password } = await inquirer.prompt([
@@ -51,7 +52,6 @@ async function utilsPage() {
                 type: "input",
             },
         ]);
-        Home();
     }
 }
 

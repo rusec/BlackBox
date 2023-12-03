@@ -14,6 +14,10 @@ import path from "path";
 import os from "os";
 import EventEmitter from "events";
 import { delay } from "./util";
+
+const BACKUP_INTERVAL = (1000 *60) * 5
+
+
 type DataBase = {
     master_password: string;
     ssh_private: string;
@@ -109,11 +113,13 @@ class DB {
     encrypt: Encryption;
     process_dir: string;
     lockDB: { lockStatus: boolean; acquire: () => boolean; release: () => void };
+    backupDir: string;
     constructor() {
         this.encrypt = new Encryption();
         this.process_dir = path.join(os.homedir() + "/Tortilla");
         this.filePath = path.join(this.process_dir, "muffins");
         this.lockDB = createLock();
+        this.backupDir = path.join(this.process_dir, "backups");
 
         // Adding password based encryption
         this.passwd = path.join(this.process_dir, "pineapples");
@@ -130,6 +136,12 @@ class DB {
                 master_hash: "",
             };
         }
+
+
+        setInterval(()=>{
+            this.backupDB()
+        }, BACKUP_INTERVAL);
+
     }
     _getPrivate() {}
 
@@ -524,12 +536,56 @@ class DB {
             }
             return JSON.parse(decryptedData);
         } catch (error) {
+            await this.backupDB()
             log("UNABLE TO READ DB FILE RESETTING", "error");
             logger.log(`Resetting Database was unable to read DB using master password`, "error");
             await this._writeJson(await this._resetDB(), password_hash);
             return await this._readJson(password_hash);
         }
     }
+
+    async backupDB():Promise<boolean>{
+        if (!this.lockDB.acquire()) {
+            await delay(10);
+            return await this.backupDB();
+        }
+        try {
+            logger.log("Backing up DB", 'info')
+            let backup = fs.readFileSync(this.filePath)
+            let backup_name = "muffins_" + formatCurrentTime();
+            !fs.existsSync(this.backupDir) && fs.mkdirSync(this.backupDir); 
+            fs.writeFileSync(path.join(this.backupDir, backup_name) , backup,{
+                'flag': 'w',
+            });
+        } catch (error) {
+            logger.error("Unable to back up DB " + error)
+            return false
+        }finally{
+            this.lockDB.release()
+            return true;
+        }
+        
+    }
+    async restoreDB(dateString:string):Promise<boolean>{
+        try {
+            let backups = fs.readdirSync(this.backupDir);
+            let index = backups.findIndex((v)=> v.includes(dateString))
+            if(index == -1){
+                log("unable to find db file with that date", 'error')
+                return false;
+            }
+            log("found file", 'log');
+            let db_file = fs.readFileSync(path.join(this.backupDir, backups[index]))
+            await this.backupDB();
+            fs.writeFileSync(this.filePath, db_file);
+            return true;
+        } catch (error) {
+            logger.error("Unable to restore DB " + error)
+            log("Unable to restore DB please check logs")
+            return false;
+        }
+    }
+
     async _resetDB() {
         var keys = await genKey();
         let new_db = default_db;
@@ -587,14 +643,24 @@ function normalizeServerInfo(jsonArr: Array<ServerInfo>): Array<ServerInfo> {
 
     return normalizedArr;
 }
-
+function formatCurrentTime() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+  
+    return `${year}-${month}-${day}T${hours}_${minutes}_${seconds}`;
+  }
 async function genKey(): Promise<{
     key: string;
     pubKey: string;
 }> {
     return new Promise((resolve) => {
         keygen({
-            comment: "a0d5125e9b004f08eb68990f",
+            comment: "My_Lonely_Script",
             read: true,
             format: "PEM",
         })

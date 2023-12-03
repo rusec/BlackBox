@@ -12,6 +12,7 @@ import { scanComputers } from "../page/scanComputers";
 
 async function Home() {
     await clear();
+    const ui = await inquirer.ui.BottomBar;
     console.log(`${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())}`.bgGreen);
 
     const { program } = await inquirer.prompt([
