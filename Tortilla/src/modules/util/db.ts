@@ -525,10 +525,11 @@ class DB {
 
     /**
      * Reads and decrypts the database file, returning the parsed data.
+     * Will now try to read the DB three times before failing and resetting
      *
      * @returns {Promise<DataBase>} A promise that resolves to a `DataBase` object containing the decrypted data.
      */
-    async _readJson(password_hash: string): Promise<DataBase> {
+    async _readJson(password_hash: string, trails = 3): Promise<DataBase> {
         try {
             let decryptedData = await this.encrypt.read(this.filePath, this._getPKey(password_hash));
             if (decryptedData === false) {
@@ -536,11 +537,15 @@ class DB {
             }
             return JSON.parse(decryptedData);
         } catch (error) {
-            await this.backupDB()
-            log("UNABLE TO READ DB FILE RESETTING", "error");
-            logger.log(`Resetting Database was unable to read DB using master password`, "error");
-            await this._writeJson(await this._resetDB(), password_hash);
-            return await this._readJson(password_hash);
+            logger.log(`unable to read DB TRYs: ${trails}`)
+            if(trails <0){
+                await this.backupDB()
+                log("UNABLE TO READ DB FILE RESETTING", "error");
+                logger.log(`Resetting Database was unable to read DB using master password`, "error");
+                await this._writeJson(await this._resetDB(), password_hash);
+                return await this._readJson(password_hash);    
+            }
+            return await this._readJson(password_hash, --trails);
         }
     }
 
@@ -566,15 +571,22 @@ class DB {
         }
         
     }
+    async getBackups(){
+        let files = fs.readdirSync(this.backupDir);
+        files = files.filter(v => v.startsWith("muffins"));
+        return files.map(v=> v.substring(v.indexOf("_")+1));
+    }
+
     async restoreDB(dateString:string):Promise<boolean>{
         try {
+            logger.log(`Restoring DB from ${dateString}`);
             let backups = fs.readdirSync(this.backupDir);
             let index = backups.findIndex((v)=> v.includes(dateString))
             if(index == -1){
                 log("unable to find db file with that date", 'error')
                 return false;
             }
-            log("found file", 'log');
+            logger.log("found file", 'log');
             let db_file = fs.readFileSync(path.join(this.backupDir, backups[index]))
             await this.backupDB();
             fs.writeFileSync(this.filePath, db_file);

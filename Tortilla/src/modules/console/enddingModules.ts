@@ -18,7 +18,7 @@ async function pressEnter(){
     await inquirer.prompt([
         {
             name: "confirm",
-            type: "confirm",
+            type: "input",
             message: "Press Enter to Continue",
         },
     ]);

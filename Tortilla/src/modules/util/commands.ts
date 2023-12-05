@@ -38,6 +38,11 @@ const commands = {
     },
     hostname: "hostname",
     users: {
+        current: {
+            windows: "query user",
+            linux: "who -a --ips --lookup -H",
+            freebsd: "who -HumT",
+        },
         windows: `wmic.exe useraccount get name,sid,disabled,domain,fullname,status,passwordexpires,passwordrequired,description`,
         linux: `cat /etc/passwd | awk -F: '{print $1 " ID:" $3 " GID:" $4 " dir:" $6 "  Comment:" $5}'`,
         darwin: 'dscl . list /Users | grep -v "^_"',

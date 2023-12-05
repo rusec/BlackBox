@@ -7,6 +7,7 @@ import { log } from "../../modules/util/debug";
 import fs from "fs/promises";
 import util from "util";
 import logger from "../../modules/util/logger";
+import { Bar } from "../../modules/console/progress";
 
 const exec = util.promisify(require("node:child_process").exec);
 
@@ -84,6 +85,9 @@ async function ShotGun() {
         }
     logger.log(`Attempt to Shotgun ${computers.length} Computers , ${users_sessions.length} User Sessions`, "info");
 
+
+    let bar = new Bar(computers.length)
+
     var promises = computers.map(async (computer: string) => {
         var passed = false;
         log(`Attempting to login ${computer} using ${sessions.length} sessions`, "info");
@@ -99,6 +103,8 @@ async function ShotGun() {
                 break;
             }
         }
+
+        bar.done(computer);
         if (!passed) {
             log(`Unable to login, invalid user pass combo ${computer}`, "error");
             throw new Error(`Unable to login, invalid user pass combo ${computer}`);
@@ -108,6 +114,7 @@ async function ShotGun() {
     });
 
     let results = await Promise.allSettled(promises);
+
     log("Finished Scanning for Sessions", "log");
     const numberOfSuccess = results
         .filter(({ status }) => status === "fulfilled")
@@ -126,18 +133,26 @@ async function ShotGun() {
         },
     ]);
     if (logHost) {
-        var string = "\n";
-        for (const computer of computers) {
-            string += `${computer.ip}     ${computer.name}\n`;
+        try {
+            var string = "\n";
+            for (const computer of computers) {
+                string += `${computer.ip}     ${computer.name}\n`;
+            }
+            if (process.platform === "linux" || process.platform === "darwin" || process.platform === "freebsd" || process.platform === "openbsd") {
+                await exec(`echo '${string}' | sudo tee -a /etc/hosts`);
+            }
+            if (process.platform === "win32") {
+                // add windows host input
+                await exec(`Powershell.exe -Command "& {Start-Process Powershell.exe 'echo ${string} >> C:/Windows/System32/drivers/etc/hosts' -Verb RunAs}`)
+            }
+        } catch (error) {
         }
-        if (process.platform === "linux" || process.platform === "darwin" || process.platform === "freebsd" || process.platform === "openbsd") {
-            await exec(`echo '${string}' | sudo tee -a /etc/hosts`);
-        }
-        if (process.platform === "win32") {
-            // add windows host input
-            await exec(`Powershell.exe -Command "& {Start-Process Powershell.exe 'echo ${string} >> C:/Windows/System32/drivers/etc/hosts' -Verb RunAs}`)
-        }
+     
     }
+    bar.stop();
+    console.clear();
+
+
 }
 
 export { ShotGun as sshMenu };

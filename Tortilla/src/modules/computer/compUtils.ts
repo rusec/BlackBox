@@ -174,6 +174,38 @@ async function getFailedLogins(conn: SSH2Promise, os_type: options) {
         fs.writeFileSync("log.log", failedLogins, "utf8");
     }
 }
+async function getCurrentLoggedIn(conn: SSH2Promise, os_type: options) {
+    let currentLogOns = "";
+    switch (os_type.toLowerCase()) {
+        case "freebsd":
+            currentLogOns = await getOutput(conn, commands.users.current.freebsd);
+            break;
+        case "windows":
+            currentLogOns = await getOutput(conn, commands.users.current.windows);
+            break;
+        case "darwin":
+            currentLogOns = await getOutput(conn, commands.users.current.linux);
+            break;
+        case "linux":
+            currentLogOns = await getOutput(conn, commands.failedLogins.linux);
+            break;
+        default:
+            currentLogOns = "Unable to get Unknown OS";
+            break;
+    }
+    console.log(currentLogOns);
+    const { logToFile } = await inquirer.prompt([
+        {
+            name: "logToFile",
+            type: "confirm",
+            message: "Would you like to log users to file?",
+        },
+    ]);
+    if (logToFile) {
+        currentLogOns = `Current Logins for ${conn.config[0].host}\n` + currentLogOns;
+        fs.writeFileSync("log.log", currentLogOns, "utf8");
+    }
+}
 
 
-export { getUsers, getNetwork, getFailedLogins, getProcess,getEVariables };
+export { getUsers, getNetwork, getFailedLogins, getProcess,getEVariables,getCurrentLoggedIn };

@@ -10,10 +10,10 @@ import { removeANSIColorCodes } from "../../modules/util/util";
 import { Home } from "../menu/home";
 import logger from "../../modules/util/logger";
 import { logToFile, pressEnter } from "../../modules/console/enddingModules";
+import { Bar } from "../../modules/console/progress";
 async function runScript(debug?: boolean) {
     const originalConsoleLog = console.log;
     let capturedOutput = "";
-
     try {
         const computers = await runningDB.readComputers();
 
@@ -42,12 +42,16 @@ async function runScript(debug?: boolean) {
 
         const passwords = debug ? computers.map(() => "Password123") : generatePasses(computers.length, seed);
 
+
+        let bar = new Bar(computers.length)
+
         const promises = computers.map(async (element, i) => {
             const password = passwords[i];
             const result = await changePasswordOf(element, password);
             if (typeof result == "string" || result.error) {
                 throw new Error(typeof result == "string" ? result : result.error ? result.error : "");
             }
+            bar.done(element.Name+ " " + element["IP Address"])
             return await runningDB.writeCompResult(i, result);
         });
 
@@ -70,13 +74,14 @@ async function runScript(debug?: boolean) {
         .join("\n");
 
         await logToFile(removeANSIColorCodes(runningLog + "\n\nLOG:\n" + capturedOutput))
-
+        bar.stop();
         await delay(1000);
     } catch (error) {
         console.log(`Error while updating passwords ${error}`);
         await delay(1000);
     } finally {
         console.log = originalConsoleLog;
+
     }
     //Set up reporting
 

@@ -17,7 +17,7 @@ import {
 import { changePasswordOf } from "../../modules/password/change_passwords";
 import { log } from "../../modules/util/debug";
 import logger from "../../modules/util/logger";
-import { getEVariables, getFailedLogins, getNetwork, getProcess, getUsers } from "../../modules/computer/compUtils";
+import { getCurrentLoggedIn, getEVariables, getFailedLogins, getNetwork, getProcess, getUsers } from "../../modules/computer/compUtils";
 import { pressEnter } from "../../modules/console/enddingModules";
 import { scanComputer } from "../../modules/computer/scan";
 async function edit(id = -1): Promise<void> {
@@ -304,10 +304,12 @@ async function computerUtils(server: ServerInfo) {
             message: "Please select a command to run",
             choices: [
                 { name: "Get Computers Users", value: "users" },
+                { name: "Get Current Logged in Users", value: "curr_users" },
                 { name: "Get Failed Logins Event", value: "failedLogins" },
                 { name: "Get Current Network Connections", value: "network" },
                 { name: "Get Current Process", value: "processes" },
                 { name: "Get Current Environment Variables", value: "variables" },
+                
                 { name: "Scan Computer", value: "scan" },
 
                 "Back",
@@ -326,6 +328,9 @@ async function computerUtils(server: ServerInfo) {
     switch (program) {
         case "scan":
             await scanComputer(conn, server["OS Type"]);
+            break;
+        case "curr_users":
+            await getCurrentLoggedIn(conn,server["OS Type"])
             break;
         case "users":
             await getUsers(conn, server["OS Type"]);
