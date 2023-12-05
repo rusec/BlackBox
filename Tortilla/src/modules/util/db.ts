@@ -366,8 +366,8 @@ class DB {
                 computers[computer_id].Password = result.password;
                 computers[computer_id].ssh_key = result.ssh;
                 computers[computer_id].password_changes = computers[computer_id].password_changes + 1;
-                log(`Writing computer ${computers[computer_id]["IP Address"]}`, "info");
-                logger.log(`Writing Computer ${computers[computer_id]["IP Address"]} in Database`, "info");
+                log(`Writing computer ${computers[computer_id]["IP Address"]} ${computers[computer_id]["Name"]}`, "info");
+                logger.log(`Writing Computer ${computers[computer_id]["IP Address"]} ${computers[computer_id]["Name"]} in Database`, "info");
 
                 res = await this.writeComputers(computers);
             } catch (error) {

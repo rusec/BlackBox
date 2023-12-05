@@ -2,7 +2,7 @@ import runningDB from "./db";
 import inquirer from "inquirer";
 import clear from "clear";
 import logger from "./logger";
-
+let valid_session = false;
 
 /**
  * Checks and validates a master password stored in the running database or prompts the user to set it if not found.
@@ -10,7 +10,7 @@ import logger from "./logger";
  *
  * @returns {Promise<void>} A promise that resolves when the password check and validation process is completed.
  */
-async function checkPassword(): Promise<void> {
+async function checkPassword(force = false): Promise<void> {
     const hash = await runningDB.readPassword();
     if (hash === "") {
         const { master_password } = await inquirer.prompt([
@@ -28,7 +28,9 @@ async function checkPassword(): Promise<void> {
         ]);
         await runningDB.writePassword(master_password);
     }
-
+    if(valid_session && process.env.DEV && !process.pkg){
+        return;
+    }
     await clear();
     let trials = 3;
     function validateFunc(value: string) {
@@ -52,9 +54,11 @@ async function checkPassword(): Promise<void> {
             validate: validateFunc,
         },
     ]);
-
+    valid_session = true;
 }
 
+function isValidSession(){
+    return valid_session
+}
 
-
-export { checkPassword };
+export { checkPassword, isValidSession };

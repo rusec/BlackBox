@@ -4,7 +4,9 @@ import { sshMenu } from "../page/ssh";
 import { addComputer } from "../page/addComputer";
 import runningDB from "../../modules/util/db";
 import { Home } from "./home";
-
+import {json2csv} from 'json-2-csv';
+import fs from 'fs';
+import { checkPassword } from "../../modules/util/checkPassword";
 async function Settings() {
     const { program } = await inquirer.prompt([
         {
@@ -17,6 +19,7 @@ async function Settings() {
                 "Shotgun Setup",
                 "Add Computer",
                 "Load CSV",
+                "Export DB",
                 new inquirer.Separator(),
                 new inquirer.Separator("Passwords"),
                 "Reset Master Password",
@@ -41,6 +44,12 @@ async function Settings() {
             break;
         case "Load CSV":
             await runningDB.readCSV();
+            break;
+        case "Export DB":
+            await checkPassword()
+            let computers = await runningDB.readComputers();
+            let json_string = json2csv(computers)
+            fs.writeFileSync("./computers.csv", json_string)
             break;
         case "Back":
             break;

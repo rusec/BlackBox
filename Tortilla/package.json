@@ -9,7 +9,9 @@
         "cross-env": "^7.0.3",
         "csvtojson": "^2.0.10",
         "delay": "^6.0.0",
+        "express": "^4.18.2",
         "inquirer": "^8.2.6",
+        "json-2-csv": "^5.0.1",
         "keccak256": "^1.0.6",
         "lockfile": "^1.0.4",
         "node-machine-id": "^1.1.12",
@@ -25,11 +27,13 @@
     "name": "tortilla",
     "version": "1.0.0",
     "main": "Tortilla.js",
+    "bin": "./dist/src/Tortilla.js",
     "devDependencies": {
         "@types/bcryptjs": "^2.4.4",
         "@types/bn.js": "^5.1.2",
         "@types/chai": "^4.3.8",
         "@types/clear": "^0.1.2",
+        "@types/express": "^4.17.21",
         "@types/inquirer": "^9.0.4",
         "@types/lockfile": "^1.0.3",
         "@types/mocha": "^10.0.2",
@@ -51,7 +55,17 @@
         "clean": "rm index-linux && rm index-macos && rm index-win.exe"
     },
     "pkg": {
-        "name": "Tortilla"
+        "name": "Tortilla",
+        "scripts": "./src/**/*.js",
+        "targets": [
+            "node16-win-x64",
+            "node16-linux-x64",
+            "node16-macos-x64",
+            "node16-linux",
+            "node16-win",
+            "node16-macos"
+        ],
+        "outputPath": "releases"
     },
     "author": "",
     "license": "ISC",

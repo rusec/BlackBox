@@ -3,7 +3,7 @@ import runningDB, { ServerInfo } from "../../modules/util/db";
 import { Home } from "../menu/home";
 import inquirer from "inquirer";
 import { checkPassword } from "../../modules/util/checkPassword";
-import { makeConnection } from "../../modules/util/ssh_utils";
+import { makeConnection, makePermanentConnection } from "../../modules/util/ssh_utils";
 import delay from "delay";
 import { log } from "../../modules/util/debug";
 import { getOutput } from "../../modules/util/run_command";
@@ -46,14 +46,14 @@ async function shotgunCommands(servers: ServerInfo[], command: string) {
         try {
             let server = servers[id];
             fileLOG += `Running Command for ${server["IP Address"]} ${server.Name}\n`
-            let conn = await makeConnection(server, true);
+            let conn = await makePermanentConnection(server, true);
             if (!conn) {
                 log(`${server["IP Address"]} Unable to Connect to Host`, "error");
 
                 continue;
             }
             let output = await getOutput(conn, command);
-            log(`${server["IP Address"]} Successful Ran Command\nLOG:\n${output}`, 'success')
+            log(`${server["IP Address"]} Successful LOG:\n${output}`, 'success')
             fileLOG += `${server["IP Address"]} Successful Ran Command\nLOG:\n${output}\n`;
         } catch (error) {}
         log(`${id +1} of ${servers.length} Done`);

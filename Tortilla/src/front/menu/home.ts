@@ -9,12 +9,11 @@ import { Settings } from "./settings";
 import { utilsPage } from "./utilsPage";
 import { Commands } from "../page/commands";
 import { scanComputers } from "../page/scanComputers";
+import { getAllCurrentConnections } from "../../modules/util/ssh_utils";
 
 async function Home() {
-    await clear();
-    const ui = await inquirer.ui.BottomBar;
-    console.log(`${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())}`.bgGreen);
-
+    process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");console.clear();
+    console.log(`${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())} Connections: ${(await getAllCurrentConnections()).length}`.bgGreen);
     const { program } = await inquirer.prompt([
         {
             name: "program",
@@ -58,7 +57,7 @@ async function Home() {
             scanComputers();
             break;
         case "Exit":
-            await clear();
+            process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");console.clear();
             process.exit(0);
             break;
     }

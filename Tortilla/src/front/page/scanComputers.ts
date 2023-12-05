@@ -3,7 +3,7 @@ import { pressEnter } from "../../modules/console/enddingModules";
 import { checkPassword } from "../../modules/util/checkPassword";
 import runningDB from "../../modules/util/db";
 import { log } from "../../modules/util/debug";
-import { makeConnection } from "../../modules/util/ssh_utils";
+import { makePermanentConnection } from "../../modules/util/ssh_utils";
 import { Home } from "../menu/home";
 
 
@@ -18,7 +18,7 @@ async function scanComputers(){
     for(let server of servers){
         try {
             log(`${done} of ${numberOfComputers} computers`, 'info')
-            let conn = await makeConnection(server);
+            let conn = await makePermanentConnection(server);
             if(!conn){
                 done++;
                 log(`[${server["IP Address"]}] [${server.Name}] Unable to connect to server`,'error');
@@ -27,7 +27,6 @@ async function scanComputers(){
             await scanComputer(conn, server["OS Type"], false);
             success++;
             done++;
-            await conn.close();
         } catch (error) {
             
         }

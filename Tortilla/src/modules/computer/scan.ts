@@ -9,7 +9,7 @@ import csv from "csvtojson";
 import fs from 'fs';
 import asTable from 'as-table';
 
-async function scanComputer(conn: SSH2CONN, os_type: options, wait_for_enter:boolean = true) {
+async function scanComputer(conn: SSH2CONN, os_type: options, wait_for_enter:boolean = true):Promise<string> {
     let hostname = await detect_hostname(conn);
     let os = await detect_os(conn);
     let openPorts: port[] = [];
@@ -79,8 +79,9 @@ async function scanComputer(conn: SSH2CONN, os_type: options, wait_for_enter:boo
 
 
 
-    createTextFile(hostname, os, openPorts, installedApplications, osInfo,users)
+    let text = createTextFile(hostname, os, openPorts, installedApplications, osInfo,users)
     wait_for_enter && await pressEnter()
+    return text;
 }
 type application = {
     name: string;
@@ -243,7 +244,7 @@ function createTextFile(hostname:string, os:string, ports:port[], applications:a
     }
     fs.writeFileSync(`./scans/${hostname}.txt`, file.finish())
     log("Created Text File "  + `./scans/${hostname}.txt`, 'success')
-
+    return file.finish();
 }
 async function getUsersWindows(conn:SSH2Promise){
     try {

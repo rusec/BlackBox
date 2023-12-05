@@ -29,14 +29,33 @@ const addComputer = async function () {
             type: "input",
         },
     ]);
-    var computer_info = await pingSSH(ip, user, pass);
+    await trySSH();
+    async function trySSH(){
+        var computer_info = await pingSSH(ip, user, pass);
 
-    if (typeof computer_info == "object") {
-        await runningDB.addComputer(computer_info.hostname, ip, user, pass, computer_info.operatingSystem);
-        log(`Added`, "success");
-    } else {
-        log(`Unable to reach computer, Not Added`, "error");
+        let success = false;
+        if (typeof computer_info == "object") {
+            await runningDB.addComputer(computer_info.hostname, ip, user, pass, computer_info.operatingSystem);
+            log(`Added`, "success");
+            success = true;
+        } else {
+            log(`Unable to reach computer, Not Added`, "error");
+        }
+        if(success) return;
+
+        let {confirm} = await inquirer.prompt([
+            {
+                name: "confirm",
+                type: "confirm",
+                message: "Would you like to try again",
+            },
+        ]);
+        if(confirm){
+            await trySSH();
+        }
+
     }
+    
 
     await pressEnter();
 };

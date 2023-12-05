@@ -5,8 +5,8 @@ import { changePasswordDarwin } from "./change_password_darwin";
 import { changePasswordFreeBSD } from "./change_password_freeBSD";
 import { log } from "../util/debug";
 import options from "../util/options";
-import { detect_os } from "../util/ssh_utils";
-import { ejectSSHkey, makeConnection, testPassword } from "../util/ssh_utils";
+import { detect_os, makePermanentConnection } from "../util/ssh_utils";
+import { ejectSSHkey, testPassword } from "../util/ssh_utils";
 
 export type password_result = {
     password: string;
@@ -19,7 +19,7 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
         return "Password does not meet requirements";
     }
 
-    const conn = await makeConnection(computer, true);
+    const conn = await makePermanentConnection(computer, true);
 
     try {
         if (!conn) {
@@ -55,14 +55,12 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
 
         let pass_success = await testPassword(conn, new_password);
 
-        await conn.close();
         conn.removeAllListeners();
 
         return { password: pass_success ? new_password : computer.Password, ssh: ssh_key, error: pass_success ? false : res };
     } catch (error: any) {
         if (conn) {
             conn.error(`Got Error: ${error.message ? error.message : error}`);
-            conn.close();
         } else log(`[${computer["IP Address"]}] [${computer.Name}] Got Error: ${error.message ? error.message : error}`);
         return `Got Error: ${error.message ? error.message : error}`;
     }

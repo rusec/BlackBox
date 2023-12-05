@@ -5,19 +5,26 @@ import { delay } from "../../modules/util/util";
 import { checkPassword } from "../../modules/util/checkPassword";
 import { runSingleScript } from "./passwordScript";
 import { Home } from "../menu/home";
-import { addCustomSSH, addSSH, getStatus, makeConnection, makeInteractiveShell, pingSSH, removeSSH, removeSSHkey, testPassword } from "../../modules/util/ssh_utils";
+import {
+    addCustomSSH,
+    addSSH,
+    getStatus,
+    makeInteractiveShell,
+    makePermanentConnection,
+    removeSSH,
+    testPassword,
+} from "../../modules/util/ssh_utils";
 import { changePasswordOf } from "../../modules/password/change_passwords";
 import { log } from "../../modules/util/debug";
 import logger from "../../modules/util/logger";
 import { getEVariables, getFailedLogins, getNetwork, getProcess, getUsers } from "../../modules/computer/compUtils";
 import { pressEnter } from "../../modules/console/enddingModules";
 import { scanComputer } from "../../modules/computer/scan";
-async function edit(id = -1):Promise<void> {
+async function edit(id = -1): Promise<void> {
     await clear();
     let json = await runningDB.readComputers();
 
-
-    var ipAddressesChoices = json.map( (v, k) => {
+    var ipAddressesChoices = json.map((v, k) => {
         return { name: v["IP Address"] + "  " + v["OS Type"] + " " + v.Name, value: k };
     });
 
@@ -27,30 +34,34 @@ async function edit(id = -1):Promise<void> {
 
     let selected_id = id;
 
-    if(selected_id == -1 || selected_id >= ipAddressesChoices.length){
+    if (selected_id == -1 || selected_id >= ipAddressesChoices.length) {
         const { json_id } = await inquirer.prompt([
             {
                 name: "json_id",
                 type: "list",
                 pageSize: 50,
-    
+
                 choices: [...ipAddressesChoices, { name: "Home", value: "home" }],
                 message: "Please select a computer:",
             },
         ]);
         if (json_id === "home") {
             return Home();
-
         }
         selected_id = json_id;
     }
+    await clear();
     const computer = json[selected_id];
     const header = `> ${computer.Name} ${computer["IP Address"]} ${computer.Username} ${blankPassword(computer.Password)} ${
         computer["OS Type"]
-    } | pub_key: ${computer.ssh_key ? "true" : "false"} password changes: ${computer.password_changes} | Online: ${(await getStatus(computer)) ? "Live" : "unable to connect"}`.bgBlue;
+    } | pub_key: ${computer.ssh_key ? "true" : "false"} password changes: ${computer.password_changes} | Online: ${
+        (await getStatus(computer)) ? "Live" : "unable to connect"
+    }`.bgBlue;
 
     await clear();
+
     console.log(header);
+  
 
     const { section } = await inquirer.prompt([
         {
@@ -61,13 +72,13 @@ async function edit(id = -1):Promise<void> {
                 new inquirer.Separator("Connect"),
                 { name: "Start Shell", value: "shell" },
                 { name: "Change Password", value: "change_pass_man" },
-                {name: "Test Password", value: "test_pass"},
+                { name: "Test Password", value: "test_pass" },
                 { name: "Utils", value: "utils" },
                 new inquirer.Separator("Data"),
                 { name: "Change Password (if changed from target)", value: "Change Password" },
                 "Change Username",
                 "Change OS",
-                {name: "Show Password", value: "show_pass"},
+                { name: "Show Password", value: "show_pass" },
                 { name: "Remove Computer", value: "Remove" },
                 new inquirer.Separator("SSH"),
                 { name: "Inject SSH Key", value: "add_ssh" },
@@ -138,8 +149,6 @@ async function edit(id = -1):Promise<void> {
             return Home();
     }
     return edit(selected_id);
-    
-
 
     async function Remove() {
         await clear();
@@ -253,31 +262,30 @@ async function edit(id = -1):Promise<void> {
         console.log("OS updated!");
         await delay(300);
     }
-    async function showPassword(){
-        console.log(`> ${computer.Name} ${computer["IP Address"]} ${computer.Username} ${computer.Password} ${
-            computer["OS Type"]
-        } | pub_key: ${computer.ssh_key ? "true" : "false"} password changes: ${computer.password_changes}`.bgBlue)
+    async function showPassword() {
+        console.log(
+            `> ${computer.Name} ${computer["IP Address"]} ${computer.Username} ${computer.Password} ${computer["OS Type"]} | pub_key: ${
+                computer.ssh_key ? "true" : "false"
+            } password changes: ${computer.password_changes}`.bgBlue
+        );
         await pressEnter();
         return;
-
     }
-    
 }
-async function passwordTest(server:ServerInfo){
+async function passwordTest(server: ServerInfo) {
     await clear();
     const header = `> ${server.Name} ${server["IP Address"]} ${server.Username} ${blankPassword(server.Password)} ${server["OS Type"]} | pub_key: ${
         server.ssh_key ? "true" : "false"
     } password changes: ${server.password_changes}`.bgBlue;
     console.log(header);
-    let conn = await makeConnection(server);
+    let conn = await makePermanentConnection(server);
     if (!conn) {
         console.log("Unable to connect to server");
         await delay(1000);
         return;
     }
     let pass_success = await testPassword(conn, server.Password);
-    pass_success ? log("Password Active",'success'): log("Unable to use Password", 'error');
-    await conn.close();
+    pass_success ? log("Password Active", "success") : log("Unable to use Password", "error");
 
     await pressEnter();
 }
@@ -302,15 +310,14 @@ async function computerUtils(server: ServerInfo) {
                 { name: "Get Current Environment Variables", value: "variables" },
                 { name: "Scan Computer", value: "scan" },
 
-                "Back"
-
+                "Back",
             ],
         },
     ]);
-    if(program == "Back"){
+    if (program == "Back") {
         return;
     }
-    let conn = await makeConnection(server);
+    let conn = await makePermanentConnection(server);
     if (!conn) {
         console.log("Unable to connect to server");
         await delay(1000);
@@ -318,7 +325,7 @@ async function computerUtils(server: ServerInfo) {
     }
     switch (program) {
         case "scan":
-            await scanComputer(conn, server['OS Type']);
+            await scanComputer(conn, server["OS Type"]);
             break;
         case "users":
             await getUsers(conn, server["OS Type"]);
@@ -338,7 +345,6 @@ async function computerUtils(server: ServerInfo) {
         default:
             break;
     }
-    await conn.close();
 }
 
 function blankPassword(password: string) {

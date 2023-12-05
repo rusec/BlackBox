@@ -55,22 +55,28 @@ This menu allows you to configure the application and manage your computer datab
 
 If you're uncertain about which password corresponds to a specific computer, the Shotgun Setup can help. The program will automatically find the correct password and username combination to access the computer.
 
-To use Shotgun Setup, you'll need to provide the names and IPs of the computers you want to add, formatted like this:
+To use Shotgun Setup, you'll need to provide the network your trying to reach (Last digit doesn't matter):
+
+```txt
+192.168.1.1
+```
+
+Next, Enter the host id of the targets you want to connect to 
 
 ```
-bob 192.168.1.1, matt 192.168.1.2, ben 192.168.1.3
+1 2 3 4 5 6
 ```
 
 Additionally, specify the usernames you intend to use, formatted like this:
 
 ```
-ben123, matt12, bob123
+ben123 matt1 bob123
 ```
 
 Lastly, enter the passwords you wish to use, formatted like this:
 
 ```
-HappyFlower12@42, Encryption124#$@, TheresAsnacKinMyBOOT12512@$$
+HappyFlower12@42 Encryption124#$@ TheresAsnacKinMyBOOT12512@$$
 ```
 
 By following these instructions, you can effectively manage and secure your computer passwords with the Password Manager. If you have any questions or encounter any issues, please refer to the documentation or contact support for assistance.

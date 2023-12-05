@@ -92,7 +92,7 @@ async function changePasswordWinAD(conn: SSH2CONN, username: string, password: s
         return true;
     } catch (error: any) {
         console.log("error", error);
-        return error.message ? error : error.message;
+        return error.message ? error.toString() : error.message;
     }
 }
 

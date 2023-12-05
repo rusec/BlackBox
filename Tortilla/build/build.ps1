@@ -1,6 +1,7 @@
 $SALT=$(node -e 'const crypto = require(\"crypto\"); console.log(crypto.randomBytes(256).toString(\"hex\"));')
 $SALT_2=$(node -e 'const crypto = require(\"crypto\"); console.log(crypto.randomBytes(256).toString(\"hex\"));')
 node ./build/prebuild.js $SALT $SALT_2
+Remove-Item -r .\dist
 tsc  
 pkg --out-path releases/latest/x64 -t 'node16-linux-x64,node16-win-x64,node16-macos-x64' ./dist/src/Tortilla.js
 Write-Output 'Finished x64'
