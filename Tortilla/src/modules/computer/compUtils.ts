@@ -187,7 +187,7 @@ async function getCurrentLoggedIn(conn: SSH2Promise, os_type: options) {
             currentLogOns = await getOutput(conn, commands.users.current.linux);
             break;
         case "linux":
-            currentLogOns = await getOutput(conn, commands.failedLogins.linux);
+            currentLogOns = await getOutput(conn, commands.users.current.linux);
             break;
         default:
             currentLogOns = "Unable to get Unknown OS";

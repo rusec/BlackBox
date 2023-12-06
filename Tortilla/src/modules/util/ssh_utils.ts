@@ -293,6 +293,8 @@ async function makeConnection(Server: ServerInfo, useKey?: boolean, statusLog = 
         return ssh;
     } catch (error) {
         statusLog && log(`[${Server["IP Address"]}] [${Server.Name}] Unable to connect: ${error}`, "error");
+        logger.log(`[${Server["IP Address"]}] [${Server.Name}] Unable to connect: ${error}`, 'error')
+
         return false;
     }
 }
@@ -313,6 +315,7 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
         }
     } catch (error) {
         statusLog && findConnection?.error(`Unable to connect, making new connection: ${error}`)
+        findConnection?.close();
     }
    
     try {
@@ -338,6 +341,7 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
         return ssh;
     } catch (error) {
         statusLog && log(`[${Server["IP Address"]}] [${Server.Name}] Unable to connect: ${error}`, "error");
+        logger.log(`[${Server["IP Address"]}] [${Server.Name}] Unable to connect: ${error}`, 'error')
         return false;
     }
 }
