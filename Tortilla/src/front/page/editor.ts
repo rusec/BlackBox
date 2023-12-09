@@ -78,6 +78,7 @@ async function edit(id = -1): Promise<void> {
                 { name: "Change Password (if changed from target)", value: "Change Password" },
                 "Change Username",
                 "Change OS",
+                {name: "Change Domain", value :"change_domain"},
                 { name: "Show Password", value: "show_pass" },
                 { name: "Remove Computer", value: "Remove" },
                 new inquirer.Separator("SSH"),
@@ -126,6 +127,10 @@ async function edit(id = -1): Promise<void> {
         case "test_pass":
             await passwordTest(computer);
             break;
+        case "change_domain": 
+            await checkPassword();
+            await changeDomain();
+            break; 
         case "show_pass":
             await checkPassword();
             await showPassword();
@@ -235,6 +240,29 @@ async function edit(id = -1): Promise<void> {
         console.log("username updated!");
         await delay(300);
     }
+    async function changeDomain(){
+        let { newDomain, confirm } = await inquirer.prompt([
+            {
+                name: "newDomain",
+                type: "input",
+                message: `please enter a domain (${json[selected_id].domain})`
+            },
+            {
+                name: "confirm",
+                type: "confirm",
+            },
+        ]);
+        if (!confirm) {
+            return;
+        }
+
+        json[selected_id].domain = newDomain;
+        await runningDB.writeComputers(json);
+
+        console.log("domain updated!");
+        await delay(300);
+    }
+
     async function changeOS() {
         let { newOSType, confirm } = await inquirer.prompt([
             {

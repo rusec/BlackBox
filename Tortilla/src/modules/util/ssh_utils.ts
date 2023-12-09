@@ -315,6 +315,7 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
         }
     } catch (error) {
         statusLog && findConnection?.error(`Unable to connect, making new connection: ${error}`)
+        findConnection?.removeAllListeners();
         findConnection?.close();
     }
    
@@ -443,7 +444,7 @@ async function getStatus(Server: ServerInfo) {
     }
 }
 
-async function pingSSH(ip: string, username: string, password: string): Promise<{ operatingSystem: options; hostname: string } | boolean> {
+async function pingSSH(ip: string, username: string, password: string): Promise<{ operatingSystem: options; hostname: string, domain:string} | boolean> {
     try {
         const sshConfig: SSHConfig = {
             host: ip,
@@ -456,10 +457,15 @@ async function pingSSH(ip: string, username: string, password: string): Promise<
         };
         const ssh = new SSH2CONN("", sshConfig);
         await ssh.connect();
+        log("Connected", 'success')
         let os = await detect_os(ssh);
+        let domain = ''
+        if(os == 'windows'){
+            domain = await detect_domain(ssh)
+        }
         let hostname = await detect_hostname(ssh);
         await ssh.close();
-        return { operatingSystem: os, hostname: hostname } || true;
+        return { operatingSystem: os, hostname: hostname, domain:domain } || true;
     } catch (error: any) {
         log((error as Error).message + ` ${ip}`, "error");
         return false;
@@ -524,67 +530,6 @@ async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
 
 
         })
-
-    // return new Promise(async (resolve, reject) => {
-    //     const connected_ssh: Channel = await conn.shell();
-    //     logger.log(`Made SSH interactive Shell for ${server["IP Address"]}`, "info");
-    //     let history: string[] = [];
-    //     var autoComplete = function completer(line: string) {
-    //         const com = line.split(" ");
-    //         let hits: string[] = [];
-    //         if (com.length == 1) {
-    //             hits = history.filter((c) => com[0].includes(c));
-    //         } else {
-    //             hits = history.filter((c) => c.includes(com[1]));
-    //             hits = hits.map((hit) => com[0] + " " + hit);
-    //         }
-
-    //         return [hits.length ? hits : history, line];
-    //     };
-    //     const rl = readline.createInterface({
-    //         input: process.stdin,
-    //         output: process.stdout,
-    //         completer: autoComplete,
-    //         terminal: true,
-    //     });
-
-    //     let recent_input: string = "";
-    //     let regex = new RegExp(/[\w.-]+(?:\.\w+)?/gm);
-    //     // Pipe remote server output to local stdout
-    //     connected_ssh.on("data", (data: string | Uint8Array) => {
-    //         if (recent_input != "" && data.toString().includes(recent_input)) {
-    //             recent_input = "";
-    //             return;
-    //         }
-    //         let matches = removeANSIColorCodes(data.toString()).match(regex);
-    //         if (matches) history.unshift(...matches);
-    //         while (history.length > 60) {
-    //             history.pop();
-    //         }
-
-    //         process.stdout.write(data);
-    //     });
-
-    //     rl.on("line", (input: string) => {
-    //         recent_input = input;
-    //         logger.log(`Command sent to ${conn.config[0].host}`, "info");
-    //         connected_ssh.write(input + "\r");
-    //     });
-    //     rl.on("close", () => {
-    //         connected_ssh.removeAllListeners();
-    //         !connected_ssh.closed && connected_ssh.write("exit\r");
-    //     });
-    //     connected_ssh.on("end", () => {
-    //         rl.removeAllListeners();
-
-    //         //close causes an error where it freezes the terminal for a bit.
-    //         readline.cursorTo(process.stdout, 0, 1);
-    //         readline.clearLine(process.stdout, 0);
-
-    //         rl.close();
-    //         resolve(true);
-    //     });
-    // });
 }
 async function detect_os(conn: SSH2CONN): Promise<options> {
     conn.log("Checking For Os");
@@ -614,6 +559,11 @@ async function detect_os(conn: SSH2CONN): Promise<options> {
         }
         return "Unknown";
     }
+}
+async function detect_domain(conn:SSH2CONN){
+    conn.log("Checking for Domain")
+    const domain_string = await conn.exec(commands.AD.domain);
+    return domain_string.split(':')[1].trim()
 }
 async function detect_hostname(conn: SSH2CONN) {
     conn.log("Checking For Hostname");

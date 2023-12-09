@@ -98,7 +98,7 @@ async function ShotGun() {
             var computer_info = await pingSSH(computer, session.user, session.pass);
             if (typeof computer_info == "object") {
                 log(`Found valid session for ${computer} saving...`, "success");
-                await runningDB.addComputer(computer_info.hostname, computer, session.user, session.pass, computer_info.operatingSystem);
+                await runningDB.addComputer(computer_info.hostname, computer, session.user, session.pass, computer_info.operatingSystem, computer_info.domain);
                 passed = true;
                 break;
             }

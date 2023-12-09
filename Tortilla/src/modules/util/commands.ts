@@ -97,7 +97,7 @@ const commands = {
     },
     AD:{
         check: `powershell.exe -Command "& {Get-ADDefaultDomainPasswordPolicy}"`,
-
+        domain: `systeminfo | findstr /B "Domain"`
     },
     os_info: {
         windows:"systeminfo.exe /FO csv",

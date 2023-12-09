@@ -35,7 +35,7 @@ describe("SSH Windows", async function () {
         if (!conn) {
             assert(false, "Unable to connect to target");
         }
-        let success = await changePasswordWin(conn, target_win.Username, "Password123");
+        let success = await changePasswordWin(target_win,conn, target_win.Username, "Password123");
         await conn.close();
         assert(success, `Unable to change password ${success}`);
     });

@@ -22,33 +22,45 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
     const conn = await makePermanentConnection(computer, true);
 
     try {
-        if (!conn) {
-            throw new Error(`${computer["IP Address"]} ${computer.Name} Unable to connect to host`);
-        }
-
         let res;
-        if (!options.includes(computer["OS Type"])) {
-            let os = await detect_os(conn);
-            if (os) computer["OS Type"] = os;
-        }
 
-        switch (computer["OS Type"].toLowerCase()) {
-            case "windows":
-                res = await changePasswordWin(conn, computer.Username, new_password);
-                break;
-            case "freebsd":
-                res = await changePasswordFreeBSD(conn, computer.Username, new_password);
-                break;
-            case "linux":
-                res = await changePasswordLinux(conn, computer.Username, new_password, computer.Password);
-                break;
-            case "darwin":
-                res = await changePasswordDarwin(conn, computer.Username, computer.Password, new_password);
-                break;
-            default:
-                res = "Unknown OS";
-                break;
+        if(computer["OS Type"] == 'windows'){
+            res = await changePasswordWin(computer, conn, computer.Username, new_password);
+            const new_conn = await makePermanentConnection(computer, true);
+            if (!new_conn) {
+                throw new Error(`${computer["IP Address"]} ${computer.Name} Unable to connect to host`);
+            }
+            let ssh_key = await ejectSSHkey(new_conn, computer["OS Type"]);
+
+            let pass_success = await testPassword(new_conn, new_password);
+
+            return { password: pass_success ? new_password : computer.Password, ssh: ssh_key, error: pass_success ? false : res };
+        }else{
+            if (!conn) {
+                throw new Error(`${computer["IP Address"]} ${computer.Name} Unable to connect to host`);
+            }
+    
+            if (!options.includes(computer["OS Type"])) {
+                let os = await detect_os(conn);
+                if (os) computer["OS Type"] = os;
+            }
+    
+            switch (computer["OS Type"].toLowerCase()) {
+                case "freebsd":
+                    res = await changePasswordFreeBSD(conn, computer.Username, new_password);
+                    break;
+                case "linux":
+                    res = await changePasswordLinux(conn, computer.Username, new_password, computer.Password);
+                    break;
+                case "darwin":
+                    res = await changePasswordDarwin(conn, computer.Username, computer.Password, new_password);
+                    break;
+                default:
+                    res = "Unknown OS";
+                    break;
+            }
         }
+        
 
         // ADD CHECK FOR SSH KEY
         let ssh_key = await ejectSSHkey(conn, computer["OS Type"]);

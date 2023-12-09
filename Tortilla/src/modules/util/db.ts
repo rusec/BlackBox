@@ -40,6 +40,7 @@ export type ServerInfo = {
     "OS Type": options;
     ssh_key: boolean;
     password_changes: number;
+    domain:string,
 };
 export type app_config = {
     master_hash: string;
@@ -235,10 +236,10 @@ class DB {
      * @param {string} os_type - The operating system type of the computer.
      * @returns {Promise<void>} A promise that resolves when the computer entry is successfully added or updated.
      */
-    async addComputer(name: string, ip: string, username: string, password: string, os_type: options): Promise<boolean> {
+    async addComputer(name: string, ip: string, username: string, password: string, os_type: options,domain:string =''): Promise<boolean> {
         if (!this.lockDB.acquire()) {
             await delay(10);
-            return await this.addComputer(name, ip, username, password, os_type);
+            return await this.addComputer(name, ip, username, password, os_type,domain);
         }
         let result = false;
         try {
@@ -254,6 +255,7 @@ class DB {
                     "OS Type": os_type || computers[index]["OS Type"],
                     ssh_key: false || computers[index]["ssh_key"], // You can decide how to update this property
                     password_changes: computers[index]["password_changes"] || 0,
+                    domain:domain || computers[index]["domain"],
                 };
             } else {
                 // If it doesn't exist, create a new entry
@@ -265,6 +267,7 @@ class DB {
                     "OS Type": os_type || "",
                     ssh_key: false,
                     password_changes: 0,
+                    domain: domain
                 });
             }
             logger.log(`Added Computer ${name} ${ip}`, "info");
@@ -648,6 +651,7 @@ function normalizeServerInfo(jsonArr: Array<ServerInfo>): Array<ServerInfo> {
             "OS Type": jsonObj["OS Type"] || "",
             ssh_key: false,
             password_changes: 0,
+            domain:jsonObj["domain"] || ''
         };
 
         normalizedArr.push(serverInfo);

@@ -35,7 +35,7 @@ const addComputer = async function () {
 
         let success = false;
         if (typeof computer_info == "object") {
-            await runningDB.addComputer(computer_info.hostname, ip, user, pass, computer_info.operatingSystem);
+            await runningDB.addComputer(computer_info.hostname, ip, user, pass, computer_info.operatingSystem,computer_info.domain);
             log(`Added`, "success");
             success = true;
         } else {

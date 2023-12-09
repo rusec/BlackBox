@@ -4,14 +4,30 @@ import { log } from "../util/debug";
 import { delay } from "../util/util";
 import socket_commands from "../util/socket_commands";
 import { SSH2CONN, detect_hostname } from "../util/ssh_utils";
+import { ServerInfo } from "../util/db";
+import { LDAPChangePassword } from "./active_directory";
 
-async function changePasswordWin(conn: SSH2CONN, username: string, password: string) {
+async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, username: string, password: string) {
+    if(!conn){
+        try {
+            await LDAPChangePassword(server,password)
+            return;
+        } catch (error:any) {
+            return error.message ? error : error.message;       
+         }
+    }
+
     try {
         let checkReport = await check(conn);
         let useLocalUser = checkReport.useLocal
         if(checkReport.isDomainUser && checkReport.domainController){
-
-            return await changePasswordWinAD(conn,stripDomain(username), password);
+            try {
+                await LDAPChangePassword(server,password)
+                return;
+            } catch (error:any) {
+                console.log(error)
+                return await changePasswordWinAD(conn,stripDomain(username), password);    
+             }
         }
         if(checkReport.isDomainUser){
             return "UNABLE TO CHANGE PASSWORD OF DOMAIN ACCOUNT ON NON-DOMAIN-CONTROLLER"
