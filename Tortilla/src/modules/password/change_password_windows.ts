@@ -11,7 +11,7 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
     if(!conn){
         try {
             await LDAPChangePassword(server,password)
-            return;
+            return true;
         } catch (error:any) {
             return error.message ? error : error.message;       
          }

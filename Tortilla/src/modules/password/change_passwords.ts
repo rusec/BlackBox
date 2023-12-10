@@ -7,6 +7,7 @@ import { log } from "../util/debug";
 import options from "../util/options";
 import { detect_os, makePermanentConnection } from "../util/ssh_utils";
 import { ejectSSHkey, testPassword } from "../util/ssh_utils";
+import { TestLDAPPassword } from "./active_directory";
 
 export type password_result = {
     password: string;
@@ -27,14 +28,15 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
         if(computer["OS Type"] == 'windows'){
             res = await changePasswordWin(computer, conn, computer.Username, new_password);
             const new_conn = await makePermanentConnection(computer, true);
-            if (!new_conn) {
+            let ldap_test = await TestLDAPPassword(computer, new_password);
+
+            if (!new_conn || !ldap_test) {
                 throw new Error(`${computer["IP Address"]} ${computer.Name} Unable to connect to host`);
             }
             let ssh_key = await ejectSSHkey(new_conn, computer["OS Type"]);
 
             let pass_success = await testPassword(new_conn, new_password);
-
-            return { password: pass_success ? new_password : computer.Password, ssh: ssh_key, error: pass_success ? false : res };
+            return { password: pass_success ||ldap_test ? new_password : computer.Password, ssh: !new_conn? computer.ssh_key : ssh_key, error: pass_success ? false : res };
         }else{
             if (!conn) {
                 throw new Error(`${computer["IP Address"]} ${computer.Name} Unable to connect to host`);

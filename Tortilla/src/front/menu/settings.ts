@@ -1,7 +1,7 @@
 import clear from "clear";
 import inquirer from "inquirer";
 import { sshMenu } from "../page/ssh";
-import { addComputer } from "../page/addComputer";
+import { addComputer, addComputerManual } from "../page/addComputer";
 import runningDB from "../../modules/util/db";
 import { Home } from "./home";
 import {json2csv} from 'json-2-csv';
@@ -19,7 +19,8 @@ async function Settings() {
                 new inquirer.Separator("Computer Setup"),
                 "Shotgun Setup",
                 "Add Computer",
-                new inquirer.Separator("Data Setup"),
+                "Add Computer Manually"
+,                new inquirer.Separator("Data Setup"),
                 "Load CSV",
                 "Export DB",
                 "Restore DB",
@@ -41,6 +42,9 @@ async function Settings() {
             break;
         case "Add Computer":
             await addComputer();
+            break;
+        case "Add Computer Manually":
+            await addComputerManual();
             break;
         case "Reset Master Password":
             await runningDB.resetMasterPassword();

@@ -15,6 +15,8 @@ async function ChangeADPassword(ADIpAddress: string, domain: string, username: s
     logger.log("LDAP Connected")
 
     const bindDN = `CN=${username},CN=Users,` + domain_to_ldap(domain);
+    logger.log(`trying to connect to ${bindDN}`)
+
     await client.bind(bindDN, oldPassword);
     try {
         await client.modify(
@@ -49,6 +51,41 @@ async function LDAPChangePassword(server: ServerInfo, newPassword: string) {
     }
     await ChangeADPassword(server["IP Address"], server.domain, stripDomain(server.Username), server.Password, newPassword);
 }
+async function TestLDAPPassword(server:ServerInfo, newPassword:string):Promise<boolean> {
+    if (server.domain == "") {
+        return false;
+    }
+    logger.log("Attempting to change Password using LDAP")
+  
+    try {
+        const client = ldap.createClient({
+            url: `ldaps://${server["IP Address"]}`, // Use ldaps for secure communication
+            tlsOptions: {
+                rejectUnauthorized: false,
+            },
+        });
+        logger.log("LDAP Connected")
+        logger.log("Attempting Password")
+        const bindDN = `CN=${server.Username},CN=Users,` + domain_to_ldap(server.domain);
+        try {
+            await client.bind(bindDN, newPassword);
+            logger.log("Successful bind to LDAP")
+            await client.unbind()
+            return true;
+        } catch (error) {
+            logger.log("unable to use password on LDAP")
+            await client.unbind()
+            return false;
+        }
+        
+    } catch (error) {
+        logger.log("Unable to connect to LDAP")
+        return false
+    }
+   
+
+
+}
 
 // extracts the username from a domain
 function stripDomain(fullUsername: string): string {
@@ -64,6 +101,8 @@ function stripDomain(fullUsername: string): string {
         return fullUsername;
     }
 }
+
+
 
 function domain_to_ldap(domain: string): string {
     let domains_parts = domain.split(".");
@@ -87,4 +126,4 @@ function encodePassword(str: string) {
     return output;
 }
 
-export { LDAPChangePassword };
+export { LDAPChangePassword,TestLDAPPassword };
