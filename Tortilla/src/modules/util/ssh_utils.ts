@@ -336,9 +336,12 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
         const ssh = new SSH2CONN(Server.Name, sshConfig );
         statusLog && ssh.log("Attempting Connection");
         await ssh.connect();
+        ssh.on("ssh",async  (e)=>{
+            logger.log(`[${ssh.config[0].host}] [${Server.Name}] Event: ${e}`)
+        })
         statusLog && ssh.log("Connected");
         servers_connections.set(Server["IP Address"], ssh);
-
+        
         return ssh;
     } catch (error) {
         statusLog && log(`[${Server["IP Address"]}] [${Server.Name}] Unable to connect: ${error}`, "error");
@@ -367,17 +370,19 @@ async function initConnections(){
                     logger.log(`Unable to connect to server ${computer["IP Address"]}`)
                     return;
                 }
-                logger.log(`[${computer["IP Address"]}] [${computer.Name}] I still have connection`)
+                logger.log(`[${computer["IP Address"]}] [${computer.Name}] I got a connection`)
                 return;
             }
 
             // test if connection is still good
             try {
-                // await conn.connect();
                 await conn.exec("hostname");
                 logger.log(`[${computer["IP Address"]}] [${computer.Name}] I still have connection`)
             } catch (error) {
-                // log("unable to connect to ")
+                try {
+                    conn.close();
+                    conn.removeAllListeners();
+                } catch (error) {}
                 let new_password_conn  = await makePermanentConnection(computer,true, false, 5000)
                 if(!new_password_conn){
                     logger.log(`Unable to connect to server ${computer["IP Address"]}`)

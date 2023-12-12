@@ -18,17 +18,17 @@ const commands = {
     ssh: {
         eject: {
             windows: (ssh_key: string) =>
-                `powershell Add-Content -Force -Path $env:ProgramData\\ssh\\administrators_authorized_keys -Value '${ssh_key}';icacls.exe ""$env:ProgramData\\ssh\\administrators_authorized_keys"" /inheritance:r /grant ""Administrators:F"" /grant ""SYSTEM:F""`,
+                `powershell.exe Add-Content -Force -Path $env:ProgramData\\ssh\\administrators_authorized_keys -Value '${ssh_key}';icacls.exe ""$env:ProgramData\\ssh\\administrators_authorized_keys"" /inheritance:r /grant ""Administrators:F"" /grant ""SYSTEM:F""`,
             linux: (ssh_key: string) => `mkdir -p ~/.ssh && echo "${ssh_key}" | cat >> ~/.ssh/authorized_keys`,
         },
         remove: {
             windows: (ssh_key: string) =>
-                `powershell -command \"$keyToRemove = \\"${ssh_key}\\";$authorizedKeysPath = Join-Path $env:ProgramData \\"ssh\\administrators_authorized_keys\\"; $authorizedKeysContent = Get-Content -Path $authorizedKeysPath; $authorizedKeysContent = $authorizedKeysContent -notmatch [regex]::Escape($keyToRemove); $authorizedKeysContent | Set-Content -Path $authorizedKeysPath; icacls.exe $authorizedKeysPath /inheritance:r /grant \\"Administrators:F\\" /grantclear \\"SYSTEM:F\\"; Write-Host \\"SSH key removal complete.\\"\"`,
+                `powershell.exe -command \"$keyToRemove = \\"${ssh_key}\\";$authorizedKeysPath = Join-Path $env:ProgramData \\"ssh\\administrators_authorized_keys\\"; $authorizedKeysContent = Get-Content -Path $authorizedKeysPath; $authorizedKeysContent = $authorizedKeysContent -notmatch [regex]::Escape($keyToRemove); $authorizedKeysContent | Set-Content -Path $authorizedKeysPath; icacls.exe $authorizedKeysPath /inheritance:r /grant \\"Administrators:F\\" /grantclear \\"SYSTEM:F\\"; Write-Host \\"SSH key removal complete.\\"\"`,
             linux: (ssh_key: string) => `ssh_key="${replaceAll(ssh_key, "/", "\\/")}" && sed -i "s/$ssh_key//g" ~/.ssh/authorized_keys`,
             freebsd: (ssh_key: string) => `setenv ssh_key "${replaceAll(ssh_key, "/", "\\/")}" && sed -i "" "s/$ssh_key//g" ~/.ssh/authorized_keys`,
         },
         echo: {
-            windows: `powershell cat "$env:ProgramData\\ssh\\administrators_authorized_keys"`,
+            windows: `powershell.exe cat "$env:ProgramData\\ssh\\administrators_authorized_keys"`,
             linux: "cat ~/.ssh/authorized_keys",
         },
     },
@@ -58,9 +58,9 @@ const commands = {
                 step_2: `ss -tuan | grep "LISTEN" | awk '/^tcp/ {print "TCP", $5} /^udp/ {print "UDP", $5}'`
             },
             freebsd: `netstat -an | grep "LISTEN"|awk '/^tcp/ {print "TCP", $4} /^udp/ {print "UDP", $4}'`,
-            windows: `powershell "Get-NetTCPConnection | Where-Object { $_.State -eq 'Listen' } | ForEach-Object {$($_.LocalPort)}"`
+            windows: `powershell.exe "Get-NetTCPConnection | Where-Object { $_.State -eq 'Listen' } | ForEach-Object {$($_.LocalPort)}"`
         },
-        windows: `powershell "Get-NetTCPConnection | Where-Object { $_.State -eq 'Established' }"`,
+        windows: `powershell.exe "Get-NetTCPConnection | Where-Object { $_.State -eq 'Established' }"`,
         linux: {
             step_1: `netstat -an | grep "ESTABLISHED"`,
             step_2: `ss -tan | grep ESTAB`
@@ -69,8 +69,8 @@ const commands = {
     processes: {
         installed:{
             windows:{
-                step_1:`powershell "Get-ItemProperty HKLM:/Software/Microsoft/Windows/CurrentVersion/Uninstall/*, HKLM:/Software/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/*, HKCU:/Software/Microsoft/Windows/CurrentVersion/Uninstall/* |Select-Object DisplayName, Publisher, InstallDate | Format-Table -AutoSize"`,
-                step_2: `powershell "Get-ItemProperty HKLM:/Software/Microsoft/Windows/CurrentVersion/Uninstall/*, HKLM:/Software/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/* |Select-Object DisplayName, Publisher, InstallDate | Format-Table -AutoSize"`
+                step_1:`powershell.exe "Get-ItemProperty HKLM:/Software/Microsoft/Windows/CurrentVersion/Uninstall/*, HKLM:/Software/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/*, HKCU:/Software/Microsoft/Windows/CurrentVersion/Uninstall/* |Select-Object DisplayName, Publisher, InstallDate | Format-Table -AutoSize"`,
+                step_2: `powershell.exe "Get-ItemProperty HKLM:/Software/Microsoft/Windows/CurrentVersion/Uninstall/*, HKLM:/Software/Wow6432Node/Microsoft/Windows/CurrentVersion/Uninstall/* |Select-Object DisplayName, Publisher, InstallDate | Format-Table -AutoSize"`
             },
             linux: {
                 step_1:`for x in $(ls -1t /var/log/dpkg.log*); do zcat -f $x |tac |grep -e " install " -e " upgrade "; done |awk -F ":a" '{print $1}'`,

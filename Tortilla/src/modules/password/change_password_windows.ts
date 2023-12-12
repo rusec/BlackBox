@@ -13,7 +13,7 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
             await LDAPChangePassword(server,password)
             return true;
         } catch (error:any) {
-            return error.message ? error : error.message;       
+            return error.message ? error : error.message;
          }
     }
 
@@ -46,7 +46,7 @@ async function changePasswordWindowsLocal(conn:SSH2CONN, username:string, passwo
         conn.info(`Using ${useLocalUser ? "Get-Local" : "net user"}`)
 
         if (useLocalUser) {
-            await socket_commands.sendCommandExpect(shellSocket, `PowerShell`, `Windows PowerShell`);
+            await socket_commands.sendCommandExpect(shellSocket, `powershell.exe`, `Windows PowerShell`);
             await delay(2000);
             await socket_commands.sendCommand(shellSocket, `$pass = Read-Host -AsSecureString`);
             await socket_commands.sendInput(shellSocket, `${password}`);
@@ -132,7 +132,7 @@ async function check(conn: SSH2CONN):Promise<check_report> {
     let get_local_check;
 
     try {
-        get_local_check = await conn.exec(`PowerShell -Command "& {Get-LocalUser}"`);
+        get_local_check = await conn.exec(`powershell.exe -Command "& {Get-LocalUser}"`);
     } catch (error: any) {
         if (error.trim().includes("is not recognized")) {
             conn.warn(`Windows check error GOT ${error.substring(0, 30)} WANTED User List, Powershell version might be out of date`)
@@ -142,7 +142,7 @@ async function check(conn: SSH2CONN):Promise<check_report> {
     }
     let isDomainController = false;
     try {
-        isDomainController = await conn.exec(`PowerShell -Command "& {Get-ADDefaultDomainPasswordPolicy}"`)
+        isDomainController = await conn.exec(`powershell.exe -Command "& {Get-ADDefaultDomainPasswordPolicy}"`)
         conn.log("Computer is a Domain Controller")
         isDomainController = true;
     } catch (error) {
