@@ -8,6 +8,7 @@ import {json2csv} from 'json-2-csv';
 import fs from 'fs';
 import { checkPassword } from "../../modules/util/checkPassword";
 import { mapDateString } from "../../modules/util/util";
+import { pressEnter } from "../../modules/console/enddingModules";
 async function Settings() {
     const { program } = await inquirer.prompt([
         {
@@ -24,6 +25,7 @@ async function Settings() {
                 "Load CSV",
                 "Export DB",
                 "Restore DB",
+                {name: "Display Public Key", value: "display_key"},
                 new inquirer.Separator(),
                 new inquirer.Separator("Passwords"),
                 "Reset Master Password",
@@ -51,6 +53,11 @@ async function Settings() {
             break;
         case "Load CSV":
             await runningDB.readCSV();
+            break;
+        case "display_key":
+            var ssh_key = await runningDB.getSSHPublicKey();
+            console.log(ssh_key);
+            await pressEnter()
             break;
         case "Restore DB":
             await checkPassword()

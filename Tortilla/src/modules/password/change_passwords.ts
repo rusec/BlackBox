@@ -31,14 +31,19 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
         
             // Change password on Windows
             const passwordChangeResult = await changePasswordWin(computer, conn, username, newPassword);
-        
+
             // Establish a permanent connection
             const newConn = await makePermanentConnection(computer, true);
         
             // Test LDAP password
             const ldapTestResult = await TestLDAPPassword(computer, newPassword);
-        
-            if (!newConn || !ldapTestResult) {
+
+            if (!newConn) {
+                return {
+                    password: ldapTestResult ? newPassword : computer.Password,
+                    ssh: computer.ssh_key,
+                    error: ldapTestResult ? false :`${computer["IP Address"]} ${computer.Name} Unable to connect to host` ,
+                };
                 throw new Error(`${computer["IP Address"]} ${computer.Name} Unable to connect to host`);
             }
         

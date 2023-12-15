@@ -51,6 +51,7 @@ async function edit(id = -1): Promise<void> {
         selected_id = json_id;
     }
     await clear();
+    log("Checking Connection")
     const computer = json[selected_id];
     const header = `> ${computer.Name} ${computer["IP Address"]} ${computer.Username} ${blankPassword(computer.Password)} ${
         computer["OS Type"]

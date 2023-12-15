@@ -23,9 +23,10 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
         if(checkReport.isDomainUser && checkReport.domainController){
             try {
                 await LDAPChangePassword(server,password)
-                return;
+                return true;
             } catch (error:any) {
-                console.log(error)
+                
+                conn.log("Fallback ssh")
                 return await changePasswordWinAD(conn,stripDomain(username), password);    
              }
         }
@@ -84,7 +85,7 @@ async function changePasswordWinAD(conn: SSH2CONN, username: string, password: s
         try {
             conn.info("Resetting Active Directory User")
 
-            await socket_commands.sendCommandExpect(shellSocket, `PowerShell`, `PS`);
+            await socket_commands.sendCommandExpect(shellSocket, `powershell.exe`, `PS`);
             await delay(2000);
             await socket_commands.sendCommand(shellSocket, "$pass = Read-Host -AsSecureString");
             await delay(500);

@@ -17,6 +17,9 @@ import { isValidSession } from "./checkPassword";
 // SSH COMMANDS for ejections
 temp.track()
 
+//NOTE : MAKE PUBLIC KEY OUTPUT
+
+
 async function removeSSHkey(conn: SSH2CONN, os_type: options): Promise<boolean> {
     const ssh_key = await runningDB.getSSHPublicKey();
     conn.log("Removing SSH Key");
@@ -92,7 +95,7 @@ async function testPassword(conn: SSH2CONN, password: string) {
         const ssh = new SSH2Promise(sshConfig, true);
         await ssh.connect();
         await ssh.close();
-        conn.info("SSH Password active");
+        conn.info("Login Password active");
         return true;
     } catch (error) {
         
@@ -317,6 +320,8 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
         statusLog && findConnection?.error(`Unable to connect, making new connection: ${error}`)
         findConnection?.removeAllListeners();
         findConnection?.close();
+        logger.log("deleteing connection")
+        servers_connections.delete(Server["IP Address"]);
     }
    
     try {
@@ -350,70 +355,65 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
     }
 }
 
+let checking = false;
 // this function is for presisents
 // will reconnect to computer when its not able to connect. 
 // if password changes, it will try to reconnect with the new config.
 async function initConnections(){
-    if(!isValidSession()) return false;
-    logger.log("Checking Connections " )
-    let computers = await runningDB.readComputers();
-    let connections:SSH2CONN[] = []
-
-    let promises = computers.map(async(computer)=>{
-        try {
-            let conn = servers_connections.get(computer["IP Address"]);
-
-            // if conn is not there make a new connection to the server
-            if(conn == undefined){
-                let new_connection  = await makePermanentConnection(computer,true, false, 5000)
-                if(!new_connection){
-                    logger.log(`Unable to connect to server ${computer["IP Address"]}`)
-                    return;
-                }
-                logger.log(`[${computer["IP Address"]}] [${computer.Name}] I got a connection`)
-                return;
-            }
-
-            // test if connection is still good
+    if(checking || !isValidSession()) return;
+    try {
+        checking = true;
+        logger.log("Checking Connections " )
+        let computers = await runningDB.readComputers();
+    
+        let promises = computers.map(async(computer)=>{
             try {
-                await conn.exec("hostname");
-                logger.log(`[${computer["IP Address"]}] [${computer.Name}] I still have connection`)
-            } catch (error) {
-                try {
-                    conn.close();
-                    conn.removeAllListeners();
-                } catch (error) {}
-                let new_password_conn  = await makePermanentConnection(computer,true, false, 5000)
-                if(!new_password_conn){
-                    logger.log(`Unable to connect to server ${computer["IP Address"]}`)
+                let conn = servers_connections.get(computer["IP Address"]);
+    
+                // if conn is not there make a new connection to the server
+                if(conn == undefined){
+                    let new_connection  = await makePermanentConnection(computer,true, false, 5000)
+                    if(!new_connection){
+                        logger.log(`Unable to connect to server ${computer["IP Address"]}`)
+                        return;
+                    }
+                    logger.log(`[${computer["IP Address"]}] [${computer.Name}] I got a connection`)
                     return;
                 }
-                logger.log(`[${computer["IP Address"]}] [${computer.Name}] I dont have connection, ${error}`)
-                
+    
+                // test if connection is still good
+                try {
+                    await conn.exec("hostname");
+                    logger.log(`[${computer["IP Address"]}] [${computer.Name}] I still have connection`)
+                } catch (error) {
+                    try {
+                        conn.close();
+                        conn.removeAllListeners();
+                    } catch (error) {}
+                    let new_password_conn  = await makePermanentConnection(computer,true, false, 5000)
+                    if(!new_password_conn){
+                        logger.log(`Unable to connect to server ${computer["IP Address"]}`)
+                        return;
+                    }
+                    logger.log(`[${computer["IP Address"]}] [${computer.Name}] I dont have connection, ${error}`)
+                    
+                }
+            } catch (error) {
+                logger.log(`${error}`)
             }
-        } catch (error) {
-            logger.log(`${error}`)
-        }
-    })
-    await Promise.all(promises);
-    logger.log("finished checking connections")
-    let ips = servers_connections.keys();
-
-    for(let ip of ips){
-        let conn = servers_connections.get(ip);
-        if(!conn){
-            continue;
-        }
-        connections.push(conn)
+        })
+        await Promise.allSettled(promises);
+        logger.log("finished checking connections")
+        await delay(10000);
+    } catch (error) {
+        logger.error("Checking Error " +error)
+    }finally{
+        checking = false;
     }
-
-    return connections
+   
 }
+setInterval(()=> initConnections(), 10000)
 
-setInterval(async ()=>{
-    await initConnections()
-}, 10000)
-initConnections();
 
 function getAllCurrentConnections(){
     let ips = servers_connections.keys();

@@ -113,14 +113,14 @@ function sendInput(socket: Channel, input: string): Promise<boolean> {
 
 function sendInputExpect(socket: Channel, input: string, expect: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        let log = "";
+        let log:Buffer[] = [];
 
-        const onData = (data: string) => {
-            let parsedData = removeANSIColorCodes(data.toString());
-            log += parsedData;
-            if (log.includes(expect)) {
+        const onData = (chuck: string) => {
+            let parsedData = removeANSIColorCodes(chuck.toString());
+            log.push(Buffer.from(chuck))
+            if (removeANSIColorCodes(Buffer.concat(log).toString('utf8')).includes(expect)) {
                 cleanUp();
-                resolve(log);
+                resolve(removeANSIColorCodes(Buffer.concat(log).toString('utf8')));
             }
         };
 
@@ -134,7 +134,7 @@ function sendInputExpect(socket: Channel, input: string, expect: string): Promis
 
         const timeoutId = setTimeout(() => {
             cleanUp();
-            reject(log);
+            reject(removeANSIColorCodes(Buffer.concat(log).toString('utf8')));
         }, TIMEOUT);
     });
 }

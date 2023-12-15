@@ -16,7 +16,7 @@ import EventEmitter from "events";
 import { delay } from "./util";
 
 const BACKUP_INTERVAL = (1000 *60) * 5
-
+const DELAY_READ = 50
 
 type DataBase = {
     master_password: string;
@@ -238,7 +238,7 @@ class DB {
      */
     async addComputer(name: string, ip: string, username: string, password: string, os_type: options,domain:string =''): Promise<boolean> {
         if (!this.lockDB.acquire()) {
-            await delay(10);
+            await delay(DELAY_READ);
             return await this.addComputer(name, ip, username, password, os_type,domain);
         }
         let result = false;
@@ -324,7 +324,7 @@ class DB {
             throw new Error("Password cannot be undefined");
         }
         if (!this.lockDB.acquire()) {
-            await delay(10);
+            await delay(DELAY_READ);
             return await this.writeCompPassword(computer_id, password);
         }
         let result = false;
@@ -359,7 +359,7 @@ class DB {
         }
 
         if (!this.lockDB.acquire()) {
-            await delay(10);
+            await delay(DELAY_READ);
             return await this.writeCompResult(computer_id, result);
         }
         let res = false;
@@ -517,11 +517,14 @@ class DB {
      * @returns {Promise<boolean>} A promise that resolves to `true` if the write operation is successful.
      * @throws {Error} Throws an error if there is an issue with writing or encrypting the JSON data.
      */
-    async _writeJson(jsonData: DataBase, password_hash: string): Promise<boolean> {
+    async _writeJson(jsonData: DataBase, password_hash: string, trails = 3): Promise<boolean> {
         try {
             const jsonStr = this._normalize(jsonData);
             return await this.encrypt.write(jsonStr, this.filePath, this._getPKey(password_hash));
         } catch (error) {
+            if(trails >0){
+                return await this._writeJson(jsonData,password_hash, --trails);
+            }
             throw new Error(`Error writing and encrypting JSON file: ${error}`);
         }
     }
@@ -554,7 +557,7 @@ class DB {
 
     async backupDB():Promise<boolean>{
         if (!this.lockDB.acquire()) {
-            await delay(10);
+            await delay(DELAY_READ);
             return await this.backupDB();
         }
         try {
@@ -565,6 +568,14 @@ class DB {
             fs.writeFileSync(path.join(this.backupDir, backup_name) , backup,{
                 'flag': 'w',
             });
+
+            var files = fs.readdirSync(this.backupDir);
+            while(files.length > 50){
+                let curr_file = files.shift();
+                if(!curr_file) continue;
+                fs.rmSync(path.join(this.backupDir, curr_file))
+            }
+
         } catch (error) {
             logger.error("Unable to back up DB " + error)
             return false
