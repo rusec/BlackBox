@@ -11,6 +11,9 @@ import { Home } from "../menu/home";
 import logger from "../../modules/util/logger";
 import { logToFile, pressEnter } from "../../modules/console/enddingModules";
 import { Bar } from "../../modules/console/progress";
+
+
+const TEST_PASSWORD = "Password123"
 async function runScript(debug?: boolean) {
     const originalConsoleLog = console.log;
     let capturedOutput = "";
@@ -40,7 +43,7 @@ async function runScript(debug?: boolean) {
 
         //Generate values
 
-        const passwords = debug ? computers.map(() => "Password123") : generatePasses(computers.length, seed);
+        const passwords = debug ? computers.map(() => TEST_PASSWORD) : generatePasses(computers.length, seed);
 
 
         let bar = new Bar(computers.length)

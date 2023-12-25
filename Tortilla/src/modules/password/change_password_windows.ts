@@ -6,6 +6,7 @@ import socket_commands from "../util/socket_commands";
 import { SSH2CONN, detect_hostname } from "../util/ssh_utils";
 import { ServerInfo } from "../util/db";
 import { LDAPChangePassword } from "./active_directory";
+import logger from "../util/logger";
 
 async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, username: string, password: string) {
     if(!conn){
@@ -13,6 +14,7 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
             await LDAPChangePassword(server,password)
             return true;
         } catch (error:any) {
+            logger.log(`[${server["IP Address"]}] [${server.Name}] error ${error.message}`,'error')
             return error.message ? error : error.message;
          }
     }
@@ -25,7 +27,7 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
                 await LDAPChangePassword(server,password)
                 return true;
             } catch (error:any) {
-                
+                logger.log(`[${server["IP Address"]}] [${server.Name}] LDAP Connection ${error.message}`,'warn')
                 conn.log("Fallback ssh")
                 return await changePasswordWinAD(conn,stripDomain(username), password);    
              }
@@ -35,7 +37,7 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
         }
         return await changePasswordWindowsLocal(conn, username, password,useLocalUser);
     } catch (error: any) {
-        console.log("error", error);
+        logger.log("error", error);
         return error.message ? error : error.message;
     }
 }
@@ -60,17 +62,19 @@ async function changePasswordWindowsLocal(conn:SSH2CONN, username:string, passwo
             await socket_commands.sendInputExpect(shellSocket, `${password}`, "The command completed successfully");
         }
         conn.success("Changed Password")
+        
+        await socket_commands.sendCommand(shellSocket, "exit", true);
+
+        shellSocket.close();
+    
+        return true;
     } catch (error: any) {
         shellSocket.close();
-        conn.error("Unable to change password")
+        conn.error(`Unable to change password  ${error.message}`)
         return !error.message ? error.toString() : error.message;
     }
 
-    await socket_commands.sendCommand(shellSocket, "exit", true);
-
-    shellSocket.close();
-
-    return true;
+   
 }
 
 
@@ -98,7 +102,7 @@ async function changePasswordWinAD(conn: SSH2CONN, username: string, password: s
             conn.success("Changed password");
         } catch (error: any) {
             shellSocket.close();
-            conn.error("Unable to change password")
+            conn.error(`Unable to change password  ${error.message}`)
             return !error.message ? error.toString() : error.message;
         }
 
