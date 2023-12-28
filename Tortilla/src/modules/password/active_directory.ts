@@ -1,9 +1,9 @@
 import ldap from "ldapjs-promise";
 import util from "util";
-import logger from "../util/logger";
+import logger from "../console/logger";
 import { ServerInfo } from "../util/db";
 import { delay } from "../util/util";
-import { log } from "../util/debug";
+import { log } from "../console/debug";
 
 async function ChangeADPassword(ADIpAddress: string,hostname:string, domain: string, username: string, oldPassword: string, newPassword: string) {
     logger.log("Attempting to change Password using LDAP")
@@ -17,7 +17,7 @@ async function ChangeADPassword(ADIpAddress: string,hostname:string, domain: str
     client.log("LDAP Connected")
 
     const bindDN = `CN=${username},CN=Users,` + domain_to_ldap(domain);
-    client.log(`trying to bind to ${bindDN}`)
+    client.log(`Trying to bind to ${bindDN}`)
 
     await client.client.bind(bindDN, oldPassword);
     try {
@@ -43,7 +43,7 @@ async function ChangeADPassword(ADIpAddress: string,hostname:string, domain: str
             },
         })
     );
-    client.log(`Changed Password of ${ADIpAddress} using LDAP`)
+    client.success(`Changed Password of ${ADIpAddress} using LDAP`)
 
     await client.client.unbind();
 
@@ -68,24 +68,25 @@ async function TestLDAPPassword(server:ServerInfo, newPassword:string):Promise<b
             tlsOptions: {
                 rejectUnauthorized: false,
             },
+            timeout: 7000
         });
-        client.log(`Attempting to test Password using LDAP ${bindDN}`)
+        client.log(`Attempting to test Password using  ${bindDN}`)
 
-        client.log("LDAP Connected")
-        client.log("Attempting Password")
+        client.log("Connected, Attempting Password")
         try {
             await client.client.bind(bindDN, newPassword);
-            client.log("Successful bind to LDAP")
+            client.success("Successful bind to LDAP")
             await client.client.unbind()
             return true;
         } catch (error) {
-            client.log("unable to use password on LDAP")
+            client.warn("Unable to use password")
+            logger.log(`Password Not working from LDAP ${client.ipaddress}, Possible No LDAP`,'warn')
             return false;
         }
         
     } catch (error) {
         console.log(error)
-        logger.log("Unable to connect to LDAP")
+        logger.log(`Unable to connect`)
         return false
     }
    
@@ -100,9 +101,12 @@ class LDAP {
         this.ipaddress = ipaddress
         this.hostname = hostname
         this.client = ldap.createClient(options);
+        this.client.on('error', (err)=>{
+            this.error(err)
+        })
     }
     _getTag() {
-        return `[${this.ipaddress}]`.bgGreen + ` ` + `[${this.hostname}]`.white + " ";
+        return `[${this.ipaddress}]`.bgGreen + ` ` + `[${this.hostname}]`.white + " LDAP: ";
     }
     info(str: string) {
         log(this._getTag() + `${str}`, "info");

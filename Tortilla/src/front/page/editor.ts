@@ -15,8 +15,8 @@ import {
     testPassword,
 } from "../../modules/util/ssh_utils";
 import { changePasswordOf } from "../../modules/password/change_passwords";
-import { log } from "../../modules/util/debug";
-import logger from "../../modules/util/logger";
+import { log } from "../../modules/console/debug";
+import logger from "../../modules/console/logger";
 import { getCurrentLoggedIn, getEVariables, getFailedLogins, getNetwork, getProcess, getUsers } from "../../modules/computer/compUtils";
 import { pressEnter } from "../../modules/console/enddingModules";
 import { scanComputer } from "../../modules/computer/scan";

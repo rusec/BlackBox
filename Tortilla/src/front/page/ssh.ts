@@ -3,10 +3,10 @@ import runningDB from "../../modules/util/db";
 import clear from "clear";
 import { isValidIPAddress } from "../../modules/util/util";
 import { pingSSH } from "../../modules/util/ssh_utils";
-import { log } from "../../modules/util/debug";
+import { log } from "../../modules/console/debug";
 import fs from "fs/promises";
 import util from "util";
-import logger from "../../modules/util/logger";
+import logger from "../../modules/console/logger";
 import { Bar } from "../../modules/console/progress";
 
 const exec = util.promisify(require("node:child_process").exec);

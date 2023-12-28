@@ -2,7 +2,7 @@ import { scanComputer } from "../../modules/computer/scan";
 import { pressEnter } from "../../modules/console/enddingModules";
 import { checkPassword } from "../../modules/util/checkPassword";
 import runningDB from "../../modules/util/db";
-import { log } from "../../modules/util/debug";
+import { log } from "../../modules/console/debug";
 import { makePermanentConnection } from "../../modules/util/ssh_utils";
 import { Home } from "../menu/home";
 

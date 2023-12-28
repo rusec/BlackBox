@@ -2,7 +2,7 @@ import inquirer from "inquirer";
 import clear from "clear";
 import { generatePasses } from "../../modules/util/password-generator";
 import fs from "fs";
-import { log } from "../../modules/util/debug";
+import { log } from "../../modules/console/debug";
 import { delay } from "../../modules/util/util";
 import { Home } from "../menu/home";
 async function generatePasswords() {

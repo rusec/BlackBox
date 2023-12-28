@@ -26,7 +26,7 @@ function sendCommandExpect(socket: Channel, command: string, expected: string) {
 
         const timeoutId = setTimeout(() => {
             cleanUp();
-            reject(log);
+            reject(filterLog(log));
         }, TIMEOUT);
     });
 }
@@ -40,7 +40,7 @@ function sendCommandNoExpect(socket: Channel, command: string, not_expected: str
             log += parsedData;
             if (log.includes(not_expected)) {
                 cleanUp();
-                reject(log);
+                reject(filterLog(log));
             }
         };
 
@@ -54,7 +54,7 @@ function sendCommandNoExpect(socket: Channel, command: string, not_expected: str
 
         const timeout = setTimeout(() => {
             cleanUp();
-            resolve(log);
+            resolve(filterLog(log));
         }, 6000);
     });
 }
@@ -88,7 +88,7 @@ function sendCommand(socket: Channel, command: string, exit?: boolean): Promise<
         }
 
         const timerId = setTimeout(() => {
-            reject(log);
+            reject(filterLog(log));
             cleanUp();
         }, TIMEOUT);
     });
@@ -134,9 +134,32 @@ function sendInputExpect(socket: Channel, input: string, expect: string): Promis
 
         const timeoutId = setTimeout(() => {
             cleanUp();
-            reject(removeANSIColorCodes(Buffer.concat(log).toString('utf8')));
+            reject(filterLog(Buffer.concat(log).toString('utf8')));
         }, TIMEOUT);
     });
 }
+function filterLog(strLog:string):string{
+
+    let stringWithoutColor = removeANSIColorCodes(strLog)
+
+    const consoleCharPattern = /\x1B\[.*?[@-~]/g;
+    const stringWithoutConsoleChars = stringWithoutColor.replace(consoleCharPattern, ""); 
+
+    return removeWindowsLoading(stringWithoutConsoleChars)
+}
+
+
+function removeWindowsLoading(strLog:string):string{
+    const loadingMessagePattern = /\[.*?\]/g;
+    const stringWithoutLoadingLines = strLog.replace(loadingMessagePattern, match => {
+        // Replace the loading lines with an empty string
+        return match.includes('Loading') ? '' : match;
+    });
+
+    return stringWithoutLoadingLines.trim(); // Trim leading and trailing whitespace
+
+}
+
+
 
 export default { sendCommand, sendCommandExpect, sendCommandNoExpect, sendInput, sendInputExpect };

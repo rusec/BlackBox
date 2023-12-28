@@ -3,17 +3,18 @@ import runningDB, { ServerInfo } from "./db";
 import { getOutput, runCommand, runCommandNoExpect } from "./run_command";
 import SSHConfig from "ssh2-promise/lib/sshConfig";
 import { options } from "./options";
-import { log } from "./debug";
+import { log } from "../console/debug";
 import { commands } from "./commands";
 import { Channel } from "ssh2";
 import readline from "readline";
 import { delay, removeANSIColorCodes } from "./util";
-import logger, { log_options } from "./logger";
+import logger, { log_options } from "../console/logger";
 import {exec} from 'child_process';
 import temp from 'temp';
 import fs from 'fs';
 import os from 'os';
 import { isValidSession } from "./checkPassword";
+import LoggerTo from "../console/loggerToFile";
 // SSH COMMANDS for ejections
 temp.track()
 
@@ -303,6 +304,7 @@ async function makeConnection(Server: ServerInfo, useKey?: boolean, statusLog = 
 }
 
 let servers_connections:Map<string, SSH2CONN> = new Map();
+let connectionLog = new LoggerTo('connections')
 
 async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, statusLog = true, timeout = 3000): Promise<SSH2CONN | false> {
     
@@ -342,7 +344,7 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
         statusLog && ssh.log("Attempting Connection");
         await ssh.connect();
         ssh.on("ssh",async  (e)=>{
-            logger.log(`[${ssh.config[0].host}] [${Server.Name}] Event: ${e}`)
+            connectionLog.log(`[${ssh.config[0].host}] [${Server.Name}] Event: ${e}`)
         })
         statusLog && ssh.log("Connected");
         servers_connections.set(Server["IP Address"], ssh);
@@ -363,7 +365,7 @@ async function initConnections(){
     if(checking || !isValidSession()) return;
     try {
         checking = true;
-        logger.log("Checking Connections " )
+        connectionLog.log("Checking Connections " )
         let computers = await runningDB.readComputers();
     
         let promises = computers.map(async(computer)=>{
@@ -374,17 +376,17 @@ async function initConnections(){
                 if(conn == undefined){
                     let new_connection  = await makePermanentConnection(computer,true, false, 5000)
                     if(!new_connection){
-                        logger.log(`Unable to connect to server ${computer["IP Address"]}`)
+                        connectionLog.log(`Unable to connect to server ${computer["IP Address"]}`)
                         return;
                     }
-                    logger.log(`[${computer["IP Address"]}] [${computer.Name}] I got a connection`)
+                    connectionLog.log(`[${computer["IP Address"]}] [${computer.Name}] I got a connection`)
                     return;
                 }
     
                 // test if connection is still good
                 try {
                     await conn.exec("hostname");
-                    logger.log(`[${computer["IP Address"]}] [${computer.Name}] I still have connection`)
+                    connectionLog.log(`[${computer["IP Address"]}] [${computer.Name}] I still have connection`)
                 } catch (error) {
                     try {
                         conn.close();
@@ -392,21 +394,21 @@ async function initConnections(){
                     } catch (error) {}
                     let new_password_conn  = await makePermanentConnection(computer,true, false, 5000)
                     if(!new_password_conn){
-                        logger.log(`Unable to connect to server ${computer["IP Address"]}`)
+                        connectionLog.log(`Unable to connect to server ${computer["IP Address"]}`)
                         return;
                     }
-                    logger.log(`[${computer["IP Address"]}] [${computer.Name}] I dont have connection, ${error}`)
+                    connectionLog.log(`[${computer["IP Address"]}] [${computer.Name}] I dont have connection, ${error}`)
                     
                 }
             } catch (error) {
-                logger.log(`${error}`)
+                connectionLog.log(`${error}`)
             }
         })
         await Promise.allSettled(promises);
-        logger.log("finished checking connections")
+        connectionLog.log("finished checking connections")
         await delay(10000);
     } catch (error) {
-        logger.error("Checking Error " +error)
+        connectionLog.error("Checking Error " +error)
     }finally{
         checking = false;
     }
@@ -585,7 +587,7 @@ class SSH2CONN extends SSH2Promise {
         this.ipaddress = this.config[0].host;
     }
     _getTag() {
-        return `[${this.ipaddress}]`.bgGreen + ` ` + `[${this.hostname}]`.white + " ";
+        return `[${this.ipaddress}]`.bgGreen + ` ` + `[${this.hostname}]`.white + " SSH: ";
     }
     info(str: string) {
         log(this._getTag() + `${str}`, "info");

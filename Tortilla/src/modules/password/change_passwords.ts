@@ -3,7 +3,7 @@ import { changePasswordWin } from "./change_password_windows";
 import { ServerInfo } from "../util/db";
 import { changePasswordDarwin } from "./change_password_darwin";
 import { changePasswordFreeBSD } from "./change_password_freeBSD";
-import { log } from "../util/debug";
+import { log } from "../console/debug";
 import options from "../util/options";
 import { detect_os, makePermanentConnection } from "../util/ssh_utils";
 import { ejectSSHkey, testPassword } from "../util/ssh_utils";

@@ -2,7 +2,7 @@ import SSH2Promise from "ssh2-promise";
 import { options } from "../util/options";
 import { getOutput } from "../util/run_command";
 import { commands } from "../util/commands";
-import { log } from "../util/debug";
+import { log } from "../console/debug";
 import { SSH2CONN, detect_hostname, detect_os, pingSSH } from "../util/ssh_utils";
 import { pressEnter } from "../console/enddingModules";
 import csv from "csvtojson";

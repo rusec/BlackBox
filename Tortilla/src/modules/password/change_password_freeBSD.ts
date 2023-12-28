@@ -1,5 +1,5 @@
 import SSH2Promise from "ssh2-promise";
-import { log } from "../util/debug";
+import { log } from "../console/debug";
 import bcrypt from "bcryptjs";
 import { runCommand, runCommandNoExpect } from "../util/run_command";
 import { bcryptPassword } from "../util/util";

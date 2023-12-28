@@ -1,7 +1,7 @@
 import runningDB from "./db";
 import inquirer from "inquirer";
 import clear from "clear";
-import logger from "./logger";
+import logger from "../console/logger";
 let valid_session = false;
 
 /**

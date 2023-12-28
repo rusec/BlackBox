@@ -1,7 +1,7 @@
 import fs from "fs";
 import crypto from "crypto";
 import csv from "csvtojson";
-import { log } from "./debug";
+import { log } from "../console/debug";
 import bcrypt from "bcryptjs";
 import inquirer from "inquirer";
 import keccak256 from "keccak256";
@@ -9,7 +9,7 @@ import { machineIdSync } from "node-machine-id";
 import keygen from "ssh-keygen-lite";
 import { options } from "./options";
 import { password_result } from "../password/change_passwords";
-import logger from "./logger";
+import logger from "../console/logger";
 import path from "path";
 import os from "os";
 import EventEmitter from "events";
@@ -267,7 +267,7 @@ class DB {
                     "OS Type": os_type || "",
                     ssh_key: false,
                     password_changes: 0,
-                    domain: domain
+                    domain: domain || ''
                 });
             }
             logger.log(`Added Computer ${name} ${ip}`, "info");
@@ -332,7 +332,7 @@ class DB {
             try {
                 const computers = await this.readComputers();
                 computers[computer_id].Password = password;
-                logger.log(`Changed Computer Password in Database`, "info");
+                logger.log(`Changed Computer ${computers[computer_id].Name} Password in Database`, "info");
 
                 result = await this.writeComputers(computers);
             } catch (error) {

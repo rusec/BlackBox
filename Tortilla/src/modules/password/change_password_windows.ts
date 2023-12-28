@@ -1,12 +1,12 @@
 import SSH2Promise from "ssh2-promise";
-import { log } from "../util/debug";
+import { log } from "../console/debug";
 
 import { delay } from "../util/util";
 import socket_commands from "../util/socket_commands";
 import { SSH2CONN, detect_hostname } from "../util/ssh_utils";
 import { ServerInfo } from "../util/db";
 import { LDAPChangePassword } from "./active_directory";
-import logger from "../util/logger";
+import logger from "../console/logger";
 
 async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, username: string, password: string) {
     if(!conn){
@@ -70,8 +70,8 @@ async function changePasswordWindowsLocal(conn:SSH2CONN, username:string, passwo
         return true;
     } catch (error: any) {
         shellSocket.close();
-        conn.error(`Unable to change password  ${error.message}`)
-        return !error.message ? error.toString() : error.message;
+        conn.error(`Unable to change Local password  ${error}`)
+        return error ;
     }
 
    
@@ -102,8 +102,8 @@ async function changePasswordWinAD(conn: SSH2CONN, username: string, password: s
             conn.success("Changed password");
         } catch (error: any) {
             shellSocket.close();
-            conn.error(`Unable to change password  ${error.message}`)
-            return !error.message ? error.toString() : error.message;
+            conn.error(`Unable to Change AD User password  ${error}`)
+            return error;
         }
 
         await socket_commands.sendCommand(shellSocket, "exit", true);

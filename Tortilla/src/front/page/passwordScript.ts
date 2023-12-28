@@ -3,12 +3,12 @@ import runningDB, { ServerInfo } from "../../modules/util/db";
 import clear from "clear";
 import { delay } from "../../modules/util/util";
 import { changePasswordOf, password_result } from "../../modules/password/change_passwords";
-import { log } from "../../modules/util/debug";
+import { log } from "../../modules/console/debug";
 import { generatePasses } from "../../modules/util/password-generator";
 import fs from "fs";
 import { removeANSIColorCodes } from "../../modules/util/util";
 import { Home } from "../menu/home";
-import logger from "../../modules/util/logger";
+import logger from "../../modules/console/logger";
 import { logToFile, pressEnter } from "../../modules/console/enddingModules";
 import { Bar } from "../../modules/console/progress";
 
@@ -40,7 +40,7 @@ async function runScript(debug?: boolean) {
         //Clear and print status
         await clear();
         log(debug ? `Running DEBUG script on ${computers.length} computers` : `Running script on ${computers.length} computers`);
-
+        logger.log(debug ? `Running DEBUG script on ${computers.length} computers` : `Running script on ${computers.length} computers`);
         //Generate values
 
         const passwords = debug ? computers.map(() => TEST_PASSWORD) : generatePasses(computers.length, seed);

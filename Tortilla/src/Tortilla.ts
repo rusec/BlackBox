@@ -4,7 +4,7 @@ import { Home } from "./front/menu/home";
 import { checkPassword } from "./modules/util/checkPassword";
 import os from "os";
 import path from "path";
-import logger from "./modules/util/logger";
+import logger from "./modules/console/logger";
 import SingleInstance from "single-instance";
 
 const locker = new SingleInstance("Tortilla");
