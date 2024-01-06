@@ -1,5 +1,4 @@
-import delay from "delay";
-import { removeANSIColorCodes } from "./util";
+import { removeANSIColorCodes ,delay} from "./util";
 import { Channel } from "ssh2";
 const TIMEOUT = 4000;
 
@@ -111,6 +110,72 @@ function sendInput(socket: Channel, input: string): Promise<boolean> {
     });
 }
 
+/**
+ *  Allows you to send a command and input after for Read-Host, has automatic delay 
+ *
+ */
+function sendCommandAndInput(socket:Channel, input:string, command:string): Promise<string | true>{
+    return new Promise((resolve, reject)=>{
+        let log = ''
+        let commandSent = false;
+        let sentInput = false;
+        let errored = false;
+        async function sendInputToSocket(){
+            sentInput= true;
+            await delay(100);
+            if(errored){
+                return;
+            }
+            socket.stdin.write(`${input}\r`,async  (err:any) => {
+                cleanUp();
+                if (err) {
+                    cleanUp()
+                    reject(filterLog(log));
+                } else {
+                    await delay(2000);
+                    !errored && resolve(true);
+                }
+            });
+
+        }
+        const onData = (chuck: Buffer) => {
+            let parsedData = filterLog(chuck.toString());
+            log += parsedData;
+            if(errored){
+                return;
+            }
+            if(/(?<!["'])An error occurred.(?!["'])/.test(log.replace(/\r|\n|\r\n/g, ''))){
+                errored = true
+                reject(filterLog(log))
+                cleanUp()
+                return;
+            }
+       
+            if (log.replace(/\r|\n|\r\n/g, '').includes(command) && !commandSent) {
+                commandSent = true;
+                if(!sentInput) sendInputToSocket();
+            }
+        };
+
+        socket.on("data", onData);
+        socket.write(`${wrapTryCatch(command)}\r`);
+        
+        const cleanUp = () => {
+            clearTimeout(timerId);
+            socket.stdout.removeListener("data", onData);
+        };
+        const timerId = setTimeout(() => {
+            reject(log.replace(/\r|\n|\r\n/g, '') + " TIMEOUT");
+        }, 15000);
+
+    })
+}
+
+function wrapTryCatch(command:string){
+    return `try{${command}}catch{"An error occurred."}`
+}
+
+
 function sendInputExpect(socket: Channel, input: string, expect: string): Promise<string> {
     return new Promise((resolve, reject) => {
         let log:Buffer[] = [];
@@ -145,7 +210,7 @@ function filterLog(strLog:string):string{
     const consoleCharPattern = /\x1B\[.*?[@-~]/g;
     const stringWithoutConsoleChars = stringWithoutColor.replace(consoleCharPattern, ""); 
 
-    return removeWindowsLoading(stringWithoutConsoleChars)
+    return (stringWithoutConsoleChars)
 }
 
 
@@ -162,4 +227,4 @@ function removeWindowsLoading(strLog:string):string{
 
 
 
-export default { sendCommand, sendCommandExpect, sendCommandNoExpect, sendInput, sendInputExpect };
+export default { sendCommand, sendCommandAndInput, sendCommandExpect, sendCommandNoExpect, sendInput, sendInputExpect };

@@ -51,10 +51,7 @@ async function changePasswordWindowsLocal(conn:SSH2CONN, username:string, passwo
         if (useLocalUser) {
             await socket_commands.sendCommandExpect(shellSocket, `powershell.exe`, `Windows PowerShell`);
             await delay(2000);
-            await socket_commands.sendCommand(shellSocket, `$pass = Read-Host -AsSecureString`);
-            await socket_commands.sendInput(shellSocket, `${password}`);
-            await socket_commands.sendCommand(shellSocket, `$user = Get-LocalUser "${username}"`);
-            await socket_commands.sendCommandNoExpect(shellSocket, `Set-LocalUser -Name $user -Password $pass`, "Unable to update the password");
+            await socket_commands.sendCommandAndInput(shellSocket, `${password}`, `$pass = Read-Host -AsSecureString;$user = Get-LocalUser "${username}";Set-LocalUser -Name $user -Password $pass;`)         
         } else {
             await socket_commands.sendCommandExpect(shellSocket, `net user ${username} *`, "Type a password for the user:");
             await delay(2000);
@@ -91,14 +88,7 @@ async function changePasswordWinAD(conn: SSH2CONN, username: string, password: s
 
             await socket_commands.sendCommandExpect(shellSocket, `powershell.exe`, `PS`);
             await delay(2000);
-            await socket_commands.sendCommand(shellSocket, "$pass = Read-Host -AsSecureString");
-            await delay(500);
-            await socket_commands.sendInput(shellSocket, `${password}`);
-            await socket_commands.sendCommandNoExpect(
-                shellSocket,
-                `Set-ADAccountPassword –Identity "${username}" –Reset –NewPassword $pass`,
-                "CategoryInfo"
-            );
+            await socket_commands.sendCommandAndInput(shellSocket, `${password}`, `$pass = Read-Host -AsSecureString;Set-ADAccountPassword –Identity "${username}" –Reset –NewPassword $pass;`)
             conn.success("Changed password");
         } catch (error: any) {
             shellSocket.close();
