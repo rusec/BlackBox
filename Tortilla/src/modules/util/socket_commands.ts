@@ -173,7 +173,7 @@ function sendCommandAndInput(socket:Channel, input:string, command:string): Prom
                 return;
             }
        
-            if (log.replace(/\r|\n|\r\n/g, '').includes(command) && !commandSent) {
+            if (log.replace(/\r|\n|\r\n/g, '').includes(command.trim()) && !commandSent) {
                 commandSent = true;
                 if(!sentInput) sendInputToSocket();
             }
@@ -194,7 +194,7 @@ function sendCommandAndInput(socket:Channel, input:string, command:string): Prom
 }
 
 function wrapTryCatch(command:string){
-    return `try{${command}}catch{"An error occurred."}`
+    return `try{ ${command} }catch{"An error occurred."}`
 }
 
 

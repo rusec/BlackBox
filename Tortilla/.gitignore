@@ -16,6 +16,7 @@ pineapples
 
 # Ignore Computers
 computers.csv
+computers_old*.csv
 
 # Files
 

@@ -72,9 +72,12 @@ async function testSSH(conn: SSH2CONN) {
             authHandler: ["publickey"],
             reconnect: false,
             keepaliveInterval: 0,
-            readyTimeout: 2000,
+            readyTimeout: 7000,
         };
-        const ssh = new SSH2Promise(sshConfig, true);
+        const ssh = new SSH2CONN(conn.config[0].host? conn.config[0].host : "",sshConfig, true);
+        ssh.on("ssh",async  (e)=>{
+            connectionLog.log(`[${ssh.config[0].host}] [] Event: ${e}`)
+        })
         await ssh.connect();
         await ssh.close();
         conn.info("Testing SSH Private Key active");
@@ -96,9 +99,12 @@ async function testPassword(conn: SSH2CONN, password: string) {
             authHandler: ["password"],
             reconnect: false,
             keepaliveInterval: 0,
-            readyTimeout: 4000,
+            readyTimeout: 7000,
         };
         const ssh = new SSH2Promise(sshConfig, true);
+        ssh.on("ssh",async  (e)=>{
+            connectionLog.log(`[${ssh.config[0].host}] [] Event: ${e}`)
+        })
         await ssh.connect();
         await ssh.close();
         conn.info("Login Password active");
@@ -513,7 +519,9 @@ async function pingSSH(ip: string, username: string, password: string): Promise<
         const ssh = new SSH2CONN("", sshConfig);
         await ssh.connect();
         let hostname = await detect_hostname(ssh);
-        
+        ssh.on("ssh",async  (e)=>{
+            connectionLog.log(`[${ssh.config[0].host}] [] Event: ${e}`)
+        })
         ssh.log("Connected")
         ssh.updateHostname(hostname);
         let os = await detect_os(ssh);
