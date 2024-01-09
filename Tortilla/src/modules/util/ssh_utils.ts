@@ -43,6 +43,11 @@ async function removeSSHkey(conn: SSH2CONN, os_type: options): Promise<boolean> 
             break;
         case "windows":
             var output = await runCommand(conn, commands.ssh.remove.windows(ssh_key), "successfully processed");
+            if(output.toString().includes("Timed")){
+                conn.warn("Using CMD to remove make sure %ProgramData%\\ssh\\administrators_authorized_keys Exists, We are unable to detect completion")
+                output = await runCommandNoExpect(conn, commands.ssh.remove.windows_cmd(ssh_key));
+            }
+
             if (!output) {
                 return false;
             }
@@ -140,6 +145,10 @@ async function injectSSHkey(conn: SSH2CONN, os_type: options, force?: undefined 
             break;
         case "windows":
             var ssh_keys = await getOutput(conn, commands.ssh.echo.windows);
+            if(ssh_keys.includes('Timed')){
+                conn.warn("Using CMD to inject make sure %ProgramData%\\ssh\\administrators_authorized_keys Exists, We are unable to detect completion")
+                return await injectSSHKeyWindowsCMD(conn, 'windows')
+            }
             if (ssh_keys.includes(ssh_key)) {
                 return await test();
             }
@@ -159,6 +168,7 @@ async function injectSSHkey(conn: SSH2CONN, os_type: options, force?: undefined 
                 return await injectSSHkey(conn, os_type, true, trials);
             }
         } catch (error) {
+            trials = trials + 1;
             return await injectSSHkey(conn, os_type, true, trials);
         }
     }
@@ -180,6 +190,44 @@ async function injectSSHkey(conn: SSH2CONN, os_type: options, force?: undefined 
                 await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
                 break;
         }
+    }
+}
+
+async function injectSSHKeyWindowsCMD(conn: SSH2CONN, os_type: options, force?: undefined | boolean, trials: number = 0): Promise<boolean>{
+    if (trials > 2) {
+        return false;
+    }
+    const ssh_key = await runningDB.getSSHPublicKey();
+
+    if (force) {
+        await injectKey();
+        return await test();
+    }
+    var ssh_keys = await getOutput(conn, commands.ssh.echo.windows_cmd);
+
+    if (ssh_keys.includes(ssh_key)) {
+        return await test();
+    }
+
+    conn.log("Ejecting SSH Key Using CMD");
+    await injectKey();
+    return await test();
+
+    async function test(){
+        try {
+            let result = await testSSH(conn);
+            if (result) return true;
+            else {
+                trials = trials + 1;
+                return await injectSSHKeyWindowsCMD(conn, os_type, true, trials);
+            }
+        } catch (error) {
+            trials = trials + 1;
+            return await injectSSHKeyWindowsCMD(conn, os_type, true, trials);
+        }
+    }
+    async function injectKey() {
+        await runCommandNoExpect(conn, commands.ssh.eject.windows_cmd(ssh_key));
     }
 }
 

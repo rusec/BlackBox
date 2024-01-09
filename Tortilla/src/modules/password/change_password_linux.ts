@@ -16,7 +16,7 @@ async function changePasswordLinux(conn: SSH2CONN, username: string, password: s
 
     let error: boolean | string = true;
     // Try changing the password without inputting the sudo password first.
-    let changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_1(string));
+    let changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_1(string), false);
     if (typeof changedPassword != "string") {
         conn.success("Changed password")
         return true;
@@ -25,7 +25,7 @@ async function changePasswordLinux(conn: SSH2CONN, username: string, password: s
     conn.warn(error)
 
     // If the first attempt fails, try with sudo chpasswd.
-    changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_2(string));
+    changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_2(string),false);
     if (typeof changedPassword !== "string") {
         conn.success("Changed password")
 
@@ -37,7 +37,7 @@ async function changePasswordLinux(conn: SSH2CONN, username: string, password: s
 
 
     // Try with inputting the sudo password.
-    changedPassword = await runCommandNotExpect(conn, commands.password.linux.step_3(sudoPassword, string), "sorry");
+    changedPassword = await runCommandNotExpect(conn, commands.password.linux.step_3(sudoPassword, string), "sorry", false);
     if (typeof changedPassword !== "string") {
         conn.success("Changed password")
 

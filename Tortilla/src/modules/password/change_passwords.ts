@@ -21,7 +21,8 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
     }
 
     const conn = await makePermanentConnection(computer, true);
-
+    if(!conn) log("Unable to connect to Target", 'warn')
+    else conn.log("Connected to Target")
     try {
         let res;
 
@@ -44,7 +45,6 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
                     ssh: computer.ssh_key,
                     error: ldapTestResult ? false :`${computer["IP Address"]} ${computer.Name} Unable to connect to host` ,
                 };
-                throw new Error(`${computer["IP Address"]} ${computer.Name} Unable to connect to host`);
             }
         
             // Eject SSH key

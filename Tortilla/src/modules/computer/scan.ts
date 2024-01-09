@@ -1,4 +1,3 @@
-import SSH2Promise from "ssh2-promise";
 import { options } from "../util/options";
 import { getOutput } from "../util/run_command";
 import { commands } from "../util/commands";
@@ -246,7 +245,7 @@ function createTextFile(hostname:string, os:string, ports:port[], applications:a
     log("Created Text File "  + `./scans/${hostname}.txt`, 'success')
     return file.finish();
 }
-async function getUsersWindows(conn:SSH2Promise){
+async function getUsersWindows(conn:SSH2CONN){
     try {
         let usersOutput = await getOutput(conn, commands.users.parsing.windows)
         return parseUsersWindows(usersOutput);
@@ -294,7 +293,7 @@ async function parseUsersWindows(str:string){
     return users
 }
 
-async function getUsersLinux(conn:SSH2Promise){
+async function getUsersLinux(conn:SSH2CONN){
     
     try {
         let usersOutput = await getOutput(conn, commands.users.parsing.linux)
@@ -333,7 +332,7 @@ function parseUsersLinux(str:string){
 
 //OS info
 
-async function getOsInfoWindows(conn:SSH2Promise){
+async function getOsInfoWindows(conn:SSH2CONN){
     let os_infoOutput;
     try {
         os_infoOutput = await getOutput(conn, commands.os_info.windows)
@@ -358,7 +357,7 @@ async function getOsInfoWindows(conn:SSH2Promise){
     }
 }
 
-async function getOsInfoLinux(conn:SSH2Promise){
+async function getOsInfoLinux(conn:SSH2CONN){
     let os_infoOutput;
     try {
         os_infoOutput = await getOutput(conn, commands.os_info.linux)
@@ -390,7 +389,7 @@ async function getOsInfoLinux(conn:SSH2Promise){
 
 
 //Getting installed APPs
-async function getInstalledAppsLinux(conn: SSH2Promise) {
+async function getInstalledAppsLinux(conn: SSH2CONN) {
     let applications;
     try {
         applications = await getOutput(conn, commands.processes.installed.linux.step_1);
@@ -403,7 +402,7 @@ async function getInstalledAppsLinux(conn: SSH2Promise) {
     }
     return [];
 }
-async function getInstallAppsFreeBsd(conn: SSH2Promise) {
+async function getInstallAppsFreeBsd(conn: SSH2CONN) {
     let applications;
     try {
         applications = await getOutput(conn, commands.processes.installed.freebsd.step_1);
@@ -414,7 +413,7 @@ async function getInstallAppsFreeBsd(conn: SSH2Promise) {
     } catch (error) {}
     return [];
 }
-async function getInstalledAppsWindows(conn: SSH2Promise) {
+async function getInstalledAppsWindows(conn: SSH2CONN) {
     let applications;
     try {
         applications = await getOutput(conn, commands.processes.installed.windows.step_1);
@@ -520,7 +519,7 @@ function parseLinuxAppsStepTwo(str: string) {
 
 
 //Getting listening ports
-async function getPortsLinux(conn: SSH2Promise) {
+async function getPortsLinux(conn: SSH2CONN) {
     let network;
     try {
         network = await getOutput(conn, commands.network.ports.linux.step_1);
@@ -533,7 +532,7 @@ async function getPortsLinux(conn: SSH2Promise) {
     }
     return [];
 }
-async function getPortsFreeBSD(conn: SSH2Promise) {
+async function getPortsFreeBSD(conn: SSH2CONN) {
     let network;
     try {
         network = await getOutput(conn, commands.network.ports.freebsd);
@@ -543,7 +542,7 @@ async function getPortsFreeBSD(conn: SSH2Promise) {
     }
     return [];
 }
-async function getPortsWindows(conn: SSH2Promise) {
+async function getPortsWindows(conn: SSH2CONN) {
     let network;
     try {
         network = await getOutput(conn, commands.network.ports.windows);

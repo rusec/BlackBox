@@ -1,12 +1,10 @@
-import SSH2Promise from "ssh2-promise";
-import { log } from "../console/debug";
-
 import { delay } from "../util/util";
 import socket_commands from "../util/socket_commands";
 import { SSH2CONN, detect_hostname } from "../util/ssh_utils";
 import { ServerInfo } from "../util/db";
 import { LDAPChangePassword } from "./active_directory";
 import logger from "../console/logger";
+import { getOutput } from "../util/run_command";
 
 async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, username: string, password: string) {
     if(!conn){
@@ -21,7 +19,12 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
 
     try {
         let checkReport = await check(conn);
+        conn.log(`AD: ${checkReport.domainController}  Domain User: ${checkReport.isDomainUser}  Local User: ${checkReport.useLocal} Force Net: ${checkReport.forceNetUser}`)
         let useLocalUser = checkReport.useLocal
+        if(checkReport.forceNetUser){
+            return await changePasswordWindowsLocal(conn, username, password,false);
+        }
+
         if(checkReport.isDomainUser && checkReport.domainController){
             try {
                 await LDAPChangePassword(server,password)
@@ -114,11 +117,15 @@ type check_report = {
     domainController: boolean,
     useLocal:boolean,
     isDomainUser:boolean,
+    forceNetUser: boolean
 
 }
 async function check(conn: SSH2CONN):Promise<check_report> {
     var passed = 2;
     var useLocalUser = true;
+    var forceNetUser = false;
+    conn.log("Running Checks")
+    
     let os_check = await conn.exec("echo %OS%");
     if (os_check.trim() != "Windows_NT") {
         conn.error(`Windows check error GOT ${os_check} WANTED Windows_NT, Please check for environment vars`)
@@ -127,19 +134,33 @@ async function check(conn: SSH2CONN):Promise<check_report> {
     let get_local_check;
 
     try {
-        get_local_check = await conn.exec(`powershell.exe -Command "& {Get-LocalUser}"`);
-    } catch (error: any) {
-        if (error.trim().includes("is not recognized")) {
-            conn.warn(`Windows check error GOT ${error.substring(0, 30)} WANTED User List, Powershell version might be out of date`)
+        var output  = await getOutput(conn, `powershell.exe -Command "Get-LocalUser"`);
+
+        // If this times out either we do not have connect or powershell cannot be targeted. Will focus to use net user
+        if(output.includes("Timed")){
+            get_local_check = false;
+            forceNetUser = true;
+        }else
+        if (output.trim().includes("is not recognized")) {
+            conn.warn(`Windows check error GOT ${output.substring(0, 30)} WANTED User List, Powershell version might be out of date`)
             passed--;
             useLocalUser = false;
+        }else {
+            useLocalUser = true;
         }
+    } catch (error: any) {
+
     }
-    let isDomainController = false;
+   
+    let isDomainController = false ;
     try {
-        isDomainController = await conn.exec(`powershell.exe -Command "& {Get-ADDefaultDomainPasswordPolicy}"`)
-        conn.log("Computer is a Domain Controller")
-        isDomainController = true;
+        var output =  await getOutput(conn,`powershell.exe -Command "& {Get-ADDefaultDomainPasswordPolicy}"`)
+        if(output.includes("Timed") || output.includes("is not recognized")) {
+            isDomainController = false;
+        }else {
+            conn.log("Computer is a Domain Controller")
+            isDomainController = true;
+        }
     } catch (error) {
 
     }
@@ -149,7 +170,7 @@ async function check(conn: SSH2CONN):Promise<check_report> {
         let hostname = await detect_hostname(conn);
 
         // if hostname is not included in whoami then its a domain user
-        if(!whoamiString.includes(hostname.toLowerCase())){
+        if(!whoamiString.includes(hostname?.toLowerCase())){
             isDomainUser = true;
         }
 
@@ -158,9 +179,10 @@ async function check(conn: SSH2CONN):Promise<check_report> {
     }
     conn.info(`Passed ${passed} of 2 tests`)
     return {
-        useLocal: get_local_check,
+        useLocal: !!get_local_check,
         domainController: isDomainController,
-        isDomainUser:isDomainUser
+        isDomainUser:isDomainUser,
+        forceNetUser: forceNetUser
     };
 }
 

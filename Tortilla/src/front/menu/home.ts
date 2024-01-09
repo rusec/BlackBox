@@ -11,6 +11,23 @@ import { Commands } from "../page/commands";
 import { scanComputers } from "../page/scanComputers";
 import { getAllCurrentConnections } from "../../modules/util/ssh_utils";
 
+async function setTitleOfApplication(){
+    setTerminalTitle(`${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())} Connections: ${(await getAllCurrentConnections()).length}`);
+}
+function setTerminalTitle(title:string)
+{
+    if(process.platform =='win32'){
+        process.title = title;
+    }else
+  process.stdout.write(
+    String.fromCharCode(27) + "]0;" + title + String.fromCharCode(7)
+  );
+}
+
+setInterval(()=> {
+    setTitleOfApplication()
+}, 15 *1000)
+
 async function Home() {
     process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");console.clear();
     console.log(`${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())} Connections: ${(await getAllCurrentConnections()).length}`.bgGreen);

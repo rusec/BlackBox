@@ -10,9 +10,8 @@ async function changePasswordFreeBSD(conn: SSH2CONN, username: string, password:
     await checks(conn);
 
     const bcrypt_password = await bcryptPassword(password);
-    const host = conn.config[0].host;
 
-    let changedPassword = await runCommand(conn, commands.password.freebsd.step_1(bcrypt_password, username), `user information updated`);
+    let changedPassword = await runCommand(conn, commands.password.freebsd.step_1(bcrypt_password, username), `user information updated`,false);
     if (typeof changedPassword != "string") {
         conn.success("Changed password")
         return true;
@@ -21,7 +20,7 @@ async function changePasswordFreeBSD(conn: SSH2CONN, username: string, password:
     let error = `Unable to use chpass. Got: ${changedPassword.trim()}. Please check for alias or no implementation.`;
     conn.warn(error);
 
-    changedPassword = await runCommandNoExpect(conn, commands.password.freebsd.step_2(bcrypt_password, username));
+    changedPassword = await runCommandNoExpect(conn, commands.password.freebsd.step_2(bcrypt_password, username),false);
     if (typeof changedPassword != "string") {
         conn.success("Changed password")
         return true;

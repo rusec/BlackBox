@@ -47,7 +47,7 @@ async function runScript(debug?: boolean) {
 
 
         let bar = new Bar(computers.length)
-
+        var then = new Date();
         const promises = computers.map(async (element, i) => {
             const password = passwords[i];
             const result = await changePasswordOf(element, password);
@@ -59,12 +59,15 @@ async function runScript(debug?: boolean) {
         });
 
         var results = await Promise.allSettled(promises);
+        var now = new Date();
         const numberOfSuccess = results
             .filter(({ status }) => status === "fulfilled")
             .map((p) => typeof (p as PromiseFulfilledResult<any>).value == "boolean" && (p as PromiseFulfilledResult<any>).value).length;
-        logger.log(`Successfully changed passwords on ${numberOfSuccess} of ${computers.length}`, "info");
 
-        console.log(`Successfully changed passwords on ${numberOfSuccess} of ${computers.length}`.green);
+        var lapse_time = now.getTime() - then.getTime();
+        logger.log(`Successfully changed passwords on ${numberOfSuccess} of ${computers.length} in ${lapse_time} ms`, "info");
+
+        console.log(`Successfully changed passwords on ${numberOfSuccess} of ${computers.length} in ${lapse_time} ms`.green);
 
         const runningLog = results
         .map((element, i) => {
@@ -109,7 +112,7 @@ async function runSingleScript(id: number) {
             },
         ]);
         const computers = await runningDB.readComputers();
-        log(`Running script on ${computers[id].Name}`);
+        log(`Running script on ${computers[id].Name}`, 'info');
         const result = await changePasswordOf(computers[id], password);
 
         if (typeof result == "string" || result.error) {
