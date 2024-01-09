@@ -1,7 +1,8 @@
 import {  delay, replaceAll } from "./util";
 import { SSH2CONN } from "./ssh_utils";
 
-const TIMEOUT = 30000;
+const TIMEOUT = 10 * 1000;
+
 
 /** THIS FILE IS FOR COMMANDS SENT BY A REGULAR CONNECTION */
 
@@ -16,7 +17,7 @@ async function runCommandNotExpect(conn: SSH2CONN, command: string, not_expected
     try {
         const timeoutPromise = new Promise<string>((_, reject) => {
             timeoutId = setTimeout(() => {
-                reject(log_error ?new Error(`${command} Timed Out`) : "Timed Out");
+                reject(new Error(log_error ? `${command} Timed Out` : "Timed Out"));
             }, TIMEOUT);
         });
         timeoutPromise.catch((error) => {
@@ -52,7 +53,7 @@ async function runCommand(conn: SSH2CONN, command: string, expect: string | unde
     try {
         const timeoutPromise = new Promise<string>((_, reject) => {
             timeoutId = setTimeout(() => {
-                reject(log_error ?new Error(`${command} Timed Out`) : "Timed Out");
+                reject(new Error(log_error ? `${command} Timed Out` : "Timed Out"));
             }, TIMEOUT);
         });
         timeoutPromise.catch((error) => {
@@ -60,7 +61,6 @@ async function runCommand(conn: SSH2CONN, command: string, expect: string | unde
                     });
 
         const executionPromise = conn.exec(command);
-        // const executionPromise = delay(400);
 
         const value = await Promise.race([executionPromise, timeoutPromise]);
         if(value.toString().includes("Timed Out")){
@@ -90,7 +90,7 @@ async function runCommandNoExpect(conn: SSH2CONN, command: string, log_error =tr
     try {
         const timeoutPromise = new Promise<string>((_, reject) => {
             timeoutId = setTimeout(() => {
-                reject(log_error ? new Error(`${command} Timed Out`) : new Error("Timed Out"));
+                reject(new Error(log_error ? `${command} Timed Out` : "Timed Out"));
             }, TIMEOUT);
         });
         timeoutPromise.catch((error) => {
@@ -124,7 +124,7 @@ async function getOutput(conn: SSH2CONN, command: string, log_error =true): Prom
     try {
         const timeoutPromise = new Promise<string>((_, reject) => {
             timeoutId = setTimeout(() => {
-                reject(log_error ?new Error(`${command} Timed Out`) : "Timed Out");
+                reject(new Error(log_error ? `${command} Timed Out` : "Timed Out"));
             }, TIMEOUT);
         });
         timeoutPromise.catch((error) => {

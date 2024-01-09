@@ -11,6 +11,7 @@ const locker = new SingleInstance("Tortilla");
 locker
     .lock()
     .then(() => {
+
         logger.log("Starting application");
 
         start();
@@ -18,13 +19,15 @@ locker
         process.on("exit", () => {
             logger.log("Ending application.");
         });
+        process.on('uncaughtException', function(err){
+            logger.error(err.toString())   
+          })
     })
     .catch((err: any) => {
         console.error("Another instance is already running.");
         logger.error("Another instance is already running.");
         process.exit(1);
         // This block will be executed if the app is already running
-        console.log(err); // it will print out 'An application is already running'
     });
 
 async function start() {
@@ -32,3 +35,5 @@ async function start() {
     await checkPassword();
     Home();
 }
+
+

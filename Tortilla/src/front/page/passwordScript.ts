@@ -52,6 +52,7 @@ async function runScript(debug?: boolean) {
             const password = passwords[i];
             const result = await changePasswordOf(element, password);
             if (typeof result == "string" || result.error) {
+                bar.done("Errored " + element.Name+ " " + element["IP Address"])
                 throw new Error(typeof result == "string" ? result : result.error ? result.error : "");
             }
             bar.done(element.Name+ " " + element["IP Address"])
@@ -74,7 +75,8 @@ async function runScript(debug?: boolean) {
             if (typeof (element as PromiseFulfilledResult<any>).value === "boolean" && (element as PromiseFulfilledResult<any>).value) {
                 return `Changed password of ${computers[i]["IP Address"]}`;
             } else {
-                return `Error on ${computers[i]["IP Address"]} ${(element as PromiseFulfilledResult<any>).value}`;
+                // console.log(JSON.stringify(element))
+                return `Error on ${computers[i]["IP Address"]} ${(element as any).reason}`;
             }
         })
         .join("\n");

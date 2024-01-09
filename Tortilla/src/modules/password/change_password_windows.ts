@@ -79,7 +79,6 @@ async function changePasswordWindowsLocal(conn:SSH2CONN, username:string, passwo
 
 
 async function changePasswordWinAD(conn: SSH2CONN, username: string, password: string) {
-    const host = conn.config[0].host;
 
     conn.info("Changing Domain Controller Account")
     try {

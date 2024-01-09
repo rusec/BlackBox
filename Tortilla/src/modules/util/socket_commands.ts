@@ -1,6 +1,6 @@
 import { removeANSIColorCodes ,delay} from "./util";
 import { Channel } from "ssh2";
-const TIMEOUT = 4000;
+const TIMEOUT = 5000;
 
 /** THIS FILE IS FOR COMMANDS SENT BY A SOCKET CONNECTION */
 function sendCommandExpect(socket: Channel, command: string, expected: string) {

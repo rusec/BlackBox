@@ -366,10 +366,7 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
     let findConnection = servers_connections.get(Server["IP Address"]);
     try {
         if(findConnection){
-            // await findConnection.connect()
             await findConnection.exec("hostname")
-            // findConnection.log("Maintained Connection")
-    
             return findConnection;
         }
     } catch (error) {
@@ -412,7 +409,7 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
 }
 
 let checking = false;
-// this function is for presisents
+// this function is for precisest
 // will reconnect to computer when its not able to connect. 
 // if password changes, it will try to reconnect with the new config.
 async function initConnections(){
