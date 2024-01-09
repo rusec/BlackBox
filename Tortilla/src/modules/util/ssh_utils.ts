@@ -508,21 +508,24 @@ async function pingSSH(ip: string, username: string, password: string): Promise<
             authHandler: ["password"],
             reconnect: false,
             keepaliveInterval: 0,
-            readyTimeout: 2000,
+            readyTimeout: 6000,
         };
         const ssh = new SSH2CONN("", sshConfig);
         await ssh.connect();
-        log("Connected", 'success')
+        let hostname = await detect_hostname(ssh);
+        
+        ssh.log("Connected")
+        ssh.updateHostname(hostname);
         let os = await detect_os(ssh);
         let domain = ''
         if(os == 'windows'){
             domain = await detect_domain(ssh)
         }
-        let hostname = await detect_hostname(ssh);
         await ssh.close();
         return { operatingSystem: os, hostname: hostname, domain:domain } || true;
     } catch (error: any) {
-        log((error as Error).message + ` ${ip}`, "error");
+        console.log(error)
+        log((error as Error)?.message + ` ${ip}`, "error");
         return false;
     }
 }
@@ -594,7 +597,7 @@ async function detect_os(conn: SSH2CONN): Promise<options> {
 
         if (name.includes("linux")) {
             return "linux";
-        } else if (name.includes("freebsd") || name.includes("openbsd")) {
+        } else if (name.includes("freebsd") || name.includes("openbsd") || name.includes("netbsd") || name.includes("dragon"))  {
             return "freebsd";
         } else if (name.includes("darwin")) {
             return "darwin";
@@ -607,23 +610,30 @@ async function detect_os(conn: SSH2CONN): Promise<options> {
         }
     } catch (error) {
         if (typeof error === "string" && error.toLowerCase().includes("is not recognized")) {
-            const windowsInfo = await conn.exec(commands.detect.windows);
-            if (windowsInfo.toLowerCase().includes("windows")) {
-                return "windows";
-            }
+            return "windows";
         }
         return "Unknown";
     }
 }
 async function detect_domain(conn:SSH2CONN){
     conn.log("Checking for Domain")
-    const domain_string = await conn.exec(commands.AD.domain);
-    return domain_string.split(':')[1].trim()
+    try {
+        const domain_string = await conn.exec(commands.AD.domain);
+        return domain_string.split(':')[1].trim()
+    } catch (error) {
+        return "unknown"
+    }
+   
 }
 async function detect_hostname(conn: SSH2CONN) {
     conn.log("Checking For Hostname");
-    const system = await conn.exec(commands.hostname);
-    return system.trim();
+    try {
+        const system = await conn.exec(commands.hostname);
+        return system.trim();
+    } catch (error) {
+        return "unknown"
+    }
+ 
 }
 
 class SSH2CONN extends SSH2Promise {
