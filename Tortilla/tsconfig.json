@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
         "incremental": true,
-        "target": "ES6",
+        "target": "es2022",
         "module": "commonjs",
         "allowJs": true,
         "checkJs": false,
@@ -11,6 +11,7 @@
         "alwaysStrict": true,
         "moduleResolution": "node",
         "esModuleInterop": true
+        
     },
     "include": ["**/*", "..webpack.config.js"],
     "exclude": ["releases/**", "dist/**", "build/**", "misc/**", "testing/**"]

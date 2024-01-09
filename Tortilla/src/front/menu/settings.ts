@@ -67,7 +67,7 @@ async function Settings() {
                 {
                     name: "json_id",
                     type: "list",
-                    pageSize: 50,
+                    pageSize: 30,
     
                     choices: [...mappedOptions, { name: "Back", value: "back" }],
                     message: "Please select a computer:",

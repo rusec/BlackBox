@@ -4,7 +4,7 @@ import { SSH2CONN, detect_hostname } from "../util/ssh_utils";
 import { ServerInfo } from "../util/db";
 import { LDAPChangePassword } from "./active_directory";
 import logger from "../console/logger";
-import { getOutput } from "../util/run_command";
+import { getOutput, runCommand } from "../util/run_command";
 
 async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, username: string, password: string) {
     if(!conn){
@@ -56,10 +56,7 @@ async function changePasswordWindowsLocal(conn:SSH2CONN, username:string, passwo
             await delay(3000);
             await socket_commands.sendCommandAndInput(shellSocket, `${password}`, `$pass = Read-Host -AsSecureString;$user = Get-LocalUser "${username}";Set-LocalUser -Name $user -Password $pass;`)         
         } else {
-            await socket_commands.sendCommandExpect(shellSocket, `net user ${username} *`, "Type a password for the user:");
-            await delay(3000);
-            await socket_commands.sendInputExpect(shellSocket, `${password}`, "Retype the password to confirm:");
-            await socket_commands.sendInputExpect(shellSocket, `${password}`, "The command completed successfully");
+            await runCommand(conn, `net user ${username} ${password}`, "The command completed successfully")
         }
         conn.success("Changed Password")
         
