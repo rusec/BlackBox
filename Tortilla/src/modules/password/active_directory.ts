@@ -46,13 +46,14 @@ async function ChangeADPassword(ADIpAddress: string,hostname:string, domain: str
     client.success(`Changed Password of ${ADIpAddress} using LDAP`)
 
     await client.client.unbind();
+    return true;
 
 }
 async function LDAPChangePassword(server: ServerInfo, newPassword: string) {
     if (server.domain == "") {
         throw new Error("Unable to change Server without domain Set, please set domain");
     }
-    await ChangeADPassword(server["IP Address"],server.Name, server.domain, stripDomain(server.Username), server.Password, newPassword);
+    return await ChangeADPassword(server["IP Address"],server.Name, server.domain, stripDomain(server.Username), server.Password, newPassword);
 }
 async function TestLDAPPassword(server:ServerInfo, newPassword:string):Promise<boolean> {
     if (server.domain == "" || !server.domain) {

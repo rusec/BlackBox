@@ -391,7 +391,7 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
             readyTimeout: timeout,
             
         };
-        const ssh = new SSH2CONN(Server.Name, sshConfig );
+        const ssh = new SSH2CONN(Server.Name, sshConfig,true);
         statusLog && ssh.log("Attempting Connection");
         await ssh.connect();
         ssh.on("ssh",async  (e)=>{
@@ -529,7 +529,7 @@ async function pingSSH(ip: string, username: string, password: string): Promise<
         await ssh.close();
         return { operatingSystem: os, hostname: hostname, domain:domain } || true;
     } catch (error: any) {
-        console.log(error)
+        // console.log(error)
         log((error as Error)?.message + ` ${ip}`, "error");
         return false;
     }

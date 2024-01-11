@@ -7,10 +7,10 @@ import logger from "../console/logger";
 import { getOutput, runCommand } from "../util/run_command";
 
 async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, username: string, password: string) {
+    var then = new Date();
     if(!conn){
         try {
-            await LDAPChangePassword(server,password)
-            return true;
+            return await LDAPChangePassword(server,password);
         } catch (error:any) {
             logger.log(`[${server["IP Address"]}] [${server.Name}] error ${error.message}`,'error')
             return error.message ? error : error.message;
@@ -19,7 +19,7 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
 
     try {
         let checkReport = await check(conn);
-        conn.log(`AD: ${checkReport.domainController}  Domain User: ${checkReport.isDomainUser}  Local User: ${checkReport.useLocal} Force Net: ${checkReport.forceNetUser}`)
+        conn.log(`AD: ${checkReport.domainController}  Domain_User: ${checkReport.isDomainUser}  Local_User: ${checkReport.useLocal} Force_Net: ${checkReport.forceNetUser}`)
         let useLocalUser = checkReport.useLocal
         if(checkReport.forceNetUser){
             return await changePasswordWindowsLocal(conn, username, password,false);
@@ -27,8 +27,7 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
 
         if(checkReport.isDomainUser && checkReport.domainController){
             try {
-                await LDAPChangePassword(server,password)
-                return true;
+                return await LDAPChangePassword(server,password);
             } catch (error:any) {
                 logger.log(`[${server["IP Address"]}] [${server.Name}] LDAP Connection ${error.message}`,'warn')
                 conn.log("Fallback ssh")
@@ -42,31 +41,34 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
     } catch (error: any) {
         logger.log("error", error);
         return error.message ? error : error.message;
+    }finally{
+        var now = new Date();
+        var lapse_time= now.getTime() -then.getTime();
+        logger.log(`Time to change Password ${lapse_time} ms on windows`)
     }
 }
 async function changePasswordWindowsLocal(conn:SSH2CONN, username:string, password:string, useLocalUser:boolean){
-    let shellSocket = await conn.shell();
-    const host = conn.config[0].host;
+    let shellSocket;
 
     try {
         conn.info(`Using ${useLocalUser ? "Get-Local" : "net user"}`)
 
         if (useLocalUser) {
+            shellSocket = await conn.shell();
             await socket_commands.sendCommandExpect(shellSocket, `powershell.exe`, `Windows PowerShell`);
             await delay(3000);
             await socket_commands.sendCommandAndInput(shellSocket, `${password}`, `$pass = Read-Host -AsSecureString;$user = Get-LocalUser "${username}";Set-LocalUser -Name $user -Password $pass;`)         
         } else {
-            await runCommand(conn, `net user ${username} ${password}`, "The command completed successfully")
+            await runCommand(conn, `net user ${username} ${password}`, "The command completed successfully",false)
         }
         conn.success("Changed Password")
-        
-        await socket_commands.sendCommand(shellSocket, "exit", true);
-
-        shellSocket.close();
-    
+        if(shellSocket){
+            await socket_commands.sendCommand(shellSocket, "exit", true);
+            shellSocket.close();
+        }
         return true;
     } catch (error: any) {
-        shellSocket.close();
+        shellSocket?.close();
         conn.error(`Unable to change Local password  ${error}`)
         return error ;
     }
@@ -119,7 +121,6 @@ type check_report = {
 }
 async function check(conn: SSH2CONN):Promise<check_report> {
     var passed = 2;
-    var useLocalUser = true;
     var forceNetUser = false;
     conn.log("Running Checks")
     
@@ -139,10 +140,8 @@ async function check(conn: SSH2CONN):Promise<check_report> {
         }else if (output.trim().includes("is not recognized")) {
             conn.warn(`Windows check error GOT ${output.substring(0, 30)} WANTED User List, Powershell version might be out of date`)
             passed--;
-            useLocalUser = false;
         }else {
             get_local_check = true;
-            useLocalUser = true;
         }
     } catch (error: any) {
 

@@ -244,7 +244,7 @@ class DB {
         let result = false;
         try {
             let computers = await this.readComputers();
-            let index = computers.findIndex((v) => v["IP Address"] === ip);
+            let index = computers.findIndex((v) => v["IP Address"] === ip && v.Username === username);
             if (index !== -1) {
                 // If a computer with the same IP address exists, update its properties instead of removing it
                 computers[index] = {
