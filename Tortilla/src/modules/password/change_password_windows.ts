@@ -43,7 +43,7 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
         return error.message ? error : error.message;
     }finally{
         var now = new Date();
-        var lapse_time= now.getTime() -then.getTime();
+        var lapse_time= now.getTime() - then.getTime();
         logger.log(`Time to change Password ${lapse_time} ms on windows`)
     }
 }
@@ -89,8 +89,9 @@ async function changePasswordWinAD(conn: SSH2CONN, username: string, password: s
 
             await socket_commands.sendCommandExpect(shellSocket, `powershell.exe`, `PS`);
             await delay(3000);
-            await socket_commands.sendCommandAndInput(shellSocket, `${password}`, `$pass = Read-Host -AsSecureString ; Set-ADAccountPassword -Identity "${username}" -Reset -NewPassword $pass;
-            `)
+            await socket_commands.sendCommandAndInput(shellSocket, `${password}`, `$pass = Read-Host -AsSecureString ; Set-ADAccountPassword -Identity "${username}" -Reset -NewPassword $pass;`)
+
+
             conn.success("Changed password");
         } catch (error: any) {
             shellSocket.close();
@@ -99,7 +100,6 @@ async function changePasswordWinAD(conn: SSH2CONN, username: string, password: s
         }
 
         await socket_commands.sendCommand(shellSocket, "exit", true);
-
         shellSocket.close();
 
         return true;
@@ -149,10 +149,10 @@ async function check(conn: SSH2CONN):Promise<check_report> {
    
     let isDomainController = false ;
     try {
-        var output =  await getOutput(conn,`powershell.exe "Get-ADDefaultDomainPasswordPolicy"`)
+        var output =  await getOutput(conn,`wmic.exe ComputerSystem get DomainRole`)
         if(output.includes("Timed") || output.includes("is not recognized")) {
             isDomainController = false;
-        }else {
+        }else if (output.includes("4") ||output.includes("5") ){
             conn.log("Computer is a Domain Controller")
             isDomainController = true;
         }

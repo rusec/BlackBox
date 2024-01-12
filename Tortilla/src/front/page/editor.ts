@@ -1,5 +1,6 @@
 import inquirer from "inquirer";
-import runningDB, { ServerInfo } from "../../modules/util/db";
+import runningDB from "../../db/db";
+import  { ServerInfo } from '../../db/dbtypes'
 import clear from "clear";
 import { delay } from "../../modules/util/util";
 import { checkPassword } from "../../modules/util/checkPassword";
@@ -8,6 +9,7 @@ import { Home } from "../menu/home";
 import {
     addCustomSSH,
     addSSH,
+    getConnectedIps,
     getStatus,
     makeInteractiveShell,
     makePermanentConnection,
@@ -23,9 +25,10 @@ import { scanComputer } from "../../modules/computer/scan";
 async function edit(id = -1): Promise<void> {
     await clear();
     let json = await runningDB.readComputers();
+    let connections = getConnectedIps();
 
     var ipAddressesChoices = json.map((v, k) => {
-        return { name: v["IP Address"] + "  " + v["OS Type"] + " " + v.Name, value: k };
+        return { name: 'Conn:' + (connections.includes(v['IP Address']) ? "T" : "F")  + "  "+ v["IP Address"] + "  " + v["OS Type"] + " " + v.Name , value: k };
     });
 
     if (ipAddressesChoices.length === 0) {
@@ -116,13 +119,13 @@ async function edit(id = -1): Promise<void> {
             break;
         case "change_pass_man":
             await checkPassword();
-            await runSingleScript(selected_id);
+            await runSingleScript(json[selected_id]["IP Address"]);
             break;
         case "add_ssh":
             await checkPassword();
             let r = await addSSH(computer);
             if (r) {
-                await runningDB.writeCompSSH(selected_id, r);
+                await runningDB.writeCompSSH(json[selected_id]["IP Address"], r);
             }
             break;
         case "test_pass":
@@ -144,7 +147,7 @@ async function edit(id = -1): Promise<void> {
             await checkPassword();
             let result = await removeSSH(computer);
             if (result) {
-                await runningDB.writeCompSSH(selected_id, !result);
+                await runningDB.writeCompSSH(json[selected_id]["IP Address"], !result);
             }
             break;
         case "shell":
@@ -172,7 +175,7 @@ async function edit(id = -1): Promise<void> {
             return;
         }
 
-        await runningDB.removeComputer(selected_id);
+        await runningDB.removeComputer(json[selected_id]["IP Address"]);
     }
     async function sshCustom() {
         const { ssh_key } = await inquirer.prompt([
@@ -215,7 +218,7 @@ async function edit(id = -1): Promise<void> {
             return;
         }
 
-        await runningDB.writeCompPassword(selected_id, newPassword);
+        await runningDB.writeCompPassword(json[selected_id]["IP Address"], newPassword);
 
         console.log("password updated!");
         await delay(300);
@@ -234,9 +237,8 @@ async function edit(id = -1): Promise<void> {
         if (!confirm) {
             return;
         }
+        await runningDB.editComputer(json[selected_id]["IP Address"], newUsername)
 
-        json[selected_id].Username = newUsername;
-        await runningDB.writeComputers(json);
 
         console.log("username updated!");
         await delay(300);
@@ -257,8 +259,9 @@ async function edit(id = -1): Promise<void> {
             return;
         }
 
-        json[selected_id].domain = newDomain;
-        await runningDB.writeComputers(json);
+        // json[selected_id].domain = newDomain;
+        // await runningDB.writeComputers(json);
+        await runningDB.editComputer(json[selected_id]["IP Address"], undefined, newDomain)
 
         console.log("domain updated!");
         await delay(300);
@@ -284,9 +287,8 @@ async function edit(id = -1): Promise<void> {
         if (!confirm) {
             return;
         }
+        await runningDB.editComputer(json[selected_id]["IP Address"], undefined, undefined, newOSType)
 
-        json[selected_id]["OS Type"] = newOSType;
-        await runningDB.writeComputers(json);
 
         console.log("OS updated!");
         await delay(300);

@@ -1,5 +1,6 @@
 {
     "dependencies": {
+        "@types/level": "^6.0.3",
         "@types/ssh2-streams": "^0.1.10",
         "an-array-of-english-words": "^2.0.0",
         "as-table": "^1.0.55",
@@ -16,6 +17,7 @@
         "keccak256": "^1.0.6",
         "ldapjs": "^3.0.7",
         "ldapjs-promise": "^3.0.6",
+        "level": "^8.0.0",
         "lockfile": "^1.0.4",
         "node-machine-id": "^1.1.12",
         "random-seed": "^0.3.0",

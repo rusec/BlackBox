@@ -1,5 +1,4 @@
-import inquirer from "inquirer";
-import runningDB from "../../modules/util/db";
+import inquirer from "inquirer";;
 import clear from "clear";
 import { isValidIPAddress } from "../../modules/util/util";
 import { pingSSH } from "../../modules/util/ssh_utils";
@@ -8,6 +7,7 @@ import fs from "fs/promises";
 import util from "util";
 import logger from "../../modules/console/logger";
 import { Bar } from "../../modules/console/progress";
+import runningDB from "../../db/db";
 
 const exec = util.promisify(require("node:child_process").exec);
 

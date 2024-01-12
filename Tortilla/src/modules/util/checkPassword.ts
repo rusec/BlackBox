@@ -1,4 +1,4 @@
-import runningDB from "./db";
+import runningDB from "../../db/db";
 import inquirer from "inquirer";
 import clear from "clear";
 import logger from "../console/logger";
@@ -12,7 +12,7 @@ let valid_session = false;
  */
 async function checkPassword(force = false): Promise<void> {
     const hash = await runningDB.readPassword();
-    if (hash === "") {
+    if (hash == '') {
         const { master_password } = await inquirer.prompt([
             {
                 name: "master_password",
@@ -34,7 +34,7 @@ async function checkPassword(force = false): Promise<void> {
     await clear();
     let trials = 3;
     function validateFunc(value: string) {
-        const v = runningDB.validateMasterPassword(value);
+        const v = runningDB.validateMasterPassword(hash,value);
         if (trials <= 0) {
             logger.log(`Log in Attempt Failed`, "info");
             process.exit(0);

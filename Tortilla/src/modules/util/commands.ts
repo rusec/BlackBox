@@ -17,9 +17,9 @@ const commands = {
     },
     ssh: {
         eject: {
-            windows_cmd: (ssh_key:string)=> `echo ${ssh_key} >> %ProgramData%\\ssh\\administrators_authorized_keys ; icacls.exe %ProgramData%\\ssh\\administrators_authorized_keys /inheritance:r /grant ""Administrators:F"" /grant ""SYSTEM:F"`,
+            windows_cmd: (ssh_key:string)=> `echo ${ssh_key} >> %ALLUSERSPROFILE%\\ssh\\administrators_authorized_keys ; icacls.exe %ALLUSERSPROFILE%\\ssh\\administrators_authorized_keys /inheritance:r /grant ""Administrators:F"" /grant ""SYSTEM:F"`,
             windows: (ssh_key: string) =>
-                `powershell.exe "Add-Content -Force -Path $env:ProgramData\\ssh\\administrators_authorized_keys -Value '${ssh_key}';icacls.exe ""$env:ProgramData\\ssh\\administrators_authorized_keys"" /inheritance:r /grant ""Administrators:F"" /grant ""SYSTEM:F"""`,
+                `powershell.exe "Add-Content -Force -Path $env:ALLUSERSPROFILE\\ssh\\administrators_authorized_keys -Value '${ssh_key}';icacls.exe '$env:ALLUSERSPROFILE\\ssh\\administrators_authorized_keys' /inheritance:r /grant 'Administrators:F' /grant 'SYSTEM:F'"`,
             linux: (ssh_key: string) => `mkdir -p ~/.ssh && echo "${ssh_key}" | cat >> ~/.ssh/authorized_keys`,
         },
         remove: {

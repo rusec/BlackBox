@@ -29,10 +29,11 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
         if (computer["OS Type"] === "windows") {
             const username = computer.Username;
             const newPassword = new_password;
-        
+            const oldPassword = computer.Password
             // Change password on Windows
             const passwordChangeResult = await changePasswordWin(computer, conn, username, newPassword);
 
+            computer.Password =newPassword
             // Establish a permanent connection
             const newConn = await makePermanentConnection(computer, true);
         
@@ -41,7 +42,7 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
 
             if (!newConn) {
                 return {
-                    password: ldapTestResult ? newPassword : computer.Password,
+                    password: ldapTestResult ? newPassword : oldPassword,
                     ssh: computer.ssh_key,
                     error: ldapTestResult ? false :`${computer["IP Address"]} ${computer.Name} Unable to connect to host` ,
                 };
@@ -54,7 +55,7 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
             const passwordTestResult = await testPassword(newConn, newPassword);
         
             return {
-                password: passwordTestResult || ldapTestResult ? newPassword : computer.Password,
+                password: passwordTestResult || ldapTestResult ? newPassword : oldPassword,
                 ssh: !newConn ? computer.ssh_key : sshKey,
                 error: passwordTestResult ? false : passwordChangeResult,
             };

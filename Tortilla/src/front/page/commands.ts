@@ -1,5 +1,6 @@
 import { clear } from "console";
-import runningDB, { ServerInfo } from "../../modules/util/db";
+import runningDB from "../../db/db";
+import  { ServerInfo } from '../../db/dbtypes'
 import { Home } from "../menu/home";
 import inquirer from "inquirer";
 import { checkPassword } from "../../modules/util/checkPassword";

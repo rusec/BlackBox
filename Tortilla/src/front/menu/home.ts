@@ -1,7 +1,7 @@
 import inquirer from "inquirer";
 import clear from "clear";
 import "colors";
-import runningDB from "../../modules/util/db";
+import runningDB from "../../db/db";
 import { edit } from "../page/editor";
 import { runScript } from "../page/passwordScript";
 import { checkPassword } from "../../modules/util/checkPassword";

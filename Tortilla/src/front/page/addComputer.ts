@@ -1,6 +1,6 @@
 import inquirer from "inquirer";
 import { isValidIPAddress } from "../../modules/util/util";
-import runningDB from "../../modules/util/db";
+import runningDB from "../../db/db";
 import { pingSSH } from "../../modules/util/ssh_utils";
 import { log } from "../../modules/console/debug";
 import { delay } from "../../modules/util/util";

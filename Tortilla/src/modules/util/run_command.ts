@@ -111,9 +111,7 @@ async function runCommandNoExpect(conn: SSH2CONN, command: string, log_error =tr
         }
        
 
-        return value;
-
-        return true;
+        return value == '';
     } catch (error: any) {
         return typeof error === "string" ? replaceAll(error, "\n", " ") : replaceAll(error.message, "\n", " ");
     }

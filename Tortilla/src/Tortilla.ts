@@ -19,7 +19,7 @@ locker
             logger.log("Ending application.");
         });
         process.on('uncaughtException', function(err){
-            logger.error(err.toString())   
+            logger.error("Application Error: " + err.toString())   
           })
     })
     .catch((err: any) => {

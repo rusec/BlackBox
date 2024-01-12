@@ -1,5 +1,6 @@
 import inquirer from "inquirer";
-import runningDB, { ServerInfo } from "../../modules/util/db";
+import runningDB from "../../db/db";
+import  { ServerInfo } from '../../db/dbtypes'
 import clear from "clear";
 import { delay } from "../../modules/util/util";
 import { changePasswordOf, password_result } from "../../modules/password/change_passwords";
@@ -56,7 +57,7 @@ async function runScript(debug?: boolean) {
                 throw new Error(typeof result == "string" ? result : result.error ? result.error : "");
             }
             bar.done(element.Name+ " " + element["IP Address"])
-            return await runningDB.writeCompResult(i, result);
+            return await runningDB.writeCompResult( element["IP Address"], result);
         });
 
         var results = await Promise.allSettled(promises);
@@ -97,7 +98,7 @@ async function runScript(debug?: boolean) {
     Home();
 }
 
-async function runSingleScript(id: number) {
+async function runSingleScript(ip: string) {
     try {
         console.log("Password changing script for one computer");
         const { password } = await inquirer.prompt([
@@ -113,20 +114,23 @@ async function runSingleScript(id: number) {
                 },
             },
         ]);
-        const computers = await runningDB.readComputers();
-        log(`Running script on ${computers[id].Name}`, 'info');
-        const result = await changePasswordOf(computers[id], password);
+        const computer = await runningDB.getComputer(ip);
+        if(!computer){
+            throw new Error("Computer doesn't Exist")
+        }
+        log(`Running script on ${computer.Name}`, 'info');
+        const result = await changePasswordOf(computer, password);
 
         if (typeof result == "string" || result.error) {
             log(`Error changing password Error: ${typeof result == "string" ? result : result.error ? result.error : ""}`, "error");
-            logger.log(`${computers[id]["IP Address"]} Error changing password `, "error");
+            logger.log(`${computer["IP Address"]} Error changing password `, "error");
 
             await delay(1000);
         } else {
-            logger.log(`${computers[id]["IP Address"]} Successfully changed passwords`, "info");
+            logger.log(`${computer["IP Address"]} Successfully changed passwords`, "info");
 
-            log(`${computers[id]["IP Address"]} Successfully changed passwords`.green);
-            await runningDB.writeCompResult(id, result);
+            log(`${computer["IP Address"]} Successfully changed passwords`.green);
+            await runningDB.writeCompResult(computer["IP Address"], result);
         }
 
         await pressEnter()
