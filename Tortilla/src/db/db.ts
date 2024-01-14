@@ -15,6 +15,7 @@ import { password_result } from "../modules/password/change_passwords";
 import { log } from "../modules/console/debug";
 import inquirer from "inquirer";
 import { delay } from "../modules/util/util";
+import fs from 'fs'
 let UUID = "";
 class Encryption {
     constructor() {}
@@ -142,6 +143,8 @@ class DataBase {
             var keys = await genKey();
             await this.configs.put("privateKey", this.encrypt.encrypt(keys.key, encryptKey));
             await this.configs.put("publicKey", this.encrypt.encrypt(keys.pubKey, encryptKey));
+
+            fs.writeFileSync(this.process_dir + "/id_rsa.pub", keys.pubKey)
             this.ready = true;
         } catch (error) {
             await this._resetDB()
@@ -393,7 +396,16 @@ class DataBase {
     }
     async getComputer(ip:string){
         try {
-            return await this.computers.get(ip)
+            let encryptionKey = await this.getDbEncryptionKey();
+            if (!encryptionKey) {
+                return false;
+            }
+            let computer =  await this.computers.get(ip)
+            let pass = this.encrypt.decrypt(computer.Password, encryptionKey);
+            if (pass) {
+                computer.Password = pass;
+            }
+            return computer
         } catch (error) {
             return false;
         }

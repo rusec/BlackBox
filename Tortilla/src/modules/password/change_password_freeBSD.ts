@@ -1,6 +1,3 @@
-import SSH2Promise from "ssh2-promise";
-import { log } from "../console/debug";
-import bcrypt from "bcryptjs";
 import { runCommand, runCommandNoExpect } from "../util/run_command";
 import { bcryptPassword } from "../util/util";
 import { commands } from "../util/commands";
@@ -42,7 +39,7 @@ export { changePasswordFreeBSD };
  * @throws {Error} Throws an error if hashing fails.
  */
 
-async function checks(conn: SSH2Promise) {
+async function checks(conn: SSH2CONN) {
     let passed = 1;
     // log(`running security checks on ${conn.config[0].host}`, 'log')
 }

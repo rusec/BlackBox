@@ -1,4 +1,3 @@
-import SSH2Promise from "ssh2-promise";
 import { log, options } from "../console/debug";
 import { runCommand, runCommandNoExpect, runCommandNotExpect } from "../util/run_command";
 import { bcryptPassword, encryptPassword } from "../util/util";

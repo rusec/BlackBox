@@ -67,7 +67,7 @@ async function runCommand(conn: SSH2CONN, command: string, expect: string | unde
             conn.error(value);
         }
         clearTimeout(timeoutId);
-        if (!value.toLowerCase().includes(expect)) {
+        if (!value.toString().toLowerCase().includes(expect)) {
             return replaceAll(value.trim(), "\n", " ");
         }
         return true;
