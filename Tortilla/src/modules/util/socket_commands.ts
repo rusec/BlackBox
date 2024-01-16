@@ -149,13 +149,13 @@ function sendCommandAndInput(socket:Channel, input:string, command:string): Prom
                 return;
             }
             socket.stdin.write(`${input}\r`,async  (err:any) => {
-                cleanUp();
                 if (err) {
                     cleanUp()
                     reject(filterLog(log));
                 } else {
-                    await delay(2000);
+                    await delay(3000);
                     !errored && resolve(true);
+                    cleanUp();
                 }
             });
 
