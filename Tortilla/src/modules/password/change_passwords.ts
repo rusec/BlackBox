@@ -1,6 +1,6 @@
 import { changePasswordLinux } from "./change_password_linux";
 import { changePasswordWin } from "./change_password_windows";
-import { ServerInfo } from "../util/db";
+import { ServerInfo } from "../../db/dbtypes";
 import { changePasswordDarwin } from "./change_password_darwin";
 import { changePasswordFreeBSD } from "./change_password_freeBSD";
 import { log } from "../console/debug";

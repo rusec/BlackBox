@@ -65,7 +65,7 @@ function normalizeServerInfo(jsonArr: Array<ServerInfo>): Array<ServerInfo> {
     const normalizedArr: ServerInfo[] = [];
 
     for (const jsonObj of jsonArr) {
-        const serverInfo = {
+        const serverInfo: ServerInfo = {
             Name: jsonObj.Name || "",
             "IP Address": jsonObj["IP Address"] || "",
             Username: jsonObj.Username || "",
@@ -73,6 +73,7 @@ function normalizeServerInfo(jsonArr: Array<ServerInfo>): Array<ServerInfo> {
             "OS Type": jsonObj["OS Type"] || "",
             ssh_key: false,
             password_changes: 0,
+            OldPasswords: [],
             domain: jsonObj["domain"] || "",
         };
 
@@ -199,6 +200,7 @@ class DataBase {
                     "OS Type": os_type || "",
                     ssh_key: false,
                     password_changes: 0,
+                    OldPasswords: [],
                     domain: domain || "",
                 });
             } else {
@@ -210,6 +212,7 @@ class DataBase {
                     "OS Type": os_type || computer["OS Type"],
                     ssh_key: false || computer["ssh_key"], // You can decide how to update this property
                     password_changes: computer["password_changes"] || 0,
+                    OldPasswords: computer['OldPasswords'] || [],
                     domain: domain || computer["domain"],
                 });
             }
@@ -380,9 +383,11 @@ class DataBase {
             if (!computer) {
                 return false;
             }
+            let oldpassword = computer?.Password
 
             computer.Password = this.encrypt.encrypt(result.password, encryptKey);
             computer.ssh_key = result.ssh;
+            computer.OldPasswords ? computer.OldPasswords.push(oldpassword) : [oldpassword]
             computer.password_changes = computer.password_changes + 1;
             // const computers = await this.readComputers();
 

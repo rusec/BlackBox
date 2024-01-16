@@ -14,7 +14,15 @@ import { logToFile, pressEnter } from "../../modules/console/enddingModules";
 import { Bar } from "../../modules/console/progress";
 
 
-const TEST_PASSWORD = "Password123"
+let swit = false;
+const TEST_PASSWORD = ()=> {
+    swit = !swit;
+    if(swit){
+        return "Password123"
+    }
+    else return "Password123?"
+
+}
 async function runScript(debug?: boolean) {
     const originalConsoleLog = console.log;
     let capturedOutput = "";
@@ -44,7 +52,7 @@ async function runScript(debug?: boolean) {
         logger.log(debug ? `Running DEBUG script on ${computers.length} computers` : `Running script on ${computers.length} computers`);
         //Generate values
 
-        const passwords = debug ? computers.map(() => TEST_PASSWORD) : generatePasses(computers.length, seed);
+        const passwords = debug ? computers.map(() => TEST_PASSWORD()) : generatePasses(computers.length, seed);
 
 
         let bar = new Bar(computers.length)

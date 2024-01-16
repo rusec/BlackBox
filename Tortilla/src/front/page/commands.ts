@@ -4,7 +4,7 @@ import  { ServerInfo } from '../../db/dbtypes'
 import { Home } from "../menu/home";
 import inquirer from "inquirer";
 import { checkPassword } from "../../modules/util/checkPassword";
-import { makeConnection, makePermanentConnection } from "../../modules/util/ssh_utils";
+import { makePermanentConnection } from "../../modules/util/ssh_utils";
 import delay from "delay";
 import { log } from "../../modules/console/debug";
 import { getOutput } from "../../modules/util/run_command";

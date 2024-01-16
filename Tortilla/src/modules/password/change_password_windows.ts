@@ -1,7 +1,7 @@
 import { delay } from "../util/util";
 import socket_commands from "../util/socket_commands";
 import { SSH2CONN, detect_hostname } from "../util/ssh_utils";
-import { ServerInfo } from "../util/db";
+import { ServerInfo } from "../../db/dbtypes";
 import { LDAPChangePassword } from "./active_directory";
 import logger from "../console/logger";
 import { getOutput, runCommand } from "../util/run_command";
@@ -39,7 +39,7 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
         }
         return await changePasswordWindowsLocal(conn, username, password,useLocalUser);
     } catch (error: any) {
-        logger.log("error", error);
+        logger.log(`${error}`, 'error');
         return error.message ? error : error.message;
     }finally{
         var now = new Date();
@@ -70,6 +70,8 @@ async function changePasswordWindowsLocal(conn:SSH2CONN, username:string, passwo
     } catch (error: any) {
         shellSocket?.close();
         conn.error(`Unable to change Local password  ${error}`)
+        if(error.toString().includes('An error occurred.')) return "An error occurred while changing password, check if user exist and password meets requirements"
+
         return error ;
     }
 
@@ -91,11 +93,11 @@ async function changePasswordWinAD(conn: SSH2CONN, username: string, password: s
             await delay(3000);
             await socket_commands.sendCommandAndInput(shellSocket, `${password}`, `$pass = Read-Host -AsSecureString ; Set-ADAccountPassword -Identity "${username}" -Reset -NewPassword $pass;`)
 
-
             conn.success("Changed password");
         } catch (error: any) {
             shellSocket.close();
             conn.error(`Unable to Change AD User password  ${error}`)
+            if(error.toString().includes('An error occurred.')) return "An error occurred while changing password, check if user exist and password meets requirements"
             return error;
         }
 
@@ -104,7 +106,6 @@ async function changePasswordWinAD(conn: SSH2CONN, username: string, password: s
 
         return true;
     } catch (error: any) {
-        console.log("error", error);
         return error.message ? error.toString() : error.message;
     }
 }

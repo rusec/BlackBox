@@ -15,5 +15,5 @@
         
     },
     "include": ["**/*", "..webpack.config.js"],
-    "exclude": ["releases/**", "dist/**", "build/**", "misc/**", "testing/**"]
+    "exclude": ["releases/**", "dist/**", "build/**", "misc/**", "testing/**", "test/*"]
 }

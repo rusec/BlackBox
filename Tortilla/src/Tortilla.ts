@@ -1,5 +1,7 @@
 import clear from "clear";
 import lockfile from "lockfile";
+
+
 import { Home } from "./front/menu/home";
 import { checkPassword } from "./modules/util/checkPassword";
 
@@ -21,6 +23,7 @@ locker
         process.on('uncaughtException', function(err){
             logger.error("Application Error: " + err.toString())   
           })
+        process.setMaxListeners(30);
     })
     .catch((err: any) => {
         console.error("Another instance is already running.");

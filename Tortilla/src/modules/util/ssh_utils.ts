@@ -72,6 +72,7 @@ async function testSSH(conn: SSH2CONN) {
             authHandler: ["publickey"],
             reconnect: false,
             keepaliveInterval: 0,
+            uniqueId:"SshKEY_TEST" + conn.config[0].host +conn.config[0].username,
             readyTimeout: 7000,
         };
         const ssh = new SSH2CONN(conn.config[0].host ? conn.config[0].host : "", sshConfig, true);
@@ -99,6 +100,7 @@ async function testPassword(conn: SSH2CONN, password: string) {
             reconnect: false,
             readyTimeout: 7000,
             reconnectTries: 3,
+            uniqueId:"PasswordTest" + conn.config[0].host +conn.config[0].username 
         };
         const ssh = new SSH2Promise(sshConfig, true);
         await ssh.connect();
@@ -371,7 +373,7 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
             connectionLog.log(`[${Server.Name}] [${Server["IP Address"]}] Event: unable to close  ${error}`);
         } finally {
         }
-        findConnection && logger.log("deleting connection: " + `[${Server.Name}] [${Server["IP Address"]}]`);
+        findConnection && connectionLog.log("deleting connection: " + `[${Server.Name}] [${Server["IP Address"]}]`);
 
         servers_connections.delete(Server["IP Address"]);
     }
@@ -387,6 +389,7 @@ async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, sta
             keepaliveCountMax: 999,
             reconnectTries: 3,
             readyTimeout: timeout,
+            uniqueId: "Permanent" + Server["IP Address"] + Server.Username + Server.Name
         };
         const ssh = new SSH2CONN(Server.Name, sshConfig);
         statusLog && ssh.log("Attempting Connection");
@@ -423,14 +426,17 @@ async function createNewConnection(computer: ServerInfo) {
     } catch (error) {}
 }
 
-let checking = false;
 // this function is for precisest
 // will reconnect to computer when its not able to connect.
 // if password changes, it will try to reconnect with the new config.
 async function initConnections() {
-    if (checking || !isValidSession()) return;
+    if (!isValidSession()) {
+        setTimeout(initConnections, 5000)
+        
+        return;
+    }
+
     try {
-        checking = true;
         connectionLog.log("Checking Connections ");
         let computers = await runningDB.readComputers();
 
@@ -465,11 +471,13 @@ async function initConnections() {
     } catch (error) {
         connectionLog.error("Checking Error " + error);
     } finally {
-        checking = false;
-    }
-}
-setInterval(() => initConnections(), 10000);
+        // checking = false;
+        setTimeout(initConnections, 60000)
 
+    }
+
+}
+initConnections()
 function getConnectedIps() {
     return Array.from(servers_connections.keys());
 }

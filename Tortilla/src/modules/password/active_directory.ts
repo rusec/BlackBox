@@ -1,7 +1,7 @@
 import ldap from "ldapjs-promise";
 import util from "util";
 import logger from "../console/logger";
-import { ServerInfo } from "../util/db";
+import { ServerInfo } from "../../db/dbtypes";
 import { delay } from "../util/util";
 import { log } from "../console/debug";
 
