@@ -32,7 +32,7 @@
     "name": "tortilla",
     "version": "1.0.0",
     "main": "Tortilla.js",
-    "bin": "./dist/src/Tortilla.js",
+    "bin": "dist/src/Tortilla.js",
     "devDependencies": {
         "@types/bcryptjs": "^2.4.4",
         "@types/bn.js": "^5.1.2",
