@@ -72,7 +72,10 @@
             "node16-win",
             "node16-macos"
         ],
-        "outputPath": "releases"
+        "outputPath": "releases",
+        "assets": [
+            "node_modules/classic-level/prebuilds"
+        ]
     },
     "author": "",
     "license": "ISC",
