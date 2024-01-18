@@ -125,7 +125,7 @@ async function runScript(debug?: boolean) {
             }
 
             return prev +computerLine 
-        }, `Log for ${new Date().toISOString()} running on ${computers.length} with ${amountOfPasswords} users\n\n`)
+        }, `Log for ${new Date().toISOString()} running on ${computers.length} computers with ${amountOfPasswords} users\n\n`)
 
         await logToFile(removeANSIColorCodes(runningLog + "\n\nLOG:\n" + capturedOutput))
         bar.stop();
@@ -170,19 +170,21 @@ async function runSingleScript(ip: string, user_id:string) {
         ]);
       
 
+        let then = new Date();
 
         log(`Running script on ${computer.Name}`, 'info');
         const result = await changePasswordOf(computer,user, password);
-
+        let now = new Date();
+        var lapse_time = now.getTime() - then.getTime();
         if (typeof result == "string" || result.error) {
             log(`Error changing password Error: ${typeof result == "string" ? result : result.error ? result.error : ""}`, "error");
-            logger.log(`${user.ipaddress} Error changing password `, "error");
+            logger.log(`${user.ipaddress} Error changing password in ${lapse_time} ms`, "error");
 
             await delay(1000);
         } else {
             logger.log(`${computer.ipaddress} Successfully changed passwords`, "info");
 
-            log(`${computer.ipaddress} Successfully changed passwords`.green);
+            log(`${computer.ipaddress} Successfully changed passwords in ${lapse_time} ms`.green);
             await runningDB.writeUserResult(user.user_id, result);
         }
 

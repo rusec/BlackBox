@@ -62,7 +62,7 @@ let recentlyConnection:Map<string, boolean> = new Map();
 function getConnectedIps() {
     return Array.from(recentlyConnection.keys());
 }
-async function makeConnection(user:User, timeout = 3000){
+async function makeConnection(user:User, timeout = 3000, retryCount = 5, retryDelay = 1000){
     let privateKey= await runningDB.getPrivateSSHKey();
 
     try {
@@ -73,6 +73,8 @@ async function makeConnection(user:User, timeout = 3000){
             privateKey: privateKey,
             authHandler: ["publickey", "password"],
             readyTimeout: timeout,
+            reconnectTries:retryCount,
+            reconnectDelay:retryDelay
         };
         const ssh = new SSH2CONN(user.hostname, sshConfig);
         await ssh.connect();
@@ -536,13 +538,15 @@ async function detect_hostname(conn: SSH2CONN) {
 class SSH2CONN extends SSH2Promise {
     hostname: string;
     ipaddress: string | undefined;
+    username: string | undefined;
     constructor(hostname: string, options: Array<SSHConfig> | SSHConfig, disableCache?: boolean) {
         super(options, disableCache);
+        this.username = this.config[0].username;
         this.hostname = hostname;
         this.ipaddress = this.config[0].host;
     }
     _getTag() {
-        return `[${this.ipaddress}]`.bgGreen + ` ` + `[${this.hostname}]`.white + " SSH: ";
+        return `[${this.ipaddress}]`.bgGreen + ` ` + `[${this.hostname}]`.white +' '+ `[${this.username}]` + " SSH: ";
     }
     info(str: string) {
         log(this._getTag() + `${str}`, "info");

@@ -111,7 +111,7 @@ class DataBase {
     constructor() {
         this.encrypt = new Encryption();
         this.process_dir = path.join(os.homedir() + "/Tortilla");
-        this.filePath = path.join(this.process_dir, "testingDB");
+        this.filePath = path.join(this.process_dir, "muffins");
         this.db = new Level(this.filePath);
         this.configs = this.db.sublevel("app_configs");
         this.computers = this.db.sublevel("computers", { valueEncoding: "json" });
@@ -511,7 +511,9 @@ class DataBase {
     }
     async editComputer(ip:string, domain?:string, os?:options){
         try {
-            let computer = await this.computers.get(ip);
+            let computer = await this.computers.get(ip).catch(()=> undefined);
+            if(!computer) throw new Error("Computer not found");
+
             if(domain){
                 computer.domain = domain
             }
@@ -519,6 +521,31 @@ class DataBase {
                 computer["OS Type"] = os
             }
             await this.computers.put(ip, computer)
+            return true;
+
+        }catch(err){
+            return false;
+        }
+    }
+
+    async updateComputerHostname(ip:string, hostname:string){
+        try {
+            let computer = await this.computers.get(ip).catch(()=> undefined);
+            if(!computer) throw new Error("Computer not found");
+
+            computer.Name = hostname;
+
+            for await (const id of computer.users){
+                let user = await this.users.get(id).catch(()=> undefined);
+                if(!user){
+                    computer.users = findAndRemove(computer.users, user);
+                    continue;
+                }
+                user.hostname = hostname;
+                await this.users.put(id, user);
+            }
+            await this.computers.put(ip, computer)
+            return true;
         }catch(err){
             return false;
         }

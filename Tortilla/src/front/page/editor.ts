@@ -9,6 +9,7 @@ import { Home } from "../menu/home";
 import {
     addCustomSSH,
     addSSH,
+    detect_hostname,
     findAnyConnection,
     getConnectedIps,
     getStatus,
@@ -89,6 +90,7 @@ async function edit(id = -1): Promise<void> {
                 { name: "Remove User", value: "users_remove" },
                 new inquirer.Separator("Data"),
                 { name: "Change Domain", value: "change_domain" },
+                { name: "Change Hostname", value: "change_hostname" },
                 { name: "Change OS", value: "change_os" },
                 { name: "Remove Computer", value: "remove" },
                 new inquirer.Separator(),
@@ -106,7 +108,7 @@ async function edit(id = -1): Promise<void> {
         if(!computer) return;
         console.log(header);
         const user_choices = computer.users.map((user,k)=>{
-            return {name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key}`, value:k}
+            return {name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key} | ${k === 0 ? "Admin": ""}`, value:k}
         })
         let printHeader = false;
         if(user_id == -1){
@@ -365,7 +367,7 @@ async function edit(id = -1): Promise<void> {
         if(!computer) return;
 
         const user_choices = computer.users.map((user,k)=>{
-            return {name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key}`, value:k}
+            return {name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key} | ${k === 0 ? "Admin": ""}`, value:k}
         })
         
         const {user_index,confirm} = await inquirer.prompt([
@@ -491,6 +493,10 @@ async function edit(id = -1): Promise<void> {
             await checkPassword();
             await changeDomain();
             break; 
+        case "change_hostname":
+            await checkPassword();
+            await changeHostname();
+            break;
         case "change_os":
             await changeOS();
             break;
@@ -505,6 +511,34 @@ async function edit(id = -1): Promise<void> {
             return Home();
     }
     return edit(selected_id);
+
+
+    async function changeHostname(){
+        if(!computer) return false;
+        let conn = await findAnyConnection(computer.users);
+        if (!conn) {
+            console.log("Unable to connect to server");
+            await delay(1000);
+            return;
+        }
+        let hostname = await detect_hostname(conn);
+        const { inputForHostname } = await inquirer.prompt([
+            {
+                name: "inputForHostname",
+                type: 'input',
+                pageSize: 50,
+                message: `Please enter a hostname, enter for (${hostname}) `,
+            },
+        ]);
+        if (inputForHostname != "") {
+            hostname = inputForHostname
+        }
+        
+
+        log("Updated Hostname",await runningDB.updateComputerHostname(computer.ipaddress, hostname) ? 'success': 'error');
+        await delay(500);
+
+    }
 
     async function changePasswordAllUsers(){
         if(!computer) return;
@@ -530,9 +564,8 @@ async function edit(id = -1): Promise<void> {
         if (!confirm) {
             return;
         }
-
-        await runningDB.removeComputer(computer.ipaddress);
-        console.log("Removed computer!");
+        //CHANGE ALL TO THIS FORMAT
+        log("Removed computer!",await runningDB.removeComputer(computer.ipaddress)? 'success': 'error' );
         await delay(300);
     }
    

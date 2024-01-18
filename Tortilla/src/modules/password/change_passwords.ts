@@ -21,7 +21,7 @@ async function changePasswordOf(computer: Server, user:User, new_password: strin
     }
 
     const conn = await makeConnection(user);
-    if(!conn) log("Unable to connect to Target", 'warn')
+    if(!conn) log(`Unable to connect to Target ${computer.Name} ${computer.ipaddress}`, 'warn')
     else conn.log("Connected to Target")
     try {
         let res;
