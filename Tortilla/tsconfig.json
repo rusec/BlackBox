@@ -11,8 +11,8 @@
         "strict": true,
         "alwaysStrict": true,
         "moduleResolution": "node",
-        "esModuleInterop": true
-        
+        "esModuleInterop": true,
+        "baseUrl": "."
     },
     "include": ["**/*", "..webpack.config.js"],
     "exclude": ["releases/**", "dist/**", "build/**", "misc/**", "testing/**", "test/*"]
