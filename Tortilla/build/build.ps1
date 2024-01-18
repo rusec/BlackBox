@@ -1,7 +1,12 @@
 $SALT=$(node -e 'const crypto = require(\"crypto\"); console.log(crypto.randomBytes(256).toString(\"hex\"));')
 $SALT_2=$(node -e 'const crypto = require(\"crypto\"); console.log(crypto.randomBytes(256).toString(\"hex\"));')
 node ./build/prebuild.js $SALT $SALT_2
-Remove-Item -r .\dist
+try {
+    Remove-Item -r .\dist
+}
+catch {
+    Write-Output "Path might not exist"
+}
 tsc  
 try {
     pkg --out-path releases/latest/x64 -t 'node16-linux-x64,node16-win-x64,node16-macos-x64' ./dist/src/Tortilla.js

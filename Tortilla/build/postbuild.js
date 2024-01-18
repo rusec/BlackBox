@@ -3,7 +3,7 @@ const key = process.argv[2]
 const key_two = process.argv[3]
 
 const path = require('path')
-const db_path = path.join(__dirname, '../src/modules/util/db.ts')
+const db_path = path.join(__dirname, '../src/db/db.ts')
 const password_gen = path.join(__dirname, '../src/modules/util/password-generator.ts')
 function replaceKey(path, key) {
     var file = fs.readFileSync(path, 'utf-8')
