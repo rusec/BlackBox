@@ -1,7 +1,7 @@
 import inquirer from "inquirer";
 import { isValidIPAddress } from "../../modules/util/util";
 import runningDB from "../../db/db";
-import { pingSSH } from "../../modules/util/ssh_utils";
+import { scanSSH } from "../../modules/util/ssh_utils";
 import { log } from "../../modules/console/debug";
 import { delay } from "../../modules/util/util";
 import { Home } from "../menu/home";
@@ -32,11 +32,11 @@ const addComputer = async function () {
     ]);
     await trySSH();
     async function trySSH(){
-        var computer_info = await pingSSH(ip, user, pass);
+        var computer_info = await scanSSH(ip, user, pass);
 
         let success = false;
         if (typeof computer_info == "object") {
-            await runningDB.addComputer(computer_info.hostname, ip, user, pass, computer_info.operatingSystem,computer_info.domain);
+            await runningDB.addTargetAndUser(computer_info.hostname, ip, user, pass, computer_info.operatingSystem,computer_info.domain);
             log(`Added`, "success");
             success = true;
         } else {
@@ -101,7 +101,7 @@ async function addComputerManual() {
         },
     ]);
 
-    await runningDB.addComputer(hostname, ip, user, pass, os_type,domain);
+    await runningDB.addTargetAndUser(hostname, ip, user, pass, os_type,domain);
     log(`Added`, "success");
     await pressEnter();
 

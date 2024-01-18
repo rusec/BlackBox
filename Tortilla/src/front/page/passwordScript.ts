@@ -1,6 +1,6 @@
 import inquirer from "inquirer";
 import runningDB from "../../db/db";
-import  { ServerInfo } from '../../db/dbtypes'
+import  { ServerInfo, User } from '../../db/dbtypes'
 import clear from "clear";
 import { delay } from "../../modules/util/util";
 import { changePasswordOf, password_result } from "../../modules/password/change_passwords";
@@ -21,7 +21,6 @@ const TEST_PASSWORD = ()=> {
         return "Password123"
     }
     else return "Password123?"
-
 }
 async function runScript(debug?: boolean) {
     const originalConsoleLog = console.log;
@@ -48,47 +47,85 @@ async function runScript(debug?: boolean) {
 
         //Clear and print status
         await clear();
-        log(debug ? `Running DEBUG script on ${computers.length} computers` : `Running script on ${computers.length} computers`);
-        logger.log(debug ? `Running DEBUG script on ${computers.length} computers` : `Running script on ${computers.length} computers`);
+    
+        
         //Generate values
+        const amountOfPasswords = computers.reduce((value, computer)=> value + computer.users.length, 0); 
 
-        const passwords = debug ? computers.map(() => TEST_PASSWORD()) : generatePasses(computers.length, seed);
+        const passwordsArray = debug ? Array.from({length: amountOfPasswords}, ()=> TEST_PASSWORD()) : generatePasses(amountOfPasswords, seed);
 
-
-        let bar = new Bar(computers.length)
-        var then = new Date();
-        const promises = computers.map(async (element, i) => {
-            const password = passwords[i];
-            const result = await changePasswordOf(element, password);
-            if (typeof result == "string" || result.error) {
-                bar.done("Errored " + element.Name+ " " + element["IP Address"])
-                throw new Error(typeof result == "string" ? result : result.error ? result.error : "");
+        const passwords = computers.map((computer)=>{
+            let target_passwords = [];
+            for (let i = 0; i < computer.users.length; i++) {
+                let password = passwordsArray.pop()
+                if(!password) throw new Error("Not enough passwords");
+                target_passwords.push(password);
             }
-            bar.done(element.Name+ " " + element["IP Address"])
-            return await runningDB.writeCompResult( element["IP Address"], result);
+            return target_passwords
+        })
+
+
+        log(debug ? `Running DEBUG script on ${computers.length} computers ${amountOfPasswords} users` : `Running script on ${computers.length} computers ${amountOfPasswords} ${amountOfPasswords} users`);
+        logger.log(debug ? `Running DEBUG script on ${computers.length} computers ${amountOfPasswords} users` : `Running script on ${computers.length} computers ${amountOfPasswords} users`);
+        
+
+
+        let bar = new Bar(amountOfPasswords)
+        var then = new Date();
+
+
+        let success = 0;
+        let fails = 0;
+        const promises = computers.map(async (target, i) => {
+            const target_passwords = passwords[i];
+            let results: (string|boolean)[] = []
+            for await(const [index, user] of target.users.entries()){
+                let result: string | boolean= false;
+                try {
+                    let password = target_passwords[index];
+                    if(!password) throw new Error("Unable to find password to change to")
+                    const passwordResult = await changePasswordOf(target, user, password);
+                    if (typeof passwordResult == "string" || passwordResult.error) {
+                        throw new Error(typeof passwordResult == "string" ? passwordResult : passwordResult.error ? passwordResult.error : "");
+                    }
+                    let wrote = await runningDB.writeUserResult(user.user_id, passwordResult)
+                    bar.done(`${user.username} ${user.ipaddress} ${user.hostname}`)
+                    success++;
+                    if(!wrote) throw new Error("Unable to write user password");
+                    result= `Success ${user.username} ${user.ipaddress} ${user.hostname}`
+                } catch (error) {
+                    bar.done(`Errored: ${user.username} ${user.ipaddress} ${user.hostname}`)
+                    result = `Errored: ${user.username} ${user.ipaddress} ${user.hostname}` + (error as Error).message
+                    fails++;
+                }
+                results.push(result)
+            }
+            
+            return results
         });
 
         var results = await Promise.allSettled(promises);
         var now = new Date();
-        const numberOfSuccess = results
-            .filter(({ status }) => status === "fulfilled")
-            .map((p) => typeof (p as PromiseFulfilledResult<any>).value == "boolean" && (p as PromiseFulfilledResult<any>).value).length;
+
 
         var lapse_time = now.getTime() - then.getTime();
-        logger.log(`Successfully changed passwords on ${numberOfSuccess} of ${computers.length} in ${lapse_time} ms`, "info");
+        logger.log(`Successfully changed passwords on ${success} of ${amountOfPasswords} in ${lapse_time} ms`, "info");
 
-        console.log(`Successfully changed passwords on ${numberOfSuccess} of ${computers.length} in ${lapse_time} ms`.green);
+        console.log(`Successfully changed passwords on ${success} of ${amountOfPasswords} in ${lapse_time} ms`.green);
 
-        const runningLog = results
-        .map((element, i) => {
-            if (typeof (element as PromiseFulfilledResult<any>).value === "boolean" && (element as PromiseFulfilledResult<any>).value) {
-                return `Changed password of ${computers[i]["IP Address"]}`;
-            } else {
-                // console.log(JSON.stringify(element))
-                return `Error on ${computers[i]["IP Address"]} ${(element as any).reason}`;
+        const runningLog = results.reduce((prev, value)=>{
+            if(!value) return prev
+            if(typeof value == 'boolean') return prev + "UNKNOWN\n"
+            // console.log(JSON.stringify(value))
+
+            let results = (value as PromiseFulfilledResult<string[]>).value
+            let computerLine = ""
+            for(let line of results){
+                computerLine += line + "\n"
             }
-        })
-        .join("\n");
+
+            return prev +computerLine 
+        }, `Log for ${new Date().toISOString()} running on ${computers.length} with ${amountOfPasswords} users\n\n`)
 
         await logToFile(removeANSIColorCodes(runningLog + "\n\nLOG:\n" + capturedOutput))
         bar.stop();
@@ -106,9 +143,18 @@ async function runScript(debug?: boolean) {
     Home();
 }
 
-async function runSingleScript(ip: string) {
+
+async function runSingleScript(ip: string, user_id:string) {
     try {
-        console.log("Password changing script for one computer");
+        const computer = await runningDB.getComputer(ip);
+        if(!computer){
+            throw new Error("Computer doesn't Exist")
+        }
+        const user = await runningDB.getUserByID(user_id);
+        if(!user){
+            throw new Error("Computer doesn't Exist")
+        }
+        console.log(`Password changing script for ${user.username} on ${computer.Name}`);
         const { password } = await inquirer.prompt([
             {
                 name: "password",
@@ -122,23 +168,22 @@ async function runSingleScript(ip: string) {
                 },
             },
         ]);
-        const computer = await runningDB.getComputer(ip);
-        if(!computer){
-            throw new Error("Computer doesn't Exist")
-        }
+      
+
+
         log(`Running script on ${computer.Name}`, 'info');
-        const result = await changePasswordOf(computer, password);
+        const result = await changePasswordOf(computer,user, password);
 
         if (typeof result == "string" || result.error) {
             log(`Error changing password Error: ${typeof result == "string" ? result : result.error ? result.error : ""}`, "error");
-            logger.log(`${computer["IP Address"]} Error changing password `, "error");
+            logger.log(`${user.ipaddress} Error changing password `, "error");
 
             await delay(1000);
         } else {
-            logger.log(`${computer["IP Address"]} Successfully changed passwords`, "info");
+            logger.log(`${computer.ipaddress} Successfully changed passwords`, "info");
 
-            log(`${computer["IP Address"]} Successfully changed passwords`.green);
-            await runningDB.writeCompResult(computer["IP Address"], result);
+            log(`${computer.ipaddress} Successfully changed passwords`.green);
+            await runningDB.writeUserResult(user.user_id, result);
         }
 
         await pressEnter()

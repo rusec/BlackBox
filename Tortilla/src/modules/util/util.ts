@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import crypto from 'crypto'
 function removeANSIColorCodes(inputString: string): string {
     const colorCodePattern = /\x1B\[[0-9;]*[A-Za-z]/g;
 
@@ -62,4 +63,12 @@ function  mapDateString(inputString:string) {
       value: inputString
     };
   }
-export { removeANSIColorCodes, delay, isValidIPAddress, bcryptPassword, replaceAll, encryptPassword,mapDateString };
+function makeId(){
+    const id = crypto.randomUUID()
+    return id
+}
+
+function findAndRemove(array:any[], target:any){
+    return array.filter((v)=> v != target)
+}
+export { removeANSIColorCodes, delay, isValidIPAddress, bcryptPassword, replaceAll, encryptPassword,mapDateString,makeId ,findAndRemove};

@@ -83,9 +83,7 @@ async function Settings() {
             // break;
         case "Export DB":
             await checkPassword()
-            let computers = await runningDB.readComputers();
-            let json_string = json2csv(computers)
-            fs.writeFileSync("./computers.csv", json_string)
+            await runningDB.exportDB();
             break;
         case "Back":
             break;

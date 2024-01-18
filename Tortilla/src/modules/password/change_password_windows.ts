@@ -1,18 +1,18 @@
 import { delay } from "../util/util";
 import socket_commands from "../util/socket_commands";
 import { SSH2CONN, detect_hostname } from "../util/ssh_utils";
-import { ServerInfo } from "../../db/dbtypes";
+import { Server, User } from "../../db/dbtypes";
 import { LDAPChangePassword } from "./active_directory";
 import logger from "../console/logger";
 import { getOutput, runCommand } from "../util/run_command";
 
-async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, username: string, password: string) {
+async function changePasswordWin(server:Server,user:User, conn: SSH2CONN |false, username: string, password: string) {
     var then = new Date();
     if(!conn){
         try {
-            return await LDAPChangePassword(server,password);
+            return await LDAPChangePassword(user,password);
         } catch (error:any) {
-            logger.log(`[${server["IP Address"]}] [${server.Name}] error ${error.message}`,'error')
+            logger.log(`[${server.ipaddress}] [${server.Name}] [${user.username}] error ${error.message}`,'error')
             return error.message ? error : error.message;
          }
     }
@@ -27,9 +27,9 @@ async function changePasswordWin(server:ServerInfo, conn: SSH2CONN |false, usern
 
         if(checkReport.isDomainUser && checkReport.domainController){
             try {
-                return await LDAPChangePassword(server,password);
+                return await LDAPChangePassword(user,password);
             } catch (error:any) {
-                logger.log(`[${server["IP Address"]}] [${server.Name}] LDAP Connection ${error.message}`,'warn')
+                logger.log(`[${server.ipaddress}] [${server.Name}] [${user.username}] LDAP Connection ${error.message}`,'warn')
                 conn.log("Fallback ssh")
                 return await changePasswordWinAD(conn,stripDomain(username), password);    
              }

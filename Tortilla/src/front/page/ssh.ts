@@ -1,7 +1,7 @@
 import inquirer from "inquirer";;
 import clear from "clear";
 import { isValidIPAddress } from "../../modules/util/util";
-import { pingSSH } from "../../modules/util/ssh_utils";
+import { scanSSH } from "../../modules/util/ssh_utils";
 import { log } from "../../modules/console/debug";
 import fs from "fs/promises";
 import util from "util";
@@ -19,7 +19,7 @@ async function ShotGun() {
             validate: (v: string) => {
                 return isValidIPAddress(v);
             },
-            message: "ip range ex: 192.168.1.0",
+            message: "ip range last digit gets cut off ex: 192.168.1.0",
         },
         {
             name: "hosts_ids",
@@ -95,12 +95,12 @@ async function ShotGun() {
         for (const session of sessions) {
             log(`Attempting to login ${computer} using ${session.user}`, "info");
 
-            var computer_info = await pingSSH(computer, session.user, session.pass);
+            var computer_info = await scanSSH(computer, session.user, session.pass);
             if (typeof computer_info == "object") {
                 log(`Found valid session for ${computer} saving...`, "success");
-                await runningDB.addComputer(computer_info.hostname, computer, session.user, session.pass, computer_info.operatingSystem, computer_info.domain);
-                passed = true;
-                break;
+                
+                // await runningDB.addComputer(computer_info.hostname, computer, session.user, session.pass, computer_info.operatingSystem, computer_info.domain);
+                passed = await runningDB.addTargetAndUser(computer_info.hostname, computer, session.user, session.pass, computer_info.operatingSystem,computer_info.domain);;
             }
         }
 

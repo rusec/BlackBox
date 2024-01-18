@@ -1,6 +1,6 @@
 import inquirer from "inquirer";
 import runningDB from "../../db/db";
-import  { ServerInfo } from '../../db/dbtypes'
+import  { Server, ServerInfo, User } from '../../db/dbtypes'
 import clear from "clear";
 import { delay } from "../../modules/util/util";
 import { checkPassword } from "../../modules/util/checkPassword";
@@ -9,10 +9,11 @@ import { Home } from "../menu/home";
 import {
     addCustomSSH,
     addSSH,
+    findAnyConnection,
     getConnectedIps,
     getStatus,
+    makeConnection,
     makeInteractiveShell,
-    makePermanentConnection,
     removeSSH,
     testPassword,
 } from "../../modules/util/ssh_utils";
@@ -24,11 +25,11 @@ import { pressEnter } from "../../modules/console/enddingModules";
 import { scanComputer } from "../../modules/computer/scan";
 async function edit(id = -1): Promise<void> {
     await clear();
-    let json = await runningDB.readComputers();
+    let servers = await runningDB.readComputers();
     let connections = getConnectedIps();
 
-    var ipAddressesChoices = json.map((v, k) => {
-        return { name: 'Conn:' + (connections.includes(v['IP Address']) ? "T" : "F")  + "  "+ v["IP Address"] + "  " + v["OS Type"] + " " + v.Name , value: k };
+    var ipAddressesChoices = servers.map((v, k) => {
+        return { name: 'Conn:' + (connections.includes(v.ipaddress) ? "T" : "F")  + "  "+ v.ipaddress  + " " + v.Name + " Users: " + v.users.length , value: k };
     });
 
     if (ipAddressesChoices.length === 0) {
@@ -53,12 +54,16 @@ async function edit(id = -1): Promise<void> {
         }
         selected_id = json_id;
     }
+
+
+
+
+    
     await clear();
     log("Checking Connection")
-    const computer = json[selected_id];
-    const header = `> ${computer.Name} ${computer["IP Address"]} ${computer.Username} ${blankPassword(computer.Password)} ${
-        computer["OS Type"]
-    } | pub_key: ${computer.ssh_key ? "true" : "false"} password changes: ${computer.password_changes} | Online: ${
+    const computer = await runningDB.getComputer(servers[selected_id].ipaddress);
+    if(!computer) return edit();
+    const header = `> ${computer.Name} ${computer.ipaddress} ${computer["OS Type"]} ${computer.domain}| Users: ${computer.users.length} | password changes: ${computer.password_changes} | Online: ${
         (await getStatus(computer)) ? "Live" : "unable to connect"
     }`.bgBlue;
 
@@ -75,20 +80,17 @@ async function edit(id = -1): Promise<void> {
             choices: [
                 new inquirer.Separator("Connect"),
                 { name: "Start Shell", value: "shell" },
-                { name: "Change Password", value: "change_pass_man" },
-                { name: "Test Password", value: "test_pass" },
+                { name: "Change Passwords", value: "change_passwords" },
                 { name: "Utils", value: "utils" },
+                new inquirer.Separator("Users Management"),
+                { name: "Users", value: "users" },
+                { name: "Choice Admin", value: "user_admin" },
+                { name: "Add User", value: "users_add" },
+                { name: "Remove User", value: "users_remove" },
                 new inquirer.Separator("Data"),
-                { name: "Change Password (if changed from target)", value: "Change Password" },
-                "Change Username",
-                "Change OS",
-                {name: "Change Domain", value :"change_domain"},
-                { name: "Show Password", value: "show_pass" },
-                { name: "Remove Computer", value: "Remove" },
-                new inquirer.Separator("SSH"),
-                { name: "Inject SSH Key", value: "add_ssh" },
-                { name: "Inject Custom SSH Key", value: "add_custom_ssh" },
-                { name: "Remove SSH Key", value: "remove_ssh" },
+                { name: "Change Domain", value: "change_domain" },
+                { name: "Change OS", value: "change_os" },
+                { name: "Remove Computer", value: "remove" },
                 new inquirer.Separator(),
                 new inquirer.Separator("Navigation"),
                 "Back",
@@ -98,76 +100,430 @@ async function edit(id = -1): Promise<void> {
         },
     ]);
 
+
+    async function editUsers(user_id:number =-1): Promise<void>{
+        await clear();
+        if(!computer) return;
+        console.log(header);
+        const user_choices = computer.users.map((user,k)=>{
+            return {name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key}`, value:k}
+        })
+        let printHeader = false;
+        if(user_id == -1){
+            const {user_index} = await inquirer.prompt([
+                {
+                    name: "user_index",
+                    type:'list',
+                    pageSize:50,
+                    choices: [
+                        ...user_choices, {name:"Back", value: "Back"}
+                    ],
+                    message: "Please select a user"
+                }
+            ])
+    
+            if(user_index == 'Back') return;
+            user_id = user_index;
+        }else {
+            printHeader = true;
+        }
+        const user = await runningDB.getUserByID(computer.users[user_id].user_id);
+        if(!user) {
+            log("unable to find user", 'error')
+            await delay(1000)
+            return editUsers();
+        }
+        printHeader && console.log(`>> ${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key}`.cyan)
+
+
+        const { menu } = await inquirer.prompt([
+            {
+                name: "menu",
+                type: "list",
+                pageSize: 50,
+                choices: [
+                    new inquirer.Separator("Connect"),
+                    { name: "Start Shell", value: "shell" },
+                    { name: "Change Password", value: "change_pass" },
+                    { name: "Test Password", value: "test_pass" },
+                    { name: "Show Passwords", value: "show_pass" },
+                    new inquirer.Separator("edit"),
+                    { name: "Change User Name", value: "username_edit" },
+                    { name: "Change Password", value: "password_edit" },
+                    { name: "Change Domain", value: "domain_edit" },
+                    { name: "Remove User", value: "remove_user" },
+                    new inquirer.Separator("SSH"),
+                    "Inject SSH",
+                    "Remove SSH",
+                    "Inject Custom SSH",
+                    new inquirer.Separator(),
+                    new inquirer.Separator("Navigation"),
+                    "Back",
+                    new inquirer.Separator(),
+                ],
+                message: "Please select one of the following options:",
+            },
+        ]);
+        if(menu == 'Back') return editUsers();
+
+        switch(menu){
+            case 'shell':
+                await makeInteractiveShell(user);
+                break;
+            case "change_pass":
+                await runSingleScript(computer.ipaddress, user.user_id);
+            break;
+            case "test_pass":
+                await passwordTest();
+            break;
+            case "show_pass":
+                await checkPassword();
+                await showPasswords();
+            break;
+            case "username_edit":
+                await changeUsername();
+                break;
+            case "password_edit":
+               await changePassword();
+               break;
+            case "domain_edit":
+                await changeDomain()    
+                break;
+            case "remove_user":
+                await removeUser();    
+                break;
+            case "Inject SSH":
+                let r = await addSSH(user,computer["OS Type"]);
+                if (r) {
+                    await runningDB.writeUserSSH(user.user_id, r);
+                }
+                break;
+
+            case "Inject Custom SSH":
+                await sshCustom();
+                break;
+            case "Remove SSH": 
+                let result = await removeSSH(user, computer["OS Type"]);
+                if (result) {
+                    await runningDB.writeUserSSH(user.user_id, !result);
+                }
+            break;
+            default:
+                log('Unknown selection', 'error') 
+                await delay(1000)
+            break;
+        }
+
+        return editUsers(user_id);
+
+
+
+        async function showPasswords(){
+            if(!user)return 
+            console.log(`Current: ${user.password}`)
+            console.log(`Old Passwords: ${JSON.stringify(user.oldPasswords)}`)
+            await pressEnter();
+        }
+        async function changeUsername() {
+            if(!user) return;
+            let { newUsername, confirm } = await inquirer.prompt([
+                {
+                    name: "newUsername",
+                    type: "input",
+                },
+                {
+                    name: "confirm",
+                    type: "confirm",
+                },
+            ]);
+            if (!confirm) {
+                return;
+            }
+            await runningDB.editUser(user.user_id, newUsername, undefined)
+    
+            console.log("username updated!");
+            await delay(300);
+        }
+        async function changeDomain(){
+            if(!user) return;
+
+            let { newDomain, confirm } = await inquirer.prompt([
+                {
+                    name: "newDomain",
+                    type: "input",
+                    message: `please enter a domain (${user.domain})`
+                },
+                {
+                    name: "confirm",
+                    type: "confirm",
+                },
+            ]);
+            if (!confirm) {
+                return;
+            }
+    
+            // json[selected_id].domain = newDomain;
+            // await runningDB.writeComputers(json);
+            await runningDB.editUser(user.user_id,undefined, newDomain)
+    
+            console.log("domain updated!");
+            await delay(300);
+        }
+        async function changePassword() {
+            if(!user) return;
+
+            let { newPassword, confirm } = await inquirer.prompt([
+                {
+                    name: "newPassword",
+                    message: "new password if manually changed",
+                    type: "input",
+                },
+                {
+                    name: "confirm",
+                    type: "confirm",
+                },
+            ]);
+            if (!confirm) {
+                return;
+            }
+    
+            await runningDB.writeUserPassword(user.user_id, newPassword);
+    
+            console.log("password updated!");
+            await delay(300);
+        }
+        async function removeUser() {
+            if(!user) return;
+            let { confirm } = await inquirer.prompt([
+                {
+                    name: "confirm",
+                    type: "confirm",
+                    message: `Would you like to remove ${user.username}`
+                },
+            ]);
+            if (!confirm) {
+                return;
+            }
+
+
+            await runningDB.removeUser(user.ipaddress, user.user_id);
+            
+            console.log("user removed!");
+            await delay(300);
+        }
+        async function passwordTest() {
+            if(!user)return;
+            // await clear();
+            // // const header = `> ${server.Name} ${server["IP Address"]} ${server.Username} ${blankPassword(server.Password)} ${server["OS Type"]} | pub_key: ${
+            // //     server.ssh_key ? "true" : "false"
+            // // } password changes: ${server.password_changes}`.bgBlue;
+            // // console.log(header);
+            let conn = await makeConnection(user);
+            if (!conn) {
+                console.log("Unable to connect to server");
+                await delay(1000);
+                return;
+            }
+            let pass_success = await testPassword(conn, user.password);
+            pass_success ? log("Password Active", "success") : log("Unable to use Password", "error");
+        
+            await pressEnter();
+        }
+        async function sshCustom() {
+            if(!computer) return;
+
+            if(!user) return;
+            const { ssh_key } = await inquirer.prompt([
+                {
+                    name: "ssh_key",
+                    message: "please enter an ssh key",
+                    validate: function isValidSSHPublicKey(publicKey) {
+                        const sshPublicKeyRegex = /^(ssh-rsa|ssh-dss|ecdsa-[a-zA-Z0-9]+)\s+[A-Za-z0-9+/]+[=]{0,3}(\s+.+)?$/;
+
+                        return sshPublicKeyRegex.test(publicKey.trim()) ? true : "Invalid SSH KEY";
+                    },
+                    filter: (input) => {
+                        return input.trim();
+                    },
+                },
+            ]);
+            let res = await addCustomSSH(user, ssh_key, computer["OS Type"]);
+            if (res) {
+                log(`INJECTED SSH KEY SUCCESS on ${user.ipaddress} ${user.username}`, "success");
+                logger.log(`injected ssh key to ${user.ipaddress} ${user.username}`);
+            } else {
+                log(`Unable to inject SSH KEY SUCCESS on ${user.ipaddress} ${user.username}`, "error");
+                logger.log(`Unable to inject ssh key to ${user.ipaddress} ${user.username}`);
+            }
+            await delay(1000);
+        }
+
+
+    }
+
+    async function removeUsers(){
+        if(!computer) return;
+
+        const user_choices = computer.users.map((user,k)=>{
+            return {name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key}`, value:k}
+        })
+        
+        const {user_index,confirm} = await inquirer.prompt([
+            {
+                name: "user_index",
+                type:'list',
+                pageSize:50,
+                choices: [
+                    ...user_choices, {name:"Back", value: "Back"}
+                ],
+                message: "Please select a user"
+            },
+            {
+                name: `confirm`,
+                message: `confirm`,
+                type: "confirm",
+            },
+        ])
+        if(!confirm) return;
+        if(user_index == 'Back') return;
+        const user = await runningDB.getUserByID(computer.users[user_index].user_id);
+
+        if(!user) {
+            log("unable to find user", 'error')
+            await delay(1000)
+            return;
+        }
+
+        await runningDB.removeUser(computer.ipaddress, user.user_id)
+        log("Removed User", 'success')
+        await delay(500)
+        return;
+
+
+    }
+    async function choiceAdmin(){
+        if(!computer) return;
+
+        const user_choices = computer.users.map((user,k)=>{
+            return {name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key}`, value:k}
+        })
+        
+        const {user_index,confirm} = await inquirer.prompt([
+            {
+                name: "user_index",
+                type:'list',
+                pageSize:50,
+                choices: [
+                    ...user_choices, {name:"Back", value: "Back"}
+                ],
+                message: "Please select a user"
+            },
+            {
+                name: `confirm`,
+                message: `confirm`,
+                type: "confirm",
+            },
+        ])
+        if(!confirm) return;
+        if(user_index == 'Back') return;
+        console.log(user_index)
+        let result = await runningDB.setAdmin(computer.ipaddress, user_index)
+
+        result && log(`Set User ${computer.users[user_index].username} to Admin`, 'success')
+        await delay(500)
+    }
+
+    async function addUser(){
+        if(!computer) return;
+
+        const {username, password, domain} = await inquirer.prompt([
+            {
+                'name':"username",
+                'type': 'input', 
+                message: 'Please enter a username',
+            },
+            {
+                name: "password",
+                'type': 'password',
+                message: 'Please enter a password',
+            },
+            {
+                name: 'domain',
+                type:'input',
+                message: 'Please enter a domain'
+            }
+        ])
+
+        await runningDB.addUser(computer.ipaddress, username, password, computer.Name, domain)
+        log("Added User", 'success')
+        await delay(500)
+        return;
+    }
+
     switch (section) {
         case "Back":
             return edit();
-        case "Change Password":
+        case "shell":
             await checkPassword();
-            await changePassword();
+            await makeInteractiveShell(computer.users[0])
             break;
-        case "Change Username":
-            await changeUsername();
-            break;
-        case "Change OS":
-            await changeOS();
-            break;
-        case "Remove":
-            await Remove();
-            break;
-        case "utils":
-            await computerUtils(computer);
-            break;
-        case "change_pass_man":
+        case "change_passwords":
             await checkPassword();
-            await runSingleScript(json[selected_id]["IP Address"]);
+            await changePasswordAllUsers();
             break;
-        case "add_ssh":
+        case "users":
             await checkPassword();
-            let r = await addSSH(computer);
-            if (r) {
-                await runningDB.writeCompSSH(json[selected_id]["IP Address"], r);
-            }
+            await editUsers();
             break;
-        case "test_pass":
-            await passwordTest(computer);
+        case "user_admin":
+            await checkPassword();
+            await choiceAdmin();
+            break;
+        case "users_add":
+            await checkPassword();
+            await addUser();
+            break;
+        case "users_remove":
+            await checkPassword();
+            await removeUsers()
             break;
         case "change_domain": 
             await checkPassword();
             await changeDomain();
             break; 
-        case "show_pass":
-            await checkPassword();
-            await showPassword();
+        case "change_os":
+            await changeOS();
             break;
-        case "add_custom_ssh":
+        case "remove":
             await checkPassword();
-            await sshCustom();
-            break;
-        case "remove_ssh":
-            await checkPassword();
-            let result = await removeSSH(computer);
-            if (result) {
-                await runningDB.writeCompSSH(json[selected_id]["IP Address"], !result);
-            }
-            break;
-        case "shell":
-            await checkPassword();
-            await makeInteractiveShell(computer);
+            await Remove();
+            return edit();
+        case "utils":
+            await computerUtils(computer);
             break;
         case "Home":
             return Home();
     }
     return edit(selected_id);
 
+    async function changePasswordAllUsers(){
+        if(!computer) return;
+        for(let user of computer.users){
+            await clear();
+            await runSingleScript(computer.ipaddress, user.user_id);
+        }
+
+    }
+
+
     async function Remove() {
-        await clear();
-        await checkPassword();
+        if(!computer) return;
         console.log(header);
 
         let { confirm } = await inquirer.prompt([
             {
                 name: `confirm`,
-                message: `confirm removing ${computer.Name} ${computer["IP Address"]}`,
+                message: `confirm removing ${computer.Name} ${computer.ipaddress}`,
                 type: "confirm",
             },
         ]);
@@ -175,80 +531,20 @@ async function edit(id = -1): Promise<void> {
             return;
         }
 
-        await runningDB.removeComputer(json[selected_id]["IP Address"]);
-    }
-    async function sshCustom() {
-        const { ssh_key } = await inquirer.prompt([
-            {
-                name: "ssh_key",
-                message: "please enter an ssh key",
-                validate: function isValidSSHPublicKey(publicKey) {
-                    const sshPublicKeyRegex = /^(ssh-rsa|ssh-dss|ecdsa-[a-zA-Z0-9]+)\s+[A-Za-z0-9+/]+[=]{0,3}(\s+.+)?$/;
-
-                    return sshPublicKeyRegex.test(publicKey.trim()) ? true : "Invalid SSH KEY";
-                },
-                filter: (input) => {
-                    return input.trim();
-                },
-            },
-        ]);
-        let res = await addCustomSSH(computer, ssh_key);
-        if (res) {
-            log(`INJECTED SSH KEY SUCCESS on ${computer["IP Address"]}`, "success");
-            logger.log(`injected ssh key to ${computer["IP Address"]}`);
-        } else {
-            log(`Unable to inject SSH KEY SUCCESS on ${computer["IP Address"]}`, "error");
-            logger.log(`Unable to inject ssh key to ${computer["IP Address"]}`);
-        }
-        await delay(1000);
-    }
-    async function changePassword() {
-        let { newPassword, confirm } = await inquirer.prompt([
-            {
-                name: "newPassword",
-                message: "new password if manually changed",
-                type: "input",
-            },
-            {
-                name: "confirm",
-                type: "confirm",
-            },
-        ]);
-        if (!confirm) {
-            return;
-        }
-
-        await runningDB.writeCompPassword(json[selected_id]["IP Address"], newPassword);
-
-        console.log("password updated!");
+        await runningDB.removeComputer(computer.ipaddress);
+        console.log("Removed computer!");
         await delay(300);
     }
-    async function changeUsername() {
-        let { newUsername, confirm } = await inquirer.prompt([
-            {
-                name: "newUsername",
-                type: "input",
-            },
-            {
-                name: "confirm",
-                type: "confirm",
-            },
-        ]);
-        if (!confirm) {
-            return;
-        }
-        await runningDB.editComputer(json[selected_id]["IP Address"], newUsername)
-
-
-        console.log("username updated!");
-        await delay(300);
-    }
+   
+  
     async function changeDomain(){
+        if(!computer) return;
+
         let { newDomain, confirm } = await inquirer.prompt([
             {
                 name: "newDomain",
                 type: "input",
-                message: `please enter a domain (${json[selected_id].domain})`
+                message: `please enter a domain (${computer.domain})`
             },
             {
                 name: "confirm",
@@ -259,15 +555,15 @@ async function edit(id = -1): Promise<void> {
             return;
         }
 
-        // json[selected_id].domain = newDomain;
-        // await runningDB.writeComputers(json);
-        await runningDB.editComputer(json[selected_id]["IP Address"], undefined, newDomain)
+        await runningDB.editComputer(computer.ipaddress, newDomain)
 
         console.log("domain updated!");
         await delay(300);
     }
 
     async function changeOS() {
+        if(!computer) return;
+
         let { newOSType, confirm } = await inquirer.prompt([
             {
                 name: "newOSType",
@@ -287,46 +583,21 @@ async function edit(id = -1): Promise<void> {
         if (!confirm) {
             return;
         }
-        await runningDB.editComputer(json[selected_id]["IP Address"], undefined, undefined, newOSType)
+        await runningDB.editComputer(computer.ipaddress, undefined, newOSType)
 
 
         console.log("OS updated!");
         await delay(300);
     }
-    async function showPassword() {
-        console.log(
-            `> ${computer.Name} ${computer["IP Address"]} ${computer.Username} ${computer.Password} ${computer["OS Type"]} | pub_key: ${
-                computer.ssh_key ? "true" : "false"
-            } password changes: ${computer.password_changes}`.bgBlue
-        );
-        await pressEnter();
-        return;
-    }
-}
-async function passwordTest(server: ServerInfo) {
-    await clear();
-    const header = `> ${server.Name} ${server["IP Address"]} ${server.Username} ${blankPassword(server.Password)} ${server["OS Type"]} | pub_key: ${
-        server.ssh_key ? "true" : "false"
-    } password changes: ${server.password_changes}`.bgBlue;
-    console.log(header);
-    let conn = await makePermanentConnection(server);
-    if (!conn) {
-        console.log("Unable to connect to server");
-        await delay(1000);
-        return;
-    }
-    let pass_success = await testPassword(conn, server.Password);
-    pass_success ? log("Password Active", "success") : log("Unable to use Password", "error");
-
-    await pressEnter();
 }
 
-async function computerUtils(server: ServerInfo) {
+
+async function computerUtils(server: Server) {
     await clear();
-    const header = `> ${server.Name} ${server["IP Address"]} ${server.Username} ${blankPassword(server.Password)} ${server["OS Type"]} | pub_key: ${
-        server.ssh_key ? "true" : "false"
-    } password changes: ${server.password_changes}`.bgBlue;
-    console.log(header);
+    // const header = `> ${server.Name} ${server.ipaddress} ${server["OS Type"]} | pub_key: ${
+    //     server.ssh_key ? "true" : "false"
+    // } password changes: ${server.password_changes}`.bgBlue;
+    // console.log(header);
     const { program } = await inquirer.prompt([
         {
             name: "program",
@@ -350,7 +621,7 @@ async function computerUtils(server: ServerInfo) {
     if (program == "Back") {
         return;
     }
-    let conn = await makePermanentConnection(server);
+    let conn = await findAnyConnection(server.users);
     if (!conn) {
         console.log("Unable to connect to server");
         await delay(1000);
@@ -381,6 +652,7 @@ async function computerUtils(server: ServerInfo) {
         default:
             break;
     }
+    await conn.close();
 }
 
 function blankPassword(password: string) {

@@ -1,22 +1,27 @@
 import { clear } from "console";
 import runningDB from "../../db/db";
-import  { ServerInfo } from '../../db/dbtypes'
+import  { Server, ServerInfo } from '../../db/dbtypes'
 import { Home } from "../menu/home";
 import inquirer from "inquirer";
 import { checkPassword } from "../../modules/util/checkPassword";
-import { makePermanentConnection } from "../../modules/util/ssh_utils";
+import { makeConnection } from "../../modules/util/ssh_utils";
 import delay from "delay";
 import { log } from "../../modules/console/debug";
 import { getOutput } from "../../modules/util/run_command";
 import fs from 'fs'
 import { logToFile } from "../../modules/console/enddingModules";
+
+
+
+
+// Assumes the first user is the admin user
 async function Commands() {
     await clear();
     await checkPassword();
     let json = await runningDB.readComputers();
 
     var ipAddressesChoices = json.map((v, k) => {
-        return { name: v["IP Address"] + "  " + v["OS Type"] + " " + v.Name, value: v };
+        return { name: v.ipaddress + "  " + v["OS Type"] + " " + v.Name + "User: " + v.users[0].username, value: v };
     });
 
     if (ipAddressesChoices.length === 0) {
@@ -41,21 +46,21 @@ async function Commands() {
     Home();
 }
 
-async function shotgunCommands(servers: ServerInfo[], command: string) {
+async function shotgunCommands(servers: Server[], command: string) {
     let fileLOG = "LOG FOR COMMANDS RUN\n";
     for (let id = 0; id < servers.length; id++) {
         try {
             let server = servers[id];
-            fileLOG += `Running Command for ${server["IP Address"]} ${server.Name}\n`
-            let conn = await makePermanentConnection(server, true);
+            fileLOG += `Running Command for ${server.ipaddress} ${server.Name}\n`
+            let conn = await makeConnection(server.users[0]);
             if (!conn) {
-                log(`${server["IP Address"]} Unable to Connect to Host`, "error");
+                log(`${server.ipaddress} Unable to Connect to Host`, "error");
 
                 continue;
             }
             let output = await getOutput(conn, command);
-            log(`${server["IP Address"]} Successful LOG:\n${output}`, 'success')
-            fileLOG += `${server["IP Address"]} Successful Ran Command\nLOG:\n${output}\n`;
+            log(`${server.ipaddress} Successful LOG:\n${output}`, 'success')
+            fileLOG += `${server.ipaddress} Successful Ran Command\nLOG:\n${output}\n`;
         } catch (error) {}
         log(`${id +1} of ${servers.length} Done`);
     }

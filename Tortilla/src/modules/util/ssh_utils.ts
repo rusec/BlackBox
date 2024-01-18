@@ -1,6 +1,6 @@
 import SSH2Promise from "@fabio286/ssh2-promise";
 import runningDB from "../../db/db";
-import { ServerInfo } from "../../db/dbtypes";
+import { Server, ServerInfo, User } from "../../db/dbtypes";
 import { getOutput, runCommand, runCommandNoExpect } from "./run_command";
 import SSHConfig from "@fabio286/ssh2-promise/lib/sshConfig";
 import { options } from "./options";
@@ -16,7 +16,85 @@ import { isValidSession } from "./checkPassword";
 import LoggerTo from "../console/loggerToFile";
 // SSH COMMANDS for ejections
 temp.track();
+let connectionLog = new LoggerTo("connections");
 
+async function findAnyConnection(Users:User[], timeout = 3000){
+    let privateKey= await runningDB.getPrivateSSHKey();
+
+    for(let user of Users){
+        try {
+            const sshConfig: SSHConfig = {
+                host: user.ipaddress,
+                username: user.username,
+                password: user.password,
+                privateKey: privateKey,
+                authHandler: ["publickey", "password"],
+                readyTimeout: timeout,
+                reconnectTries: 3,
+                reconnectDelay: 1000,
+            };
+            const ssh = new SSH2CONN(user.hostname, sshConfig);
+            await ssh.connect();
+            ssh.on("ssh", async (e) => {
+                connectionLog.log(`[${ssh.config[0].host}] [${user.hostname}] Event: ${e}`);
+            });
+            ssh.on("close", async () => {
+                connectionLog.log(`[${ssh.config[0].host}] [${user.hostname}] Event: Closed Connections`);
+            });
+    
+            ssh.on(SSH2CONN.errorMonitor, (err) => {
+                recentlyConnection.delete(user.ipaddress)    
+
+                connectionLog.log(`[${ssh.config[0].host}] [${user.hostname}] Event: ERROR ${err}`);
+            });
+            recentlyConnection.set(user.ipaddress, true)
+    
+            return ssh;
+        } catch (error) {
+            
+        }
+        
+    }
+    return false;
+}
+
+let recentlyConnection:Map<string, boolean> = new Map();
+function getConnectedIps() {
+    return Array.from(recentlyConnection.keys());
+}
+async function makeConnection(user:User, timeout = 3000){
+    let privateKey= await runningDB.getPrivateSSHKey();
+
+    try {
+        const sshConfig: SSHConfig = {
+            host: user.ipaddress,
+            username: user.username,
+            password: user.password,
+            privateKey: privateKey,
+            authHandler: ["publickey", "password"],
+            readyTimeout: timeout,
+        };
+        const ssh = new SSH2CONN(user.hostname, sshConfig);
+        await ssh.connect();
+        ssh.on("ssh", async (e) => {
+            connectionLog.log(`[${ssh.config[0].host}] [${user.hostname}] Event: ${e}`);
+        });
+        ssh.on("close", async () => {
+            connectionLog.log(`[${ssh.config[0].host}] [${user.hostname}] Event: Closed Connections`);
+        });
+
+        ssh.on(SSH2CONN.errorMonitor, (err) => {
+            recentlyConnection.delete(user.ipaddress)    
+            connectionLog.log(`[${ssh.config[0].host}] [${user.hostname}] Event: ERROR ${err}`);
+        });
+        recentlyConnection.set(user.ipaddress, true)
+        return ssh;
+    } catch (error) {
+        return false;
+    }
+}
+
+// Note remove permanent connection
 //NOTE : MAKE PUBLIC KEY OUTPUT
 
 async function removeSSHkey(conn: SSH2CONN, os_type: options): Promise<boolean> {
@@ -74,6 +152,8 @@ async function testSSH(conn: SSH2CONN) {
             keepaliveInterval: 0,
             uniqueId:"SshKEY_TEST" + conn.config[0].host +conn.config[0].username,
             readyTimeout: 7000,
+            reconnectTries: 3,
+            reconnectDelay: 1000,
         };
         const ssh = new SSH2CONN(conn.config[0].host ? conn.config[0].host : "", sshConfig, true);
         ssh.on("ssh", async (e) => {
@@ -100,6 +180,7 @@ async function testPassword(conn: SSH2CONN, password: string) {
             reconnect: false,
             readyTimeout: 7000,
             reconnectTries: 3,
+            reconnectDelay: 1000,
             uniqueId:"PasswordTest" + conn.config[0].host +conn.config[0].username 
         };
         const ssh = new SSH2Promise(sshConfig, true);
@@ -120,7 +201,7 @@ async function testPassword(conn: SSH2CONN, password: string) {
 //will try to ssh using the key, if it cant it will eject one more time
 //TO DO DARWIN
 async function injectSSHkey(conn: SSH2CONN, os_type: options, force?: undefined | boolean, trials: number = 0): Promise<boolean> {
-    if (trials > 2) {
+    if (trials > 1) {
         return false;
     }
     const ssh_key = await runningDB.getPublicSSHKey();
@@ -196,7 +277,7 @@ async function injectSSHkey(conn: SSH2CONN, os_type: options, force?: undefined 
 }
 
 async function injectSSHKeyWindowsCMD(conn: SSH2CONN, os_type: options, force?: undefined | boolean, trials: number = 0): Promise<boolean> {
-    if (trials > 2) {
+    if (trials > 1) {
         return false;
     }
     const ssh_key = await runningDB.getPublicSSHKey();
@@ -275,244 +356,45 @@ async function injectCustomKey(conn: SSH2CONN, ssh_key: string, os_type: options
     }
     return false;
 }
-async function addSSH(server: ServerInfo) {
-    const conn = await makePermanentConnection(server);
+async function addSSH(user: User, os:options) {
+    const conn = await makeConnection(user);
     if (!conn) {
         return false;
     }
-    let results = await injectSSHkey(conn, server["OS Type"]);
+    let results = await injectSSHkey(conn, os);
     return results;
 }
-async function addCustomSSH(server: ServerInfo, ssh_key: string) {
-    const conn = await makePermanentConnection(server, true);
+async function addCustomSSH(user: User, ssh_key: string, os: options) {
+    const conn = await makeConnection(user);
     if (!conn) {
         return false;
     }
-    let results = await injectCustomKey(conn, ssh_key, server["OS Type"]);
+    let results = await injectCustomKey(conn, ssh_key, os);
     return results;
 }
 
-async function removeSSH(server: ServerInfo) {
-    const conn = await makePermanentConnection(server, true);
+async function removeSSH(user: User, os:options) {
+    const conn = await makeConnection(user);
     if (!conn) {
         return false;
     }
-    let results = await removeSSHkey(conn, server["OS Type"]);
+    let results = await removeSSHkey(conn, os);
     return results;
 }
 
-async function makeConn(ip: string, username: string, password: string, useKey?: boolean): Promise<SSH2CONN | false> {
+async function getStatus(target: Server) {
     try {
-        const sshConfig: SSHConfig = {
-            host: ip,
-            username: username,
-            password: password,
-            privateKey: await runningDB.getPrivateSSHKey(),
-            authHandler: useKey ? ["publickey"] : ["password"],
-            reconnect: false,
-            keepaliveInterval: 0,
-            readyTimeout: 2000,
-        };
-        const ssh = new SSH2CONN("", sshConfig);
-        log(`${ip} Attempting connection`, "log");
-        await ssh.connect();
-        log(`${ip} Connected`, "log");
-        return ssh;
-    } catch (error) {
-        log(`${ip} Unable to connect`, "log");
-        return false;
-    }
-}
-
-async function makeConnection(Server: ServerInfo, useKey?: boolean, statusLog = true, timeout = 3000): Promise<SSH2CONN | false> {
-    try {
-        const sshConfig: SSHConfig = {
-            host: Server["IP Address"],
-            username: Server.Username,
-            password: Server.Password,
-            privateKey: await runningDB.getPrivateSSHKey(),
-            authHandler: useKey ? ["publickey", "password"] : ["password"],
-            reconnect: false,
-            keepaliveInterval: 0,
-            readyTimeout: timeout,
-        };
-        const ssh = new SSH2CONN(Server.Name, sshConfig);
-        statusLog && ssh.log("Attempting Connection");
-        await ssh.connect();
-        statusLog && ssh.log("Connected");
-        return ssh;
-    } catch (error) {
-        statusLog && log(`[${Server["IP Address"]}] [${Server.Name}] Unable to connect: ${error}`, "error");
-        logger.log(`[${Server["IP Address"]}] [${Server.Name}] Unable to connect: ${error}`, "error");
-
-        return false;
-    }
-}
-
-let servers_connections: Map<string, SSH2CONN> = new Map();
-let connectionLog = new LoggerTo("connections");
-
-async function makePermanentConnection(Server: ServerInfo, useKey?: boolean, statusLog = true, timeout = 3000): Promise<SSH2CONN | false> {
-    // log(`called ${Server["IP Address"]}` )
-    let findConnection = servers_connections.get(Server["IP Address"]);
-    try {
-        if (!findConnection) {
-            throw new Error("Connection doesn't exist");
-        }
-        await findConnection.exec("hostname");
-        return findConnection;
-    } catch (error) {
-        statusLog && findConnection?.error(`Unable to connect, making new connection: ${error}`);
-        connectionLog.log(`[${Server.Name}] [${Server["IP Address"]}] Event: ERROR ${error}`);
-
-        findConnection?.removeAllListeners();
-        try {
-            await findConnection?.close();
-            
-        } catch (error) {
-            connectionLog.log(`[${Server.Name}] [${Server["IP Address"]}] Event: unable to close  ${error}`);
-        } finally {
-        }
-        findConnection && connectionLog.log("deleting connection: " + `[${Server.Name}] [${Server["IP Address"]}]`);
-
-        servers_connections.delete(Server["IP Address"]);
-    }
-    try {
-        const sshConfig: SSHConfig = {
-            host: Server["IP Address"],
-            username: Server.Username,
-            password: Server.Password,
-            privateKey: await runningDB.getPrivateSSHKey(),
-            authHandler: useKey ? ["publickey", "password"] : ["password"],
-            reconnect: true,
-            keepaliveInterval: 6 * 1000,
-            keepaliveCountMax: 999,
-            reconnectTries: 3,
-            readyTimeout: timeout,
-            uniqueId: "Permanent" + Server["IP Address"] + Server.Username + Server.Name
-        };
-        const ssh = new SSH2CONN(Server.Name, sshConfig);
-        statusLog && ssh.log("Attempting Connection");
-        await ssh.connect();
-        ssh.on("ssh", async (e) => {
-            connectionLog.log(`[${ssh.config[0].host}] [${Server.Name}] Event: ${e}`);
-        });
-        ssh.on("close", async () => {
-            connectionLog.log(`[${ssh.config[0].host}] [${Server.Name}] Event: Closed Connections`);
-        });
-
-        ssh.on(SSH2CONN.errorMonitor, (err) => {
-            connectionLog.log(`[${ssh.config[0].host}] [${Server.Name}] Event: ERROR ${err}`);
-        });
-        statusLog && ssh.log("Connected");
-        servers_connections.set(Server["IP Address"], ssh);
-
-        return ssh;
-    } catch (error) {
-        statusLog && log(`[${Server["IP Address"]}] [${Server.Name}] Unable to connect: ${error}`, "error");
-        logger.log(`[${Server["IP Address"]}] [${Server.Name}] Unable to connect: ${error}`, "error");
-        return false;
-    }
-}
-
-async function createNewConnection(computer: ServerInfo) {
-    try {
-        let new_connection = await makePermanentConnection(computer, true, false, 5000);
-        connectionLog.log(`[${computer["IP Address"]}] [${computer.Name}] I got a connection`);
-        if (!new_connection) {
-            connectionLog.log(`Unable to connect to server ${computer["IP Address"]}`);
-            return false;
-        }
-    } catch (error) {}
-}
-
-// this function is for precisest
-// will reconnect to computer when its not able to connect.
-// if password changes, it will try to reconnect with the new config.
-async function initConnections() {
-    if (!isValidSession()) {
-        setTimeout(initConnections, 5000)
-        
-        return;
-    }
-
-    try {
-        connectionLog.log("Checking Connections ");
-        let computers = await runningDB.readComputers();
-
-        let promises = computers.map(async (computer) => {
-            try {
-                let conn = servers_connections.get(computer["IP Address"]);
-
-                // if conn is not there make a new connection to the server
-                if (conn == undefined) {
-                    await createNewConnection(computer);
-                    return;
-                }
-
-                // test if connection is still good
-                try {
-                    await conn.exec("hostname");
-                    connectionLog.log(`[${computer["IP Address"]}] [${computer.Name}] I still have connection`);
-                } catch (error) {
-                    try {
-                        conn.close();
-                        conn.removeAllListeners();
-                    } catch (error) {}
-                    await createNewConnection(computer);
-                }
-            } catch (error) {
-                connectionLog.log(`${error}`);
-            }
-        });
-        await Promise.allSettled(promises);
-        connectionLog.log("finished checking connections");
-        await delay(10000);
-    } catch (error) {
-        connectionLog.error("Checking Error " + error);
-    } finally {
-        // checking = false;
-        setTimeout(initConnections, 60000)
-
-    }
-
-}
-initConnections()
-function getConnectedIps() {
-    return Array.from(servers_connections.keys());
-}
-
-function getAllCurrentConnections() {
-    let ips = servers_connections.keys();
-    let connections: SSH2CONN[] = [];
-
-    for (let ip of ips) {
-        let conn = servers_connections.get(ip);
-        if (!conn) {
-            continue;
-        }
-        connections.push(conn);
-    }
-
-    return connections;
-}
-
-process.on("exit", () => {
-    servers_connections.forEach((conn) => {
-        conn.close();
-    });
-});
-
-async function getStatus(Server: ServerInfo) {
-    try {
-        const ssh = await makePermanentConnection(Server, true, false, 2000);
-        return ssh ? true : false;
+        const ssh = await findAnyConnection(target.users, 2000);
+        if(!ssh) return false;
+        await ssh.close();
+        return true ;
     } catch (error: any) {
         return false;
     }
 }
 
-async function pingSSH(
+
+async function scanSSH(
     ip: string,
     username: string,
     password: string
@@ -551,11 +433,12 @@ async function pingSSH(
     }
 }
 
-async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
-    const conn = await makeConnection(server, true);
+async function makeInteractiveShell(server: User): Promise<boolean> {
+    const conn = await makeConnection(server);
     if (!conn) {
         return false;
     }
+    conn.close();
     return new Promise(async (resolve, reject) => {
         temp.open("temp_key", async function (err, info) {
             if (err) {
@@ -579,20 +462,20 @@ async function makeInteractiveShell(server: ServerInfo): Promise<boolean> {
             try {
                 switch (os.platform()) {
                     case "win32":
-                        exec(`start cmd.exe /K ssh ${server.Username}@${server["IP Address"]} -i ${info.path}`);
+                        exec(`start cmd.exe /K ssh ${server.username}@${server.ipaddress} -i ${info.path}`);
                         break;
                     case "darwin":
                         exec(
-                            `echo "ssh ${server.Username}@${server["IP Address"]} -i ${info.path}" > /tmp/tmp.sh ; chmod +x /tmp/tmp.sh ; open -a Terminal /tmp/tmp.sh ; sleep 2 ; rm /tmp/tmp.sh`
+                            `echo "ssh ${server.username}@${server.ipaddress} -i ${info.path}" > /tmp/tmp.sh ; chmod +x /tmp/tmp.sh ; open -a Terminal /tmp/tmp.sh ; sleep 2 ; rm /tmp/tmp.sh`
                         );
                         break;
                     case "linux":
-                        exec(`x-terminal-emulator -e "ssh ${server.Username}@${server["IP Address"]} -i ${info.path}"`);
+                        exec(`x-terminal-emulator -e "ssh ${server.username}@${server.ipaddress} -i ${info.path}"`);
                         break;
                     case "freebsd":
                     case "netbsd":
                     case "openbsd":
-                        exec(`xterm -e "ssh ${server.Username}@${server["IP Address"]} -i ${info.path}"`);
+                        exec(`xterm -e "ssh ${server.username}@${server.ipaddress} -i ${info.path}"`);
                         break;
                     default:
                         break;
@@ -683,7 +566,6 @@ class SSH2CONN extends SSH2Promise {
 
 export {
     SSH2CONN,
-    pingSSH,
     injectSSHkey as ejectSSHkey,
     makeConnection,
     getStatus,
@@ -695,7 +577,7 @@ export {
     detect_os,
     detect_hostname,
     addCustomSSH,
-    makePermanentConnection,
-    getAllCurrentConnections,
+    findAnyConnection,
     getConnectedIps,
+    scanSSH,
 };
