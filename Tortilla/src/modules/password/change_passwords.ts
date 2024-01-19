@@ -90,7 +90,8 @@ async function changePasswordOf(computer: Server, user:User, new_password: strin
         let pass_success = await testPassword(conn, new_password);
 
         conn.removeAllListeners();
-
+        await conn.close()
+        
         return { password: pass_success ? new_password : user.password, ssh: ssh_key, error: pass_success ? false : res };
     } catch (error: any) {
         if (conn) {

@@ -12,7 +12,7 @@ let valid_session = false;
  */
 async function checkPassword(force = false): Promise<void> {
     const hash = await runningDB.readPassword();
-    if (hash == '') {
+    if (hash == "") {
         const { master_password } = await inquirer.prompt([
             {
                 name: "master_password",
@@ -27,14 +27,15 @@ async function checkPassword(force = false): Promise<void> {
             },
         ]);
         await runningDB.writePassword(master_password);
+        return await checkPassword();
     }
-    if(valid_session && process.env.DEV && !process.pkg){
+    if (valid_session && process.env.DEV && !process.pkg) {
         return;
     }
     await clear();
     let trials = 3;
     function validateFunc(value: string) {
-        const v = runningDB.validateMasterPassword(hash,value);
+        const v = runningDB.validateMasterPassword(hash, value);
         if (trials <= 0) {
             logger.log(`Log in Attempt Failed`, "info");
             process.exit(0);
@@ -57,8 +58,8 @@ async function checkPassword(force = false): Promise<void> {
     valid_session = true;
 }
 
-function isValidSession(){
-    return valid_session
+function isValidSession() {
+    return valid_session;
 }
 
 export { checkPassword, isValidSession };

@@ -1,8 +1,7 @@
 import inquirer from "inquirer";
-import fs from 'fs'
+import fs from "fs";
 
-
-async function logToFile(str:string){
+async function logToFile(str: string) {
     const { continueLog } = await inquirer.prompt([
         {
             name: "continueLog",
@@ -14,7 +13,7 @@ async function logToFile(str:string){
         fs.writeFileSync("log.log", str, "utf8");
     }
 }
-async function pressEnter(){
+async function pressEnter() {
     await inquirer.prompt([
         {
             name: "confirm",
@@ -24,5 +23,4 @@ async function pressEnter(){
     ]);
 }
 
-
-export {logToFile,  pressEnter}
+export { logToFile, pressEnter };

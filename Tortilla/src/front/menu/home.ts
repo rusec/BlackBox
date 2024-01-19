@@ -11,26 +11,31 @@ import { Commands } from "../page/commands";
 import { scanComputers } from "../page/scanComputers";
 import { getConnectedIps } from "../../modules/util/ssh_utils";
 
-async function setTitleOfApplication(){
-    setTerminalTitle(`${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())} Connections: ${(await getConnectedIps()).length}`);
+async function setTitleOfApplication() {
+    setTerminalTitle(
+        `${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${
+            (await runningDB.readComputers()).length
+        }  Passwords Changed: ${await runningDB.getPasswordChanges()} Connections: ${(await getConnectedIps()).length}`
+    );
 }
-function setTerminalTitle(title:string)
-{
-    if(process.platform =='win32'){
+function setTerminalTitle(title: string) {
+    if (process.platform == "win32") {
         process.title = title;
-    }else
-  process.stdout.write(
-    String.fromCharCode(27) + "]0;" + title + String.fromCharCode(7)
-  );
+    } else process.stdout.write(String.fromCharCode(27) + "]0;" + title + String.fromCharCode(7));
 }
 
-setInterval(()=> {
-    setTitleOfApplication()
-}, 15 *1000)
+setInterval(() => {
+    setTitleOfApplication();
+}, 15 * 1000);
 
 async function Home() {
-    process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");console.clear();
-    console.log(`${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())} Connections: ${(await getConnectedIps()).length}`.bgGreen);
+    process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");
+    console.clear();
+    console.log(
+        `${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${
+            (await runningDB.readComputers()).length
+        }  Passwords Changed: ${await runningDB.getPasswordChanges()} Connections: ${(await getConnectedIps()).length}`.bgGreen
+    );
     const { program } = await inquirer.prompt([
         {
             name: "program",
@@ -74,7 +79,8 @@ async function Home() {
             scanComputers();
             break;
         case "Exit":
-            process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");console.clear();
+            process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");
+            console.clear();
             process.exit(0);
             break;
     }
@@ -89,8 +95,8 @@ async function Home() {
                 new inquirer.Separator(),
                 new inquirer.Separator("Computers"),
                 "Computers",
-                {name: "Scan All Computers",value:"Scan" },
-                {name:"Run Commands", value: "Commands"},
+                { name: "Scan All Computers", value: "Scan" },
+                { name: "Run Commands", value: "Commands" },
                 new inquirer.Separator(),
                 new inquirer.Separator("Navigation"),
                 "Settings",
@@ -107,8 +113,8 @@ async function Home() {
                 new inquirer.Separator(),
                 new inquirer.Separator("Computers"),
                 "Computers",
-                {name: "Scan All Computers",value:"Scan" },
-                {name:"Run Commands", value: "Commands"},
+                { name: "Scan All Computers", value: "Scan" },
+                { name: "Run Commands", value: "Commands" },
                 new inquirer.Separator(),
                 new inquirer.Separator("Navigation"),
                 "Settings",

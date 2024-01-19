@@ -31,38 +31,36 @@ const addComputer = async function () {
         },
     ]);
     await trySSH();
-    async function trySSH(){
+    async function trySSH() {
         var computer_info = await scanSSH(ip, user, pass);
 
         let success = false;
         if (typeof computer_info == "object") {
-            await runningDB.addTargetAndUser(computer_info.hostname, ip, user, pass, computer_info.operatingSystem,computer_info.domain);
+            await runningDB.addTargetAndUser(computer_info.hostname, ip, user, pass, computer_info.operatingSystem, computer_info.domain);
             log(`Added`, "success");
             success = true;
         } else {
             log(`Unable to reach computer, Not Added`, "error");
         }
-        if(success) return;
+        if (success) return;
 
-        let {confirm} = await inquirer.prompt([
+        let { confirm } = await inquirer.prompt([
             {
                 name: "confirm",
                 type: "confirm",
                 message: "Would you like to try again",
             },
         ]);
-        if(confirm){
+        if (confirm) {
             await trySSH();
         }
-
     }
-    
 
     await pressEnter();
 };
 
 async function addComputerManual() {
-    const { hostname,ip, user, pass,os_type,domain } = await inquirer.prompt([
+    const { hostname, ip, user, pass, os_type, domain } = await inquirer.prompt([
         {
             name: "hostname",
             message: "please enter a hostname",
@@ -91,21 +89,19 @@ async function addComputerManual() {
         {
             name: "os_type",
             message: "please enter a password",
-            type:'list',
-            choices: options
+            type: "list",
+            choices: options,
         },
         {
             name: "domain",
             message: "please enter a domain",
-            type:'input',
+            type: "input",
         },
     ]);
 
-    await runningDB.addTargetAndUser(hostname, ip, user, pass, os_type,domain);
+    await runningDB.addTargetAndUser(hostname, ip, user, pass, os_type, domain);
     log(`Added`, "success");
     await pressEnter();
-
 }
 
-
-export { addComputer, addComputerManual  };
+export { addComputer, addComputerManual };

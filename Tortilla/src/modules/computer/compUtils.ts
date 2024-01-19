@@ -4,16 +4,16 @@ import inquirer from "inquirer";
 import fs from "fs";
 import { getOutput } from "../util/run_command";
 import { parseUsersLinux } from "./scan";
-import asTable from 'as-table'
+import asTable from "as-table";
 import { SSH2CONN } from "../util/ssh_utils";
 async function getUsers(conn: SSH2CONN, os_type: options) {
     let users = "";
-    let users_array  = []
+    let users_array = [];
     switch (os_type.toLowerCase()) {
         case "freebsd":
             users = await getOutput(conn, commands.users.parsing.linux);
-            users_array = parseUsersLinux(users)
-            users = asTable(users_array)
+            users_array = parseUsersLinux(users);
+            users = asTable(users_array);
             break;
         case "windows":
             users = await getOutput(conn, commands.users.windows);
@@ -23,8 +23,8 @@ async function getUsers(conn: SSH2CONN, os_type: options) {
             break;
         case "linux":
             users = await getOutput(conn, commands.users.parsing.linux);
-            users_array = parseUsersLinux(users)
-            users = asTable(users_array)
+            users_array = parseUsersLinux(users);
+            users = asTable(users_array);
             break;
         default:
             users = "Unable to get Unknown OS";
@@ -57,8 +57,8 @@ async function getNetwork(conn: SSH2CONN, os_type: options) {
             break;
         case "linux":
             network = await getOutput(conn, commands.network.linux.step_1);
-            if(network.includes("netstat")){
-                network = await getOutput(conn,commands.network.linux.step_2)
+            if (network.includes("netstat")) {
+                network = await getOutput(conn, commands.network.linux.step_2);
             }
             break;
         default:
@@ -78,7 +78,7 @@ async function getNetwork(conn: SSH2CONN, os_type: options) {
         fs.writeFileSync("log.log", network, "utf8");
     }
 }
-async function getEVariables(conn: SSH2CONN, os_type: options){
+async function getEVariables(conn: SSH2CONN, os_type: options) {
     let variables = "";
     switch (os_type.toLowerCase()) {
         case "freebsd":
@@ -207,5 +207,4 @@ async function getCurrentLoggedIn(conn: SSH2CONN, os_type: options) {
     }
 }
 
-
-export { getUsers, getNetwork, getFailedLogins, getProcess,getEVariables,getCurrentLoggedIn };
+export { getUsers, getNetwork, getFailedLogins, getProcess, getEVariables, getCurrentLoggedIn };

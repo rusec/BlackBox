@@ -1,6 +1,6 @@
 import inquirer from "inquirer";
 import runningDB from "../../db/db";
-import  { Server, ServerInfo, User } from '../../db/dbtypes'
+import { Server, ServerInfo, User } from "../../db/dbtypes";
 import clear from "clear";
 import { delay } from "../../modules/util/util";
 import { checkPassword } from "../../modules/util/checkPassword";
@@ -30,7 +30,10 @@ async function edit(id = -1): Promise<void> {
     let connections = getConnectedIps();
 
     var ipAddressesChoices = servers.map((v, k) => {
-        return { name: 'Conn:' + (connections.includes(v.ipaddress) ? "T" : "F")  + "  "+ v.ipaddress  + " " + v.Name + " Users: " + v.users.length , value: k };
+        return {
+            name: "Conn:" + (connections.includes(v.ipaddress) ? "T" : "F") + "  " + v.ipaddress + " " + v.Name + " Users: " + v.users.length,
+            value: k,
+        };
     });
 
     if (ipAddressesChoices.length === 0) {
@@ -56,22 +59,17 @@ async function edit(id = -1): Promise<void> {
         selected_id = json_id;
     }
 
-
-
-
-    
     await clear();
-    log("Checking Connection")
+    log("Checking Connection");
     const computer = await runningDB.getComputer(servers[selected_id].ipaddress);
-    if(!computer) return edit();
-    const header = `> ${computer.Name} ${computer.ipaddress} ${computer["OS Type"]} ${computer.domain}| Users: ${computer.users.length} | password changes: ${computer.password_changes} | Online: ${
-        (await getStatus(computer)) ? "Live" : "unable to connect"
-    }`.bgBlue;
+    if (!computer) return edit();
+    const header = `> ${computer.Name} ${computer.ipaddress} ${computer["OS Type"]} ${computer.domain}| Users: ${
+        computer.users.length
+    } | password changes: ${computer.password_changes} | Online: ${(await getStatus(computer)) ? "Live" : "unable to connect"}`.bgBlue;
 
     await clear();
 
     console.log(header);
-  
 
     const { section } = await inquirer.prompt([
         {
@@ -102,41 +100,46 @@ async function edit(id = -1): Promise<void> {
         },
     ]);
 
-
-    async function editUsers(user_id:number =-1): Promise<void>{
+    async function editUsers(user_id: number = -1): Promise<void> {
         await clear();
-        if(!computer) return;
+        if (!computer) return;
         console.log(header);
-        const user_choices = computer.users.map((user,k)=>{
-            return {name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key} | ${k === 0 ? "Admin": ""}`, value:k}
-        })
+        const user_choices = computer.users.map((user, k) => {
+            return {
+                name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${
+                    user.ssh_key
+                } | ${k === 0 ? "Admin" : ""}`,
+                value: k,
+            };
+        });
         let printHeader = false;
-        if(user_id == -1){
-            const {user_index} = await inquirer.prompt([
+        if (user_id == -1) {
+            const { user_index } = await inquirer.prompt([
                 {
                     name: "user_index",
-                    type:'list',
-                    pageSize:50,
-                    choices: [
-                        ...user_choices, {name:"Back", value: "Back"}
-                    ],
-                    message: "Please select a user"
-                }
-            ])
-    
-            if(user_index == 'Back') return;
+                    type: "list",
+                    pageSize: 50,
+                    choices: [...user_choices, { name: "Back", value: "Back" }],
+                    message: "Please select a user",
+                },
+            ]);
+
+            if (user_index == "Back") return;
             user_id = user_index;
-        }else {
+        } else {
             printHeader = true;
         }
         const user = await runningDB.getUserByID(computer.users[user_id].user_id);
-        if(!user) {
-            log("unable to find user", 'error')
-            await delay(1000)
+        if (!user) {
+            log("unable to find user", "error");
+            await delay(1000);
             return editUsers();
         }
-        printHeader && console.log(`>> ${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key}`.cyan)
-
+        printHeader &&
+            console.log(
+                `>> ${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key}`
+                    .cyan
+            );
 
         const { menu } = await inquirer.prompt([
             {
@@ -166,36 +169,36 @@ async function edit(id = -1): Promise<void> {
                 message: "Please select one of the following options:",
             },
         ]);
-        if(menu == 'Back') return editUsers();
+        if (menu == "Back") return editUsers();
 
-        switch(menu){
-            case 'shell':
+        switch (menu) {
+            case "shell":
                 await makeInteractiveShell(user);
                 break;
             case "change_pass":
                 await runSingleScript(computer.ipaddress, user.user_id);
-            break;
+                break;
             case "test_pass":
                 await passwordTest();
-            break;
+                break;
             case "show_pass":
                 await checkPassword();
                 await showPasswords();
-            break;
+                break;
             case "username_edit":
                 await changeUsername();
                 break;
             case "password_edit":
-               await changePassword();
-               break;
+                await changePassword();
+                break;
             case "domain_edit":
-                await changeDomain()    
+                await changeDomain();
                 break;
             case "remove_user":
-                await removeUser();    
+                await removeUser();
                 break;
             case "Inject SSH":
-                let r = await addSSH(user,computer["OS Type"]);
+                let r = await addSSH(user, computer["OS Type"]);
                 if (r) {
                     await runningDB.writeUserSSH(user.user_id, r);
                 }
@@ -204,30 +207,28 @@ async function edit(id = -1): Promise<void> {
             case "Inject Custom SSH":
                 await sshCustom();
                 break;
-            case "Remove SSH": 
+            case "Remove SSH":
                 let result = await removeSSH(user, computer["OS Type"]);
                 if (result) {
                     await runningDB.writeUserSSH(user.user_id, !result);
                 }
-            break;
+                break;
             default:
-                log('Unknown selection', 'error') 
-                await delay(1000)
-            break;
+                log("Unknown selection", "error");
+                await delay(1000);
+                break;
         }
 
         return editUsers(user_id);
 
-
-
-        async function showPasswords(){
-            if(!user)return 
-            console.log(`Current: ${user.password}`)
-            console.log(`Old Passwords: ${JSON.stringify(user.oldPasswords)}`)
+        async function showPasswords() {
+            if (!user) return;
+            console.log(`Current: ${user.password}`);
+            console.log(`Old Passwords: ${JSON.stringify(user.oldPasswords)}`);
             await pressEnter();
         }
         async function changeUsername() {
-            if(!user) return;
+            if (!user) return;
             let { newUsername, confirm } = await inquirer.prompt([
                 {
                     name: "newUsername",
@@ -241,19 +242,19 @@ async function edit(id = -1): Promise<void> {
             if (!confirm) {
                 return;
             }
-            await runningDB.editUser(user.user_id, newUsername, undefined)
-    
+            await runningDB.editUser(user.user_id, newUsername, undefined);
+
             console.log("username updated!");
             await delay(300);
         }
-        async function changeDomain(){
-            if(!user) return;
+        async function changeDomain() {
+            if (!user) return;
 
             let { newDomain, confirm } = await inquirer.prompt([
                 {
                     name: "newDomain",
                     type: "input",
-                    message: `please enter a domain (${user.domain})`
+                    message: `please enter a domain (${user.domain})`,
                 },
                 {
                     name: "confirm",
@@ -263,16 +264,16 @@ async function edit(id = -1): Promise<void> {
             if (!confirm) {
                 return;
             }
-    
+
             // json[selected_id].domain = newDomain;
             // await runningDB.writeComputers(json);
-            await runningDB.editUser(user.user_id,undefined, newDomain)
-    
+            await runningDB.editUser(user.user_id, undefined, newDomain);
+
             console.log("domain updated!");
             await delay(300);
         }
         async function changePassword() {
-            if(!user) return;
+            if (!user) return;
 
             let { newPassword, confirm } = await inquirer.prompt([
                 {
@@ -288,33 +289,32 @@ async function edit(id = -1): Promise<void> {
             if (!confirm) {
                 return;
             }
-    
+
             await runningDB.writeUserPassword(user.user_id, newPassword);
-    
+
             console.log("password updated!");
             await delay(300);
         }
         async function removeUser() {
-            if(!user) return;
+            if (!user) return;
             let { confirm } = await inquirer.prompt([
                 {
                     name: "confirm",
                     type: "confirm",
-                    message: `Would you like to remove ${user.username}`
+                    message: `Would you like to remove ${user.username}`,
                 },
             ]);
             if (!confirm) {
                 return;
             }
 
-
             await runningDB.removeUser(user.ipaddress, user.user_id);
-            
+
             console.log("user removed!");
             await delay(300);
         }
         async function passwordTest() {
-            if(!user)return;
+            if (!user) return;
             // await clear();
             // // const header = `> ${server.Name} ${server["IP Address"]} ${server.Username} ${blankPassword(server.Password)} ${server["OS Type"]} | pub_key: ${
             // //     server.ssh_key ? "true" : "false"
@@ -328,13 +328,13 @@ async function edit(id = -1): Promise<void> {
             }
             let pass_success = await testPassword(conn, user.password);
             pass_success ? log("Password Active", "success") : log("Unable to use Password", "error");
-        
+
             await pressEnter();
         }
         async function sshCustom() {
-            if(!computer) return;
+            if (!computer) return;
 
-            if(!user) return;
+            if (!user) return;
             const { ssh_key } = await inquirer.prompt([
                 {
                     name: "ssh_key",
@@ -359,106 +359,106 @@ async function edit(id = -1): Promise<void> {
             }
             await delay(1000);
         }
-
-
     }
 
-    async function removeUsers(){
-        if(!computer) return;
+    async function removeUsers() {
+        if (!computer) return;
 
-        const user_choices = computer.users.map((user,k)=>{
-            return {name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key} | ${k === 0 ? "Admin": ""}`, value:k}
-        })
-        
-        const {user_index,confirm} = await inquirer.prompt([
+        const user_choices = computer.users.map((user, k) => {
+            return {
+                name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${
+                    user.ssh_key
+                } | ${k === 0 ? "Admin" : ""}`,
+                value: k,
+            };
+        });
+
+        const { user_index, confirm } = await inquirer.prompt([
             {
                 name: "user_index",
-                type:'list',
-                pageSize:50,
-                choices: [
-                    ...user_choices, {name:"Back", value: "Back"}
-                ],
-                message: "Please select a user"
+                type: "list",
+                pageSize: 50,
+                choices: [...user_choices, { name: "Back", value: "Back" }],
+                message: "Please select a user",
             },
             {
                 name: `confirm`,
                 message: `confirm`,
                 type: "confirm",
             },
-        ])
-        if(!confirm) return;
-        if(user_index == 'Back') return;
+        ]);
+        if (!confirm) return;
+        if (user_index == "Back") return;
         const user = await runningDB.getUserByID(computer.users[user_index].user_id);
 
-        if(!user) {
-            log("unable to find user", 'error')
-            await delay(1000)
+        if (!user) {
+            log("unable to find user", "error");
+            await delay(1000);
             return;
         }
 
-        await runningDB.removeUser(computer.ipaddress, user.user_id)
-        log("Removed User", 'success')
-        await delay(500)
+        await runningDB.removeUser(computer.ipaddress, user.user_id);
+        log("Removed User", "success");
+        await delay(500);
         return;
-
-
     }
-    async function choiceAdmin(){
-        if(!computer) return;
+    async function choiceAdmin() {
+        if (!computer) return;
 
-        const user_choices = computer.users.map((user,k)=>{
-            return {name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key}`, value:k}
-        })
-        
-        const {user_index,confirm} = await inquirer.prompt([
+        const user_choices = computer.users.map((user, k) => {
+            return {
+                name: `${user.username} | computer: ${user.hostname} | domain: ${user.domain} | password changes:${user.password_changes} | SshKey: ${user.ssh_key}`,
+                value: k,
+            };
+        });
+
+        const { user_index, confirm } = await inquirer.prompt([
             {
                 name: "user_index",
-                type:'list',
-                pageSize:50,
-                choices: [
-                    ...user_choices, {name:"Back", value: "Back"}
-                ],
-                message: "Please select a user"
+                type: "list",
+                pageSize: 50,
+                choices: [...user_choices, { name: "Back", value: "Back" }],
+                message: "Please select a user",
             },
             {
                 name: `confirm`,
                 message: `confirm`,
                 type: "confirm",
             },
-        ])
-        if(!confirm) return;
-        if(user_index == 'Back') return;
-        console.log(user_index)
-        let result = await runningDB.setAdmin(computer.ipaddress, user_index)
+        ]);
+        if (!confirm) return;
+        if (user_index == "Back") return;
+        console.log(user_index);
+        let result = await runningDB.setAdmin(computer.ipaddress, user_index);
 
-        result && log(`Set User ${computer.users[user_index].username} to Admin`, 'success')
-        await delay(500)
+        result && log(`Set User ${computer.users[user_index].username} to Admin`, "success");
+        await delay(500);
     }
 
-    async function addUser(){
-        if(!computer) return;
+    async function addUser() {
+        if (!computer) return;
 
-        const {username, password, domain} = await inquirer.prompt([
+        const { username, password, domain } = await inquirer.prompt([
             {
-                'name':"username",
-                'type': 'input', 
-                message: 'Please enter a username',
+                name: "username",
+                type: "input",
+                message: "Please enter a username",
             },
             {
                 name: "password",
-                'type': 'password',
-                message: 'Please enter a password',
+                type: "password",
+                message: "Please enter a password",
             },
             {
-                name: 'domain',
-                type:'input',
-                message: 'Please enter a domain'
-            }
-        ])
+                name: "domain",
+                type: "input",
+                message: "Please enter a domain",
+            },
+        ]);
 
-        await runningDB.addUser(computer.ipaddress, username, password, computer.Name, domain)
-        log("Added User", 'success')
-        await delay(500)
+        await runningDB.addUser(computer.ipaddress, username, password, computer.Name, domain);
+        log("Added User", "success");
+        await delay(500);
         return;
     }
 
@@ -467,7 +467,7 @@ async function edit(id = -1): Promise<void> {
             return edit();
         case "shell":
             await checkPassword();
-            await makeInteractiveShell(computer.users[0])
+            await makeInteractiveShell(computer.users[0]);
             break;
         case "change_passwords":
             await checkPassword();
@@ -487,12 +487,12 @@ async function edit(id = -1): Promise<void> {
             break;
         case "users_remove":
             await checkPassword();
-            await removeUsers()
+            await removeUsers();
             break;
-        case "change_domain": 
+        case "change_domain":
             await checkPassword();
             await changeDomain();
-            break; 
+            break;
         case "change_hostname":
             await checkPassword();
             await changeHostname();
@@ -512,9 +512,8 @@ async function edit(id = -1): Promise<void> {
     }
     return edit(selected_id);
 
-
-    async function changeHostname(){
-        if(!computer) return false;
+    async function changeHostname() {
+        if (!computer) return false;
         let conn = await findAnyConnection(computer.users);
         if (!conn) {
             console.log("Unable to connect to server");
@@ -525,33 +524,29 @@ async function edit(id = -1): Promise<void> {
         const { inputForHostname } = await inquirer.prompt([
             {
                 name: "inputForHostname",
-                type: 'input',
+                type: "input",
                 pageSize: 50,
                 message: `Please enter a hostname, enter for (${hostname}) `,
             },
         ]);
         if (inputForHostname != "") {
-            hostname = inputForHostname
+            hostname = inputForHostname;
         }
-        
 
-        log("Updated Hostname",await runningDB.updateComputerHostname(computer.ipaddress, hostname) ? 'success': 'error');
+        log("Updated Hostname", (await runningDB.updateComputerHostname(computer.ipaddress, hostname)) ? "success" : "error");
         await delay(500);
-
     }
 
-    async function changePasswordAllUsers(){
-        if(!computer) return;
-        for(let user of computer.users){
+    async function changePasswordAllUsers() {
+        if (!computer) return;
+        for (let user of computer.users) {
             await clear();
             await runSingleScript(computer.ipaddress, user.user_id);
         }
-
     }
 
-
     async function Remove() {
-        if(!computer) return;
+        if (!computer) return;
         console.log(header);
 
         let { confirm } = await inquirer.prompt([
@@ -565,19 +560,18 @@ async function edit(id = -1): Promise<void> {
             return;
         }
         //CHANGE ALL TO THIS FORMAT
-        log("Removed computer!",await runningDB.removeComputer(computer.ipaddress)? 'success': 'error' );
+        log("Removed computer!", (await runningDB.removeComputer(computer.ipaddress)) ? "success" : "error");
         await delay(300);
     }
-   
-  
-    async function changeDomain(){
-        if(!computer) return;
+
+    async function changeDomain() {
+        if (!computer) return;
 
         let { newDomain, confirm } = await inquirer.prompt([
             {
                 name: "newDomain",
                 type: "input",
-                message: `please enter a domain (${computer.domain})`
+                message: `please enter a domain (${computer.domain})`,
             },
             {
                 name: "confirm",
@@ -588,14 +582,14 @@ async function edit(id = -1): Promise<void> {
             return;
         }
 
-        await runningDB.editComputer(computer.ipaddress, newDomain)
+        await runningDB.editComputer(computer.ipaddress, newDomain);
 
         console.log("domain updated!");
         await delay(300);
     }
 
     async function changeOS() {
-        if(!computer) return;
+        if (!computer) return;
 
         let { newOSType, confirm } = await inquirer.prompt([
             {
@@ -616,14 +610,12 @@ async function edit(id = -1): Promise<void> {
         if (!confirm) {
             return;
         }
-        await runningDB.editComputer(computer.ipaddress, undefined, newOSType)
-
+        await runningDB.editComputer(computer.ipaddress, undefined, newOSType);
 
         console.log("OS updated!");
         await delay(300);
     }
 }
-
 
 async function computerUtils(server: Server) {
     await clear();
@@ -644,7 +636,7 @@ async function computerUtils(server: Server) {
                 { name: "Get Current Network Connections", value: "network" },
                 { name: "Get Current Process", value: "processes" },
                 { name: "Get Current Environment Variables", value: "variables" },
-                
+
                 { name: "Scan Computer", value: "scan" },
 
                 "Back",
@@ -665,7 +657,7 @@ async function computerUtils(server: Server) {
             await scanComputer(conn, server["OS Type"]);
             break;
         case "curr_users":
-            await getCurrentLoggedIn(conn,server["OS Type"])
+            await getCurrentLoggedIn(conn, server["OS Type"]);
             break;
         case "users":
             await getUsers(conn, server["OS Type"]);

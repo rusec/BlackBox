@@ -8,9 +8,9 @@ class LoggerTo {
     process_dir: string;
     logFile: string;
     user: string;
-    constructor(fileName:string) {
+    constructor(fileName: string) {
         this.process_dir = path.join(os.homedir() + "/Tortilla");
-        this.logFile = path.join(this.process_dir, fileName+".log");
+        this.logFile = path.join(this.process_dir, fileName + ".log");
         this.user = os.userInfo().username;
         if (!fs.existsSync(this.process_dir)) fs.mkdirSync(this.process_dir, { recursive: true });
         if (!fs.existsSync(this.logFile)) fs.writeFileSync(this.logFile, "");
@@ -24,8 +24,7 @@ class LoggerTo {
     clear() {
         fs.writeFileSync(this.logFile, "");
     }
-    ssh_log(message:string, type:log_options = 'log'){
-
+    ssh_log(message: string, type: log_options = "log") {
         let now = new Date();
         let time = `[${now.toISOString()}]`;
         let user = os.userInfo().username;
@@ -82,16 +81,14 @@ class LoggerTo {
     formatCurrentTime() {
         const now = new Date();
         const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-      
+        const month = String(now.getMonth() + 1).padStart(2, "0"); // Months are zero-based
+        const day = String(now.getDate()).padStart(2, "0");
+        const hours = String(now.getHours()).padStart(2, "0");
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+        const seconds = String(now.getSeconds()).padStart(2, "0");
+
         return `${year}-${month}-${day}T${hours}_${minutes}_${seconds}`;
-      }
-   
+    }
 }
- 
 
 export default LoggerTo;
