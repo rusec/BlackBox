@@ -1,8 +1,7 @@
-import {  delay, replaceAll } from "./util";
+import { delay, replaceAll } from "./util";
 import { SSH2CONN } from "./ssh_utils";
 
 const TIMEOUT = 10 * 1000;
-
 
 /** THIS FILE IS FOR COMMANDS SENT BY A REGULAR CONNECTION */
 
@@ -11,7 +10,7 @@ const TIMEOUT = 10 * 1000;
  * @param {ssh2} conn
  * @returns {Promise<String | Boolean>} returns true if successful or string error if not
  */
-async function runCommandNotExpect(conn: SSH2CONN, command: string, not_expected: string| undefined,log_error =true ): Promise<string | boolean> {
+async function runCommandNotExpect(conn: SSH2CONN, command: string, not_expected: string | undefined, log_error = true): Promise<string | boolean> {
     let timeoutId: NodeJS.Timeout | undefined;
 
     try {
@@ -26,7 +25,7 @@ async function runCommandNotExpect(conn: SSH2CONN, command: string, not_expected
 
         const executionPromise = conn.exec(command);
         const value = await Promise.race([executionPromise, timeoutPromise]);
-        if(value.toString().includes("Timed Out")){
+        if (value.toString().includes("Timed Out")) {
             conn.error(value);
         }
         clearTimeout(timeoutId);
@@ -58,12 +57,12 @@ async function runCommand(conn: SSH2CONN, command: string, expect: string | unde
         });
         timeoutPromise.catch((error) => {
             // Handle timeout errors here if needed
-                    });
+        });
 
         const executionPromise = conn.exec(command);
 
         const value = await Promise.race([executionPromise, timeoutPromise]);
-        if(value.toString().includes("Timed Out")){
+        if (value.toString().includes("Timed Out")) {
             conn.error(value);
         }
         clearTimeout(timeoutId);
@@ -84,7 +83,7 @@ async function runCommand(conn: SSH2CONN, command: string, expect: string | unde
  * @param {ssh2} conn
  * @returns {Promise<String | Boolean>} returns true if successful or string error if not
  */
-async function runCommandNoExpect(conn: SSH2CONN, command: string, log_error =true): Promise<string | boolean> {
+async function runCommandNoExpect(conn: SSH2CONN, command: string, log_error = true): Promise<string | boolean> {
     let timeoutId: NodeJS.Timeout | undefined;
 
     try {
@@ -98,10 +97,9 @@ async function runCommandNoExpect(conn: SSH2CONN, command: string, log_error =tr
             // conn.error(error.message)
         });
 
-
         const executionPromise = conn.exec(command);
         const value = await Promise.race([executionPromise, timeoutPromise]);
-        if(value.toString().includes("Timed Out")){
+        if (value.toString().includes("Timed Out")) {
             conn.error(value);
         }
         clearTimeout(timeoutId);
@@ -109,14 +107,13 @@ async function runCommandNoExpect(conn: SSH2CONN, command: string, log_error =tr
         if (value.trim().toLowerCase() != "") {
             return replaceAll(value.trim(), "\n", " ");
         }
-       
 
-        return value == '';
+        return value == "";
     } catch (error: any) {
         return typeof error === "string" ? replaceAll(error, "\n", " ") : replaceAll(error.message, "\n", " ");
     }
 }
-async function getOutput(conn: SSH2CONN, command: string, log_error =true): Promise<string> {
+async function getOutput(conn: SSH2CONN, command: string, log_error = true): Promise<string> {
     let timeoutId: NodeJS.Timeout | undefined;
 
     try {
@@ -131,7 +128,7 @@ async function getOutput(conn: SSH2CONN, command: string, log_error =true): Prom
         });
         const executionPromise = conn.exec(command);
         const value = await Promise.race([executionPromise, timeoutPromise]);
-        if(value.toString().includes("Timed Out")){
+        if (value.toString().includes("Timed Out")) {
             conn.error(value);
         }
         clearTimeout(timeoutId);

@@ -10,54 +10,51 @@ const shadow = "/etc/shadow";
 // utilize passwd or a password manager like it to change password
 // might want to change to using direct /usr/sbin/chpasswd
 async function changePasswordLinux(conn: SSH2CONN, username: string, password: string, sudoPassword: string, algorithm = 6) {
-    var then = new Date;
+    var then = new Date();
     try {
         await checks(conn);
         const newPassword = algorithm === 6 ? encryptPassword(password) : await bcryptPassword(password);
         const string = `${username}:${newPassword + ""}`;
-    
+
         let error: boolean | string = true;
         // Try changing the password without inputting the sudo password first.
         let changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_1(string), false);
         if (typeof changedPassword != "string") {
-            conn.success("Changed password")
+            conn.success("Changed password");
             return true;
         }
         error = `Unable to use chpasswd. Got: ${changedPassword}. Please check for alias or no implementation.`;
-        conn.warn(error)
-    
+        conn.warn(error);
+
         // If the first attempt fails, try with sudo chpasswd.
-        changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_2(string),false);
+        changedPassword = await runCommandNoExpect(conn, commands.password.linux.step_2(string), false);
         if (typeof changedPassword !== "string") {
-            conn.success("Changed password")
-    
+            conn.success("Changed password");
+
             return true;
         }
-    
+
         error = `Unable to use sudo chpasswd. Got: ${changedPassword}. Please check for alias or no implementation.`;
-        conn.warn(error)
-    
-    
+        conn.warn(error);
+
         // Try with inputting the sudo password.
         changedPassword = await runCommandNotExpect(conn, commands.password.linux.step_3(sudoPassword, string), "sorry", false);
         if (typeof changedPassword !== "string") {
-            conn.success("Changed password")
-    
+            conn.success("Changed password");
+
             return true;
         }
         error = `Unable to use sudo chpasswd. Got: ${changedPassword}. Please check for alias or no implementation.`;
-        conn.error(error)
-        conn.error('Unable to change password')
-    
+        conn.error(error);
+        conn.error("Unable to change password");
+
         return error;
     } catch (error) {
-        
-    }finally{
+    } finally {
         var now = new Date();
-        var lapse_time= now.getTime() -then.getTime();
-        logger.log(`Time to change Password ${lapse_time} ms on Linux`)
+        var lapse_time = now.getTime() - then.getTime();
+        logger.log(`Time to change Password ${lapse_time} ms on Linux`);
     }
-   
 }
 
 export { changePasswordLinux };
@@ -69,7 +66,7 @@ export { changePasswordLinux };
  */
 async function checks(conn: SSH2CONN) {
     let passed = 7;
-    conn.log("Running Security Checks")
+    conn.log("Running Security Checks");
     const checkedForShadow = await runCommand(
         conn,
         `if test -f ${shadow}; then
@@ -78,16 +75,16 @@ async function checks(conn: SSH2CONN) {
         "file exists"
     );
     if (typeof checkedForShadow === "string") {
-        conn.warn(`/etc/shadow check error GOT ${checkedForShadow} WANTED file exists, Please check for /etc/shadow`)
+        conn.warn(`/etc/shadow check error GOT ${checkedForShadow} WANTED file exists, Please check for /etc/shadow`);
         passed--;
     }
 
     const checkFilePermissions = async (path: string, expectedPermissions: string, logType: options) => {
         const result = await runCommand(conn, `ls -l ${path}`, expectedPermissions);
         if (typeof result === "string") {
-        conn.error(`${path} permissions check failed GOT ${result
-            .trim()
-            .substring(0, 11)} WANTED ${expectedPermissions}, Please check permissions`)
+            conn.error(
+                `${path} permissions check failed GOT ${result.trim().substring(0, 11)} WANTED ${expectedPermissions}, Please check permissions`
+            );
             passed--;
         }
     };
@@ -98,11 +95,10 @@ async function checks(conn: SSH2CONN) {
     const checkCommand = async (command: string, expected: string, logType: options) => {
         const result = await runCommand(conn, command, expected);
         if (typeof result === "string") {
-            if(logType == 'warn'){
-                conn.warn(`${command} check error GOT ${result} WANTED ${expected}, Please check for alias or no implementation`)
-            }
-            else{
-                conn.error(`${command} check error GOT ${result} WANTED ${expected}, Please check for alias or no implementation`)
+            if (logType == "warn") {
+                conn.warn(`${command} check error GOT ${result} WANTED ${expected}, Please check for alias or no implementation`);
+            } else {
+                conn.error(`${command} check error GOT ${result} WANTED ${expected}, Please check for alias or no implementation`);
             }
             passed--;
         }
@@ -112,7 +108,7 @@ async function checks(conn: SSH2CONN) {
     await checkCommand("type -t type", "builtin", "error");
     await checkCommand("type -t chpasswd", "file", "error");
     await checkCommand("type -t passwd", "file", "error");
-    conn.info(`Passed ${passed} of 7 tests`)
+    conn.info(`Passed ${passed} of 7 tests`);
 
     return;
 }

@@ -4,8 +4,8 @@ import { sshMenu } from "../page/ssh";
 import { addComputer, addComputerManual } from "../page/addComputer";
 import runningDB from "../../db/db";
 import { Home } from "./home";
-import {json2csv} from 'json-2-csv';
-import fs from 'fs';
+import { json2csv } from "json-2-csv";
+import fs from "fs";
 import { checkPassword } from "../../modules/util/checkPassword";
 import { mapDateString } from "../../modules/util/util";
 import { pressEnter } from "../../modules/console/enddingModules";
@@ -20,12 +20,12 @@ async function Settings() {
                 new inquirer.Separator("Computer Setup"),
                 "Shotgun Setup",
                 "Add Computer",
-                "Add Computer Manually"
-,                new inquirer.Separator("Data Setup"),
+                "Add Computer Manually",
+                new inquirer.Separator("Data Setup"),
                 "Load CSV",
                 "Export DB",
                 "Restore DB",
-                {name: "Display Public Key", value: "display_key"},
+                { name: "Display Public Key", value: "display_key" },
                 new inquirer.Separator(),
                 new inquirer.Separator("Passwords"),
                 "Reset Master Password",
@@ -57,32 +57,32 @@ async function Settings() {
         case "display_key":
             var ssh_key = await runningDB.getPublicSSHKey();
             console.log(ssh_key);
-            await pressEnter()
+            await pressEnter();
             break;
-        case "Restore DB":
-            // await checkPassword()
-            // let dbs = await runningDB.getBackups();
-            // let mappedOptions = dbs.map((v)=> mapDateString(v));
-            // const { date_string } = await inquirer.prompt([
-            //     {
-            //         name: "json_id",
-            //         type: "list",
-            //         pageSize: 30,
-    
-            //         choices: [...mappedOptions, { name: "Back", value: "back" }],
-            //         message: "Please select a computer:",
-            //     },
-            // ]);
-            // switch (date_string) {
-            //     case "back":
-            //         break;
-            //     default:
-            //         await runningDB.restoreDB(date_string);
-            //         break;
-            // }
-            // break;
+        // case "Restore DB":
+        // await checkPassword()
+        // let dbs = await runningDB.getBackups();
+        // let mappedOptions = dbs.map((v)=> mapDateString(v));
+        // const { date_string } = await inquirer.prompt([
+        //     {
+        //         name: "json_id",
+        //         type: "list",
+        //         pageSize: 30,
+
+        //         choices: [...mappedOptions, { name: "Back", value: "back" }],
+        //         message: "Please select a computer:",
+        //     },
+        // ]);
+        // switch (date_string) {
+        //     case "back":
+        //         break;
+        //     default:
+        //         await runningDB.restoreDB(date_string);
+        //         break;
+        // }
+        // break;
         case "Export DB":
-            await checkPassword()
+            await checkPassword();
             await runningDB.exportDB();
             break;
         case "Back":

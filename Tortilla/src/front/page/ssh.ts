@@ -1,4 +1,4 @@
-import inquirer from "inquirer";;
+import inquirer from "inquirer";
 import clear from "clear";
 import { isValidIPAddress } from "../../modules/util/util";
 import { scanSSH } from "../../modules/util/ssh_utils";
@@ -85,8 +85,7 @@ async function ShotGun() {
         }
     logger.log(`Attempt to Shotgun ${computers.length} Computers , ${users_sessions.length} User Sessions`, "info");
 
-
-    let bar = new Bar(computers.length)
+    let bar = new Bar(computers.length);
 
     var promises = computers.map(async (computer: string) => {
         var passed = false;
@@ -98,9 +97,16 @@ async function ShotGun() {
             var computer_info = await scanSSH(computer, session.user, session.pass);
             if (typeof computer_info == "object") {
                 log(`Found valid session for ${computer} saving...`, "success");
-                
+
                 // await runningDB.addComputer(computer_info.hostname, computer, session.user, session.pass, computer_info.operatingSystem, computer_info.domain);
-                passed = await runningDB.addTargetAndUser(computer_info.hostname, computer, session.user, session.pass, computer_info.operatingSystem,computer_info.domain);;
+                passed = await runningDB.addTargetAndUser(
+                    computer_info.hostname,
+                    computer,
+                    session.user,
+                    session.pass,
+                    computer_info.operatingSystem,
+                    computer_info.domain
+                );
             }
         }
 
@@ -143,16 +149,14 @@ async function ShotGun() {
             }
             if (process.platform === "win32") {
                 // add windows host input
-                await exec(`Powershell.exe -Command "& {Start-Process Powershell.exe 'echo ${string} >> C:/Windows/System32/drivers/etc/hosts' -Verb RunAs}`)
+                await exec(
+                    `Powershell.exe -Command "& {Start-Process Powershell.exe 'echo ${string} >> C:/Windows/System32/drivers/etc/hosts' -Verb RunAs}`
+                );
             }
-        } catch (error) {
-        }
-     
+        } catch (error) {}
     }
     bar.stop();
     console.clear();
-
-
 }
 
 export { ShotGun as sshMenu };

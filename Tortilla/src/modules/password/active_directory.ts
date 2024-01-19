@@ -5,19 +5,19 @@ import { Server, ServerInfo, User } from "../../db/dbtypes";
 import { delay } from "../util/util";
 import { log } from "../console/debug";
 
-async function ChangeADPassword(ADIpAddress: string,hostname:string, domain: string, username: string, oldPassword: string, newPassword: string) {
-    logger.log("Attempting to change Password using LDAP")
-    const client = new LDAP(hostname, ADIpAddress,{
+async function ChangeADPassword(ADIpAddress: string, hostname: string, domain: string, username: string, oldPassword: string, newPassword: string) {
+    logger.log("Attempting to change Password using LDAP");
+    const client = new LDAP(hostname, ADIpAddress, {
         url: `ldaps://${ADIpAddress}`, // Use ldaps for secure communication
         tlsOptions: {
             rejectUnauthorized: false,
         },
     });
 
-    client.log("LDAP Connected")
+    client.log("LDAP Connected");
 
     const bindDN = `CN=${username},CN=Users,` + domain_to_ldap(domain);
-    client.log(`Trying to bind to ${bindDN}`)
+    client.log(`Trying to bind to ${bindDN}`);
 
     await client.client.bind(bindDN, oldPassword);
     try {
@@ -43,67 +43,62 @@ async function ChangeADPassword(ADIpAddress: string,hostname:string, domain: str
             },
         })
     );
-    client.success(`Changed Password of ${ADIpAddress} using LDAP`)
+    client.success(`Changed Password of ${ADIpAddress} using LDAP`);
 
     await client.client.unbind();
     return true;
-
 }
 async function LDAPChangePassword(server: User, newPassword: string) {
     if (server.domain == "") {
         throw new Error("Unable to change Server without domain Set, please set domain");
     }
-    return await ChangeADPassword(server.ipaddress,server.hostname, server.domain, stripDomain(server.username), server.password, newPassword);
+    return await ChangeADPassword(server.ipaddress, server.hostname, server.domain, stripDomain(server.username), server.password, newPassword);
 }
-async function TestLDAPPassword(server:User, newPassword:string):Promise<boolean> {
+async function TestLDAPPassword(server: User, newPassword: string): Promise<boolean> {
     if (server.domain == "" || !server.domain) {
         return false;
     }
     try {
-        const bindDN = `CN=${stripDomain(server.username)},CN=Users,` + (server.domain != '' ?  domain_to_ldap(server.domain): '');
+        const bindDN = `CN=${stripDomain(server.username)},CN=Users,` + (server.domain != "" ? domain_to_ldap(server.domain) : "");
 
-        const client = new LDAP(server.hostname, server.ipaddress,{
-            url: `ldaps://${server.ipaddress}`, 
+        const client = new LDAP(server.hostname, server.ipaddress, {
+            url: `ldaps://${server.ipaddress}`,
             // Use ldaps for secure communication
             tlsOptions: {
                 rejectUnauthorized: false,
             },
-            timeout: 7000
+            timeout: 7000,
         });
-        client.log(`Attempting to test Password using  ${bindDN}`)
+        client.log(`Attempting to test Password using  ${bindDN}`);
 
-        client.log("Connected, Attempting Password")
+        client.log("Connected, Attempting Password");
         try {
             await client.client.bind(bindDN, newPassword);
-            client.success("Successful bind to LDAP")
-            await client.client.unbind()
+            client.success("Successful bind to LDAP");
+            await client.client.unbind();
             return true;
         } catch (error) {
-            client.warn("Unable to use password")
-            logger.log(`Password Not working from LDAP ${client.ipaddress}, Possible No LDAP`,'warn')
+            client.warn("Unable to use password");
+            logger.log(`Password Not working from LDAP ${client.ipaddress}, Possible No LDAP`, "warn");
             return false;
         }
-        
     } catch (error) {
-        console.log(error)
-        logger.log(`Unable to connect`)
-        return false
+        console.log(error);
+        logger.log(`Unable to connect`);
+        return false;
     }
-   
-
-
 }
 class LDAP {
     ipaddress: string;
     hostname: string;
     client: ldap.Client;
-    constructor(hostname:string, ipaddress:string, options?: ldap.ClientOptions | undefined){
-        this.ipaddress = ipaddress
-        this.hostname = hostname
+    constructor(hostname: string, ipaddress: string, options?: ldap.ClientOptions | undefined) {
+        this.ipaddress = ipaddress;
+        this.hostname = hostname;
         this.client = ldap.createClient(options);
-        this.client.on('error', (err)=>{
-            this.error(err)
-        })
+        this.client.on("error", (err) => {
+            this.error(err);
+        });
     }
     _getTag() {
         return `[${this.ipaddress}]`.bgGreen + ` ` + `[${this.hostname}]`.white + " LDAP: ";
@@ -126,9 +121,7 @@ class LDAP {
     updateHostname(hostname: string) {
         this.hostname = hostname;
     }
-
 }
-
 
 // extracts the username from a domain
 function stripDomain(fullUsername: string): string {
@@ -144,8 +137,6 @@ function stripDomain(fullUsername: string): string {
         return fullUsername;
     }
 }
-
-
 
 function domain_to_ldap(domain: string): string {
     let domains_parts = domain.split(".");
@@ -169,4 +160,4 @@ function encodePassword(str: string) {
     return output;
 }
 
-export { LDAPChangePassword,TestLDAPPassword };
+export { LDAPChangePassword, TestLDAPPassword };

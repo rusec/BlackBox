@@ -18,10 +18,10 @@ import LoggerTo from "../console/loggerToFile";
 temp.track();
 let connectionLog = new LoggerTo("connections");
 
-async function findAnyConnection(Users:User[], timeout = 3000){
-    let privateKey= await runningDB.getPrivateSSHKey();
+async function findAnyConnection(Users: User[], timeout = 3000) {
+    let privateKey = await runningDB.getPrivateSSHKey();
 
-    for(let user of Users){
+    for (let user of Users) {
         try {
             const sshConfig: SSHConfig = {
                 host: user.ipaddress,
@@ -41,29 +41,26 @@ async function findAnyConnection(Users:User[], timeout = 3000){
             ssh.on("close", async () => {
                 connectionLog.log(`[${ssh.config[0].host}] [${user.hostname}] Event: Closed Connections`);
             });
-    
+
             ssh.on(SSH2CONN.errorMonitor, (err) => {
-                recentlyConnection.delete(user.ipaddress)    
+                recentlyConnection.delete(user.ipaddress);
 
                 connectionLog.log(`[${ssh.config[0].host}] [${user.hostname}] Event: ERROR ${err}`);
             });
-            recentlyConnection.set(user.ipaddress, true)
-    
+            recentlyConnection.set(user.ipaddress, true);
+
             return ssh;
-        } catch (error) {
-            
-        }
-        
+        } catch (error) {}
     }
     return false;
 }
 
-let recentlyConnection:Map<string, boolean> = new Map();
+let recentlyConnection: Map<string, boolean> = new Map();
 function getConnectedIps() {
     return Array.from(recentlyConnection.keys());
 }
-async function makeConnection(user:User, timeout = 3000, retryCount = 5, retryDelay = 1000){
-    let privateKey= await runningDB.getPrivateSSHKey();
+async function makeConnection(user: User, timeout = 3000, retryCount = 5, retryDelay = 1000) {
+    let privateKey = await runningDB.getPrivateSSHKey();
 
     try {
         const sshConfig: SSHConfig = {
@@ -73,8 +70,8 @@ async function makeConnection(user:User, timeout = 3000, retryCount = 5, retryDe
             privateKey: privateKey,
             authHandler: ["publickey", "password"],
             readyTimeout: timeout,
-            reconnectTries:retryCount,
-            reconnectDelay:retryDelay
+            reconnectTries: retryCount,
+            reconnectDelay: retryDelay,
         };
         const ssh = new SSH2CONN(user.hostname, sshConfig);
         await ssh.connect();
@@ -86,10 +83,10 @@ async function makeConnection(user:User, timeout = 3000, retryCount = 5, retryDe
         });
 
         ssh.on(SSH2CONN.errorMonitor, (err) => {
-            recentlyConnection.delete(user.ipaddress)    
+            recentlyConnection.delete(user.ipaddress);
             connectionLog.log(`[${ssh.config[0].host}] [${user.hostname}] Event: ERROR ${err}`);
         });
-        recentlyConnection.set(user.ipaddress, true)
+        recentlyConnection.set(user.ipaddress, true);
         return ssh;
     } catch (error) {
         return false;
@@ -152,7 +149,7 @@ async function testSSH(conn: SSH2CONN) {
             authHandler: ["publickey"],
             reconnect: false,
             keepaliveInterval: 0,
-            uniqueId:"SshKEY_TEST" + conn.config[0].host +conn.config[0].username,
+            uniqueId: "SshKEY_TEST" + conn.config[0].host + conn.config[0].username,
             readyTimeout: 7000,
             reconnectTries: 3,
             reconnectDelay: 1000,
@@ -183,7 +180,7 @@ async function testPassword(conn: SSH2CONN, password: string) {
             readyTimeout: 7000,
             reconnectTries: 3,
             reconnectDelay: 1000,
-            uniqueId:"PasswordTest" + conn.config[0].host +conn.config[0].username 
+            uniqueId: "PasswordTest" + conn.config[0].host + conn.config[0].username,
         };
         const ssh = new SSH2Promise(sshConfig, true);
         await ssh.connect();
@@ -358,7 +355,7 @@ async function injectCustomKey(conn: SSH2CONN, ssh_key: string, os_type: options
     }
     return false;
 }
-async function addSSH(user: User, os:options) {
+async function addSSH(user: User, os: options) {
     const conn = await makeConnection(user);
     if (!conn) {
         return false;
@@ -375,7 +372,7 @@ async function addCustomSSH(user: User, ssh_key: string, os: options) {
     return results;
 }
 
-async function removeSSH(user: User, os:options) {
+async function removeSSH(user: User, os: options) {
     const conn = await makeConnection(user);
     if (!conn) {
         return false;
@@ -387,14 +384,13 @@ async function removeSSH(user: User, os:options) {
 async function getStatus(target: Server) {
     try {
         const ssh = await findAnyConnection(target.users, 2000);
-        if(!ssh) return false;
+        if (!ssh) return false;
         await ssh.close();
-        return true ;
+        return true;
     } catch (error: any) {
         return false;
     }
 }
-
 
 async function scanSSH(
     ip: string,
@@ -546,7 +542,7 @@ class SSH2CONN extends SSH2Promise {
         this.ipaddress = this.config[0].host;
     }
     _getTag() {
-        return `[${this.ipaddress}]`.bgGreen + ` ` + `[${this.hostname}]`.white +' '+ `[${this.username}]` + " SSH: ";
+        return `[${this.ipaddress}]`.bgGreen + ` ` + `[${this.hostname}]`.white + " " + `[${this.username}]` + " SSH: ";
     }
     info(str: string) {
         log(this._getTag() + `${str}`, "info");

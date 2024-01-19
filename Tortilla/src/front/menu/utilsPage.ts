@@ -31,7 +31,7 @@ async function utilsPage() {
             break;
     }
     // RETURN HOME ONCE DONE
-    Home()
+    Home();
 
     async function Encrypt(algorithm: 0 | 1) {
         const { password } = await inquirer.prompt([

@@ -1,40 +1,36 @@
-import ProgressBar from 'cli-progress';
+import ProgressBar from "cli-progress";
 
-
-
-class Bar{
+class Bar {
     bar: ProgressBar.SingleBar;
-    constructor(items:number){
+    constructor(items: number) {
         this.bar = new ProgressBar.SingleBar({
-            format: 'Progress [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} | Last Done: {str}\n',
-            barCompleteChar: '\u2588',
-            barIncompleteChar: '\u2591',
-            // hideCursor: true,        
-          });
+            format: "Progress [{bar}] {percentage}% | ETA: {eta}s | {value}/{total} | Last Done: {str}\n",
+            barCompleteChar: "\u2588",
+            barIncompleteChar: "\u2591",
+            // hideCursor: true,
+        });
 
-          this.bar.start(items, 0);
-          this.bar.on('render', ()=>{
-            console.log("GELLO")
-          })
-        }
+        this.bar.start(items, 0);
+        this.bar.on("render", () => {
+            console.log("GELLO");
+        });
+    }
 
-    done(str:string){
+    done(str: string) {
         // const initialCursorPosition = process.stdout.getWindowSize()[1];
         // process.stdout.moveCursor(0, -initialCursorPosition);
-        process.stdout.write('\r');
+        process.stdout.write("\r");
 
         // Clear the line
         // process.stdout.clearLine(0);
         this.bar.increment(1, {
-            str:str
+            str: str,
         });
         // process.stdout.moveCursor(0, initialCursorPosition);
-
     }
-    stop(){
+    stop() {
         this.bar.stop();
     }
-
 }
 
-export { Bar}
+export { Bar };

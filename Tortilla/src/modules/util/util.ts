@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import crypto from 'crypto'
+import crypto from "crypto";
 function removeANSIColorCodes(inputString: string): string {
     const colorCodePattern = /\x1B\[[0-9;]*[A-Za-z]/g;
 
@@ -54,21 +54,24 @@ function encryptPassword(password: string): string {
 function replaceAll(string: string, search: string, replace: string) {
     return string.split(search).join(replace);
 }
-function  mapDateString(inputString:string) {
-    const dateObject = new Date(inputString.replace(/_/g, ':').replace(/T/, ' '));
-    const formattedDate = `${dateObject.getFullYear()}/${(dateObject.getMonth() + 1).toString().padStart(2, '0')}/${dateObject.getDate().toString().padStart(2, '0')}  Time: ${dateObject.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}`;
-  
+function mapDateString(inputString: string) {
+    const dateObject = new Date(inputString.replace(/_/g, ":").replace(/T/, " "));
+    const formattedDate = `${dateObject.getFullYear()}/${(dateObject.getMonth() + 1).toString().padStart(2, "0")}/${dateObject
+        .getDate()
+        .toString()
+        .padStart(2, "0")}  Time: ${dateObject.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })}`;
+
     return {
-      name: formattedDate,
-      value: inputString
+        name: formattedDate,
+        value: inputString,
     };
-  }
-function makeId(){
-    const id = crypto.randomUUID()
-    return id
+}
+function makeId() {
+    const id = crypto.randomUUID();
+    return id;
 }
 
-function findAndRemove(array:any[], target:any){
-    return array.filter((v)=> v != target)
+function findAndRemove(array: any[], target: any) {
+    return array.filter((v) => v != target);
 }
-export { removeANSIColorCodes, delay, isValidIPAddress, bcryptPassword, replaceAll, encryptPassword,mapDateString,makeId ,findAndRemove};
+export { removeANSIColorCodes, delay, isValidIPAddress, bcryptPassword, replaceAll, encryptPassword, mapDateString, makeId, findAndRemove };

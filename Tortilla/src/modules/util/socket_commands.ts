@@ -1,4 +1,4 @@
-import { removeANSIColorCodes ,delay} from "./util";
+import { removeANSIColorCodes, delay } from "./util";
 import { Channel } from "ssh2";
 const TIMEOUT = 5000;
 
@@ -133,24 +133,24 @@ function sendInput(socket: Channel, input: string): Promise<boolean> {
 }
 
 /**
- *  Allows you to send a command and input after for Read-Host, has automatic delay 
+ *  Allows you to send a command and input after for Read-Host, has automatic delay
  *
  */
-function sendCommandAndInput(socket:Channel, input:string, command:string): Promise<string | true>{
-    return new Promise((resolve, reject)=>{
-        let log = ''
+function sendCommandAndInput(socket: Channel, input: string, command: string): Promise<string | true> {
+    return new Promise((resolve, reject) => {
+        let log = "";
         let commandSent = false;
         let sentInput = false;
         let errored = false;
-        async function sendInputToSocket(){
-            sentInput= true;
+        async function sendInputToSocket() {
+            sentInput = true;
             await delay(100);
-            if(errored){
+            if (errored) {
                 return;
             }
-            socket.stdin.write(`${input}\r`,async  (err:any) => {
+            socket.stdin.write(`${input}\r`, async (err: any) => {
                 if (err) {
-                    cleanUp()
+                    cleanUp();
                     reject(filterLog(log));
                 } else {
                     await delay(3000);
@@ -158,56 +158,53 @@ function sendCommandAndInput(socket:Channel, input:string, command:string): Prom
                     cleanUp();
                 }
             });
-
         }
         const onData = (chuck: Buffer) => {
             let parsedData = filterLog(chuck.toString());
             log += parsedData;
-            if(errored){
+            if (errored) {
                 return;
             }
-            if(/(?<!["'])An error occurred.(?!["'])/.test(log.replace(/\r|\n|\r\n/g, ''))){
-                errored = true
-                reject(filterLog(log))
-                cleanUp()
+            if (/(?<!["'])An error occurred.(?!["'])/.test(log.replace(/\r|\n|\r\n/g, ""))) {
+                errored = true;
+                reject(filterLog(log));
+                cleanUp();
                 return;
             }
-       
-            if (log.replace(/\r|\n|\r\n/g, '').includes(command.trim()) && !commandSent) {
+
+            if (log.replace(/\r|\n|\r\n/g, "").includes(command.trim()) && !commandSent) {
                 commandSent = true;
-                if(!sentInput) sendInputToSocket();
+                if (!sentInput) sendInputToSocket();
             }
         };
 
         socket.on("data", onData);
         socket.write(`${wrapTryCatch(command)}\r`);
-        
+
         const cleanUp = () => {
             clearTimeout(timerId);
             socket.stdout.removeListener("data", onData);
         };
         const timerId = setTimeout(() => {
-            reject(log.replace(/\r|\n|\r\n/g, '') + " TIMEOUT");
+            reject(log.replace(/\r|\n|\r\n/g, "") + " TIMEOUT");
         }, 15000);
-
-    })
+    });
 }
 
-function wrapTryCatch(command:string){
-    return `try{ ${command} }catch{"An error occurred."}`
+function wrapTryCatch(command: string) {
+    return `try{ ${command} }catch{"An error occurred."}`;
 }
-
 
 function sendInputExpect(socket: Channel, input: string, expect: string): Promise<string> {
     return new Promise((resolve, reject) => {
-        let log:Buffer[] = [];
+        let log: Buffer[] = [];
 
         const onData = (chuck: string) => {
             let parsedData = removeANSIColorCodes(chuck.toString());
-            log.push(Buffer.from(chuck))
-            if (removeANSIColorCodes(Buffer.concat(log).toString('utf8')).includes(expect)) {
+            log.push(Buffer.from(chuck));
+            if (removeANSIColorCodes(Buffer.concat(log).toString("utf8")).includes(expect)) {
                 cleanUp();
-                resolve(removeANSIColorCodes(Buffer.concat(log).toString('utf8')));
+                resolve(removeANSIColorCodes(Buffer.concat(log).toString("utf8")));
             }
         };
 
@@ -221,32 +218,27 @@ function sendInputExpect(socket: Channel, input: string, expect: string): Promis
 
         const timeoutId = setTimeout(() => {
             cleanUp();
-            reject(filterLog(Buffer.concat(log).toString('utf8')));
+            reject(filterLog(Buffer.concat(log).toString("utf8")));
         }, TIMEOUT);
     });
 }
-function filterLog(strLog:string):string{
-
-    let stringWithoutColor = removeANSIColorCodes(strLog)
+function filterLog(strLog: string): string {
+    let stringWithoutColor = removeANSIColorCodes(strLog);
 
     const consoleCharPattern = /\x1B\[.*?[@-~]/g;
-    const stringWithoutConsoleChars = stringWithoutColor.replace(consoleCharPattern, ""); 
+    const stringWithoutConsoleChars = stringWithoutColor.replace(consoleCharPattern, "");
 
-    return (stringWithoutConsoleChars)
+    return stringWithoutConsoleChars;
 }
 
-
-function removeWindowsLoading(strLog:string):string{
+function removeWindowsLoading(strLog: string): string {
     const loadingMessagePattern = /\[.*?\]/g;
-    const stringWithoutLoadingLines = strLog.replace(loadingMessagePattern, match => {
+    const stringWithoutLoadingLines = strLog.replace(loadingMessagePattern, (match) => {
         // Replace the loading lines with an empty string
-        return match.includes('Loading') ? '' : match;
+        return match.includes("Loading") ? "" : match;
     });
 
     return stringWithoutLoadingLines.trim(); // Trim leading and trailing whitespace
-
 }
 
-
-
-export default { sendCommand, sendCommandAndInput, sendCommandExpect, sendCommandNoExpect, sendInput, sendInputExpect,socketGetOutput };
+export default { sendCommand, sendCommandAndInput, sendCommandExpect, sendCommandNoExpect, sendInput, sendInputExpect, socketGetOutput };

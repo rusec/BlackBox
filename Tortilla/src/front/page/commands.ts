@@ -1,6 +1,6 @@
 import { clear } from "console";
 import runningDB from "../../db/db";
-import  { Server, ServerInfo } from '../../db/dbtypes'
+import { Server, ServerInfo } from "../../db/dbtypes";
 import { Home } from "../menu/home";
 import inquirer from "inquirer";
 import { checkPassword } from "../../modules/util/checkPassword";
@@ -8,11 +8,8 @@ import { makeConnection } from "../../modules/util/ssh_utils";
 import delay from "delay";
 import { log } from "../../modules/console/debug";
 import { getOutput } from "../../modules/util/run_command";
-import fs from 'fs'
+import fs from "fs";
 import { logToFile } from "../../modules/console/enddingModules";
-
-
-
 
 // Assumes the first user is the admin user
 async function Commands() {
@@ -51,7 +48,7 @@ async function shotgunCommands(servers: Server[], command: string) {
     for (let id = 0; id < servers.length; id++) {
         try {
             let server = servers[id];
-            fileLOG += `Running Command for ${server.ipaddress} ${server.Name}\n`
+            fileLOG += `Running Command for ${server.ipaddress} ${server.Name}\n`;
             let conn = await makeConnection(server.users[0]);
             if (!conn) {
                 log(`${server.ipaddress} Unable to Connect to Host`, "error");
@@ -59,14 +56,12 @@ async function shotgunCommands(servers: Server[], command: string) {
                 continue;
             }
             let output = await getOutput(conn, command);
-            log(`${server.ipaddress} Successful LOG:\n${output}`, 'success')
+            log(`${server.ipaddress} Successful LOG:\n${output}`, "success");
             fileLOG += `${server.ipaddress} Successful Ran Command\nLOG:\n${output}\n`;
         } catch (error) {}
-        log(`${id +1} of ${servers.length} Done`);
+        log(`${id + 1} of ${servers.length} Done`);
     }
-    await logToFile(fileLOG)
-
-
+    await logToFile(fileLOG);
 }
 
 export { Commands };

@@ -24,8 +24,7 @@ class Logger {
     clear() {
         fs.writeFileSync(this.logFile, "");
     }
-    ssh_log(message:string, type:log_options = 'log'){
-
+    ssh_log(message: string, type: log_options = "log") {
         let now = new Date();
         let time = `[${now.toISOString()}]`;
         let user = os.userInfo().username;
@@ -82,17 +81,16 @@ class Logger {
     formatCurrentTime() {
         const now = new Date();
         const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-      
+        const month = String(now.getMonth() + 1).padStart(2, "0"); // Months are zero-based
+        const day = String(now.getDate()).padStart(2, "0");
+        const hours = String(now.getHours()).padStart(2, "0");
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+        const seconds = String(now.getSeconds()).padStart(2, "0");
+
         return `${year}-${month}-${day}T${hours}_${minutes}_${seconds}`;
-      }
-   
+    }
 }
- 
+
 const logger = new Logger();
 
 export default logger;

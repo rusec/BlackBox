@@ -1,7 +1,6 @@
 import clear from "clear";
 import lockfile from "lockfile";
 
-
 import { Home } from "./front/menu/home";
 import { checkPassword } from "./modules/util/checkPassword";
 
@@ -12,7 +11,6 @@ const locker = new SingleInstance("Tortilla");
 locker
     .lock()
     .then(() => {
-
         logger.log("Starting application");
 
         start();
@@ -20,9 +18,9 @@ locker
         process.on("exit", () => {
             logger.log("Ending application.");
         });
-        process.on('uncaughtException', function(err){
-            logger.error("Application Error: " + err.toString())   
-          })
+        process.on("uncaughtException", function (err) {
+            logger.error("Application Error: " + err.toString());
+        });
         process.setMaxListeners(30);
     })
     .catch((err: any) => {
@@ -37,5 +35,3 @@ async function start() {
     await checkPassword();
     Home();
 }
-
-
