@@ -13,10 +13,9 @@ chown root:root /etc/ssh/sshd_config
 chmod og-rwx /etc/ssh/sshd_config
 
 # Copy sysctl.conf
-# TODO: Fix broken sysctl config
-#sudo cp /etc/sysctl.conf /etc/sysctl_old.conf
-#sudo mv ./sysctl.conf /etc/sysctl.conf
-#sudo sysctl -p
+sudo cp /etc/sysctl.conf /etc/sysctl_old.conf
+sudo mv ./sysctl.conf /etc/sysctl.conf
+sudo sysctl -p
 #sudo sysctl fs.suid_dumpable=0
 
 # TODO: Copy system.conf
