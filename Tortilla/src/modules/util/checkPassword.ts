@@ -27,6 +27,7 @@ async function checkPassword(force = false): Promise<void> {
             },
         ]);
         await runningDB.writePassword(master_password);
+        return await checkPassword();
     }
     if (valid_session && process.env.DEV && !process.pkg) {
         return;

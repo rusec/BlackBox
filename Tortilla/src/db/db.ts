@@ -421,57 +421,7 @@ class DataBase {
         }
     }
 
-    // /**
-    //  * Adds a computer entry to the list of computers, updating it if it already exists.
-    //  *
-    //  * @param {string} name - The name of the computer.
-    //  * @param {string} ip - The IP address of the computer.
-    //  * @param {string} username - The username for connecting to the computer.
-    //  * @param {string} password - The password for connecting to the computer.
-    //  * @param {string} os_type - The operating system type of the computer.
-    //  * @returns {Promise<boolean>} A promise that resolves when the computer entry is successfully added or updated.
-    //  */
-    // async addComputer(name: string, ip: string, username: string, password: string, os_type: options, domain: string = ""): Promise<boolean> {
-    //     let encryptionKey = this._getPKey("");
-    //     try {
-    //         let passwd_hash = this.encrypt.decrypt(await this.configs.get("master_hash").catch(()=> ''), encryptionKey);
-    //         if (!passwd_hash) {
-    //             throw new Error("no master password");
-    //         }
-    //         // let computers = await this.readComputers();
-    //         let computer = await this.computers.get(ip).catch(()=> undefined);
-    //         if (!computer) {
-    //             await this.computers.put(ip, {
-    //                 Name: name || "",
-    //                 "IP Address": ip || "",
-    //                 Username: username || "",
-    //                 Password: this.encrypt.encrypt(password || "", this._getPKey(passwd_hash)),
-    //                 "OS Type": os_type || "",
-    //                 ssh_key: false,
-    //                 password_changes: 0,
-    //                 OldPasswords: [],
-    //                 domain: domain || "",
-    //             });
-    //         } else {
-    //             await this.computers.put(ip, {
-    //                 Name: name || computer.Name,
-    //                 "IP Address": ip || computer["IP Address"],
-    //                 Username: username || computer.Username,
-    //                 Password: this.encrypt.encrypt(password, this._getPKey(passwd_hash)) || computer.Password,
-    //                 "OS Type": os_type || computer["OS Type"],
-    //                 ssh_key: false || computer["ssh_key"], // You can decide how to update this property
-    //                 password_changes: computer["password_changes"] || 0,
-    //                 OldPasswords: computer['OldPasswords'] || [],
-    //                 domain: domain || computer["domain"],
-    //             });
-    //         }
 
-    //         logger.log(`Added Computer ${name} ${ip}`, "info");
-    //         return true;
-    //     } catch (error) {
-    //         return false;
-    //     }
-    // }
     async updateComputers(old_key: string, new_key: string) {
         for await (const ip of this.computers.keys()) {
             let computer = await this.computers.get(ip);
@@ -498,9 +448,8 @@ class DataBase {
         const old_hash_encrypted = await this.configs.get("master_hash").catch(() => "");
         //has old hash
         const old_hash = this.encrypt.decrypt(old_hash_encrypted, encryptionKey);
-
         // unable to read old_hash means either corruption or no password and db is just init
-        if (!old_hash) {
+        if (!old_hash || old_hash == '') {
             await this.configs.put("master_hash", this.encrypt.encrypt(hash, encryptionKey));
             await this._resetDB();
             logger.log(`Reset Database with new password`, "error");
@@ -674,82 +623,6 @@ class DataBase {
         }
     }
 
-    // /**
-    //  * Updates the password of a computer in the list of computers by its index.
-    //  *
-    //  * @param {string} ip - The index of the computer to update.
-    //  * @param {string} password - The new password to set for the computer.
-    //  * @returns {Promise<void>} A promise that resolves when the computer password is successfully updated.
-    //  * @throws {Error} Throws an error if the password is undefined.
-    //  */
-    // async writeCompPassword(ip: string, password: string): Promise<boolean> {
-    //     if (!password) {
-    //         throw new Error("Password cannot be undefined");
-    //     }
-    //     try {
-    //         let encryptKey = await this.getDbEncryptionKey();
-    //         if (!encryptKey) {
-    //             return false;
-    //         }
-    //         let computer = await this.computers.get(ip).catch(()=> undefined);
-    //         if (!computer) {
-    //             return false;
-    //         }
-    //         computer.Password = this.encrypt.encrypt(password, encryptKey);
-    //         await this.computers.put(ip, computer);
-    //         return true;
-    //     } catch (error: any) {
-    //         logger.log(error.toString())
-    //         return false;
-    //     }
-    // }
-
-    // async writeCompSSH(ip: string, result: boolean): Promise<boolean> {
-    //     try {
-    //         let computer = await this.computers.get(ip).catch(()=> undefined);
-    //         if (!computer) {
-    //             return false;
-    //         }
-
-    //         logger.log(`${result ? "Added" : "Removed"} SSH to Computer ${computer["IP Address"]}`, "info");
-    //         computer.ssh_key = result;
-    //         this.computers.put(ip, computer);
-    //         return true;
-    //     } catch (error) {
-    //         return false;
-    //     }
-    // }
-
-    // async writeCompResult(ip: string, result: password_result): Promise<boolean> {
-    //     if (!result.password) {
-    //         throw new Error("Password cannot be undefined");
-    //     }
-    //     let encryptKey = await this.getDbEncryptionKey();
-    //     if (!encryptKey) {
-    //         return false;
-    //     }
-
-    //     try {
-    //         let computer = await this.computers.get(ip).catch(()=> undefined);
-    //         if (!computer) {
-    //             return false;
-    //         }
-    //         let oldpassword = computer?.Password
-
-    //         computer.Password = this.encrypt.encrypt(result.password, encryptKey);
-    //         computer.ssh_key = result.ssh;
-    //         computer.OldPasswords ? computer.OldPasswords.push(oldpassword) : [oldpassword]
-    //         computer.password_changes = computer.password_changes + 1;
-    //         // const computers = await this.readComputers();
-
-    //         log(`Writing computer ${computer["IP Address"]} ${computer["Name"]}`, "info");
-    //         logger.log(`Writing Computer ${computer["IP Address"]} ${computer["Name"]} in Database`, "info");
-    //         await this.computers.put(ip, computer);
-    //         return true;
-    //     } catch (error) {
-    //         return false;
-    //     }
-    // }
     async getComputer(ip: string): Promise<Server | false> {
         let encryptionKey = await this.getDbEncryptionKey();
         if (!encryptionKey) {
