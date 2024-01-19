@@ -1,4 +1,3 @@
-import SSH2Promise from "ssh2-promise";
 import { options } from "../util/options";
 import { commands } from "../util/commands";
 import inquirer from "inquirer";
@@ -6,7 +5,8 @@ import fs from "fs";
 import { getOutput } from "../util/run_command";
 import { parseUsersLinux } from "./scan";
 import asTable from 'as-table'
-async function getUsers(conn: SSH2Promise, os_type: options) {
+import { SSH2CONN } from "../util/ssh_utils";
+async function getUsers(conn: SSH2CONN, os_type: options) {
     let users = "";
     let users_array  = []
     switch (os_type.toLowerCase()) {
@@ -43,7 +43,7 @@ async function getUsers(conn: SSH2Promise, os_type: options) {
         fs.writeFileSync("log.log", users, "utf8");
     }
 }
-async function getNetwork(conn: SSH2Promise, os_type: options) {
+async function getNetwork(conn: SSH2CONN, os_type: options) {
     let network = "";
     switch (os_type.toLowerCase()) {
         case "freebsd":
@@ -78,7 +78,7 @@ async function getNetwork(conn: SSH2Promise, os_type: options) {
         fs.writeFileSync("log.log", network, "utf8");
     }
 }
-async function getEVariables(conn: SSH2Promise, os_type: options){
+async function getEVariables(conn: SSH2CONN, os_type: options){
     let variables = "";
     switch (os_type.toLowerCase()) {
         case "freebsd":
@@ -110,7 +110,7 @@ async function getEVariables(conn: SSH2Promise, os_type: options){
         fs.writeFileSync("log.log", variables, "utf8");
     }
 }
-async function getProcess(conn: SSH2Promise, os_type: options) {
+async function getProcess(conn: SSH2CONN, os_type: options) {
     let processes = "";
     switch (os_type.toLowerCase()) {
         case "freebsd":
@@ -142,7 +142,7 @@ async function getProcess(conn: SSH2Promise, os_type: options) {
         fs.writeFileSync("log.log", processes, "utf8");
     }
 }
-async function getFailedLogins(conn: SSH2Promise, os_type: options) {
+async function getFailedLogins(conn: SSH2CONN, os_type: options) {
     let failedLogins = "";
     switch (os_type.toLowerCase()) {
         case "freebsd":
@@ -174,7 +174,7 @@ async function getFailedLogins(conn: SSH2Promise, os_type: options) {
         fs.writeFileSync("log.log", failedLogins, "utf8");
     }
 }
-async function getCurrentLoggedIn(conn: SSH2Promise, os_type: options) {
+async function getCurrentLoggedIn(conn: SSH2CONN, os_type: options) {
     let currentLogOns = "";
     switch (os_type.toLowerCase()) {
         case "freebsd":

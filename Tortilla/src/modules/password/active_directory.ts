@@ -1,7 +1,7 @@
 import ldap from "ldapjs-promise";
 import util from "util";
 import logger from "../console/logger";
-import { ServerInfo } from "../util/db";
+import { Server, ServerInfo, User } from "../../db/dbtypes";
 import { delay } from "../util/util";
 import { log } from "../console/debug";
 
@@ -46,24 +46,24 @@ async function ChangeADPassword(ADIpAddress: string,hostname:string, domain: str
     client.success(`Changed Password of ${ADIpAddress} using LDAP`)
 
     await client.client.unbind();
+    return true;
 
 }
-async function LDAPChangePassword(server: ServerInfo, newPassword: string) {
+async function LDAPChangePassword(server: User, newPassword: string) {
     if (server.domain == "") {
         throw new Error("Unable to change Server without domain Set, please set domain");
     }
-    await ChangeADPassword(server["IP Address"],server.Name, server.domain, stripDomain(server.Username), server.Password, newPassword);
+    return await ChangeADPassword(server.ipaddress,server.hostname, server.domain, stripDomain(server.username), server.password, newPassword);
 }
-async function TestLDAPPassword(server:ServerInfo, newPassword:string):Promise<boolean> {
+async function TestLDAPPassword(server:User, newPassword:string):Promise<boolean> {
     if (server.domain == "" || !server.domain) {
         return false;
     }
-    await delay(3000)
     try {
-        const bindDN = `CN=${stripDomain(server.Username)},CN=Users,` + domain_to_ldap(server.domain);
+        const bindDN = `CN=${stripDomain(server.username)},CN=Users,` + (server.domain != '' ?  domain_to_ldap(server.domain): '');
 
-        const client = new LDAP(server.Name, server["IP Address"],{
-            url: `ldaps://${server["IP Address"]}`, 
+        const client = new LDAP(server.hostname, server.ipaddress,{
+            url: `ldaps://${server.ipaddress}`, 
             // Use ldaps for secure communication
             tlsOptions: {
                 rejectUnauthorized: false,

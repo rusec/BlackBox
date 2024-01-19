@@ -2,7 +2,7 @@ import clear from "clear";
 import inquirer from "inquirer";
 import { sshMenu } from "../page/ssh";
 import { addComputer, addComputerManual } from "../page/addComputer";
-import runningDB from "../../modules/util/db";
+import runningDB from "../../db/db";
 import { Home } from "./home";
 import {json2csv} from 'json-2-csv';
 import fs from 'fs';
@@ -55,37 +55,35 @@ async function Settings() {
             await runningDB.readCSV();
             break;
         case "display_key":
-            var ssh_key = await runningDB.getSSHPublicKey();
+            var ssh_key = await runningDB.getPublicSSHKey();
             console.log(ssh_key);
             await pressEnter()
             break;
         case "Restore DB":
-            await checkPassword()
-            let dbs = await runningDB.getBackups();
-            let mappedOptions = dbs.map((v)=> mapDateString(v));
-            const { date_string } = await inquirer.prompt([
-                {
-                    name: "json_id",
-                    type: "list",
-                    pageSize: 50,
+            // await checkPassword()
+            // let dbs = await runningDB.getBackups();
+            // let mappedOptions = dbs.map((v)=> mapDateString(v));
+            // const { date_string } = await inquirer.prompt([
+            //     {
+            //         name: "json_id",
+            //         type: "list",
+            //         pageSize: 30,
     
-                    choices: [...mappedOptions, { name: "Back", value: "back" }],
-                    message: "Please select a computer:",
-                },
-            ]);
-            switch (date_string) {
-                case "back":
-                    break;
-                default:
-                    await runningDB.restoreDB(date_string);
-                    break;
-            }
-            break;
+            //         choices: [...mappedOptions, { name: "Back", value: "back" }],
+            //         message: "Please select a computer:",
+            //     },
+            // ]);
+            // switch (date_string) {
+            //     case "back":
+            //         break;
+            //     default:
+            //         await runningDB.restoreDB(date_string);
+            //         break;
+            // }
+            // break;
         case "Export DB":
             await checkPassword()
-            let computers = await runningDB.readComputers();
-            let json_string = json2csv(computers)
-            fs.writeFileSync("./computers.csv", json_string)
+            await runningDB.exportDB();
             break;
         case "Back":
             break;

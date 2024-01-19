@@ -1,7 +1,7 @@
 import { assert } from "chai";
 import "mocha";
 import { ejectSSHkey, makeConnection, pingSSH, removeSSHkey } from "../src/modules/util/ssh_utils";
-import runningDB, { ServerInfo } from "../src/modules/util/db";
+import  { ServerInfo } from "../src/db/dbtypes";
 import { changePasswordLinux } from "../src/modules/password/change_password_linux";
 import { changePasswordFreeBSD } from "../src/modules/password/change_password_freeBSD";
 import { target_freebsd } from "./test_computers";

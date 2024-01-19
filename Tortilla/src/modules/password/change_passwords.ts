@@ -1,11 +1,11 @@
 import { changePasswordLinux } from "./change_password_linux";
 import { changePasswordWin } from "./change_password_windows";
-import { ServerInfo } from "../util/db";
+import { Server, ServerInfo, User } from "../../db/dbtypes";
 import { changePasswordDarwin } from "./change_password_darwin";
 import { changePasswordFreeBSD } from "./change_password_freeBSD";
 import { log } from "../console/debug";
 import options from "../util/options";
-import { detect_os, makePermanentConnection } from "../util/ssh_utils";
+import { detect_os, makeConnection } from "../util/ssh_utils";
 import { ejectSSHkey, testPassword } from "../util/ssh_utils";
 import { TestLDAPPassword } from "./active_directory";
 
@@ -15,36 +15,37 @@ export type password_result = {
     error: false | string;
 };
 
-async function changePasswordOf(computer: ServerInfo, new_password: string): Promise<password_result | string> {
+async function changePasswordOf(computer: Server, user:User, new_password: string): Promise<password_result | string> {
     if (!new_password || new_password.length < 8) {
         return "Password does not meet requirements";
     }
 
-    const conn = await makePermanentConnection(computer, true);
-
+    const conn = await makeConnection(user);
+    if(!conn) log(`Unable to connect to Target ${computer.Name} ${computer.ipaddress}`, 'warn')
+    else conn.log("Connected to Target")
     try {
         let res;
 
         if (computer["OS Type"] === "windows") {
-            const username = computer.Username;
+            const username = user.username;
             const newPassword = new_password;
-        
+            const oldPassword = user.password
             // Change password on Windows
-            const passwordChangeResult = await changePasswordWin(computer, conn, username, newPassword);
+            const passwordChangeResult = await changePasswordWin(computer,user, conn, username, newPassword);
 
+            user.password =newPassword
             // Establish a permanent connection
-            const newConn = await makePermanentConnection(computer, true);
+            const newConn = await makeConnection(user);
         
             // Test LDAP password
-            const ldapTestResult = await TestLDAPPassword(computer, newPassword);
+            const ldapTestResult = await TestLDAPPassword(user, newPassword);
 
             if (!newConn) {
                 return {
-                    password: ldapTestResult ? newPassword : computer.Password,
-                    ssh: computer.ssh_key,
-                    error: ldapTestResult ? false :`${computer["IP Address"]} ${computer.Name} Unable to connect to host` ,
+                    password: ldapTestResult ? newPassword : oldPassword,
+                    ssh: user.ssh_key,
+                    error: ldapTestResult ? false :`${computer.ipaddress} ${computer.Name} ${user.username} Unable to connect to host` ,
                 };
-                throw new Error(`${computer["IP Address"]} ${computer.Name} Unable to connect to host`);
             }
         
             // Eject SSH key
@@ -54,13 +55,13 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
             const passwordTestResult = await testPassword(newConn, newPassword);
         
             return {
-                password: passwordTestResult || ldapTestResult ? newPassword : computer.Password,
-                ssh: !newConn ? computer.ssh_key : sshKey,
+                password: passwordTestResult || ldapTestResult ? newPassword : oldPassword,
+                ssh: !newConn ? user.ssh_key : sshKey,
                 error: passwordTestResult ? false : passwordChangeResult,
             };
         }
         if (!conn) {
-            throw new Error(`${computer["IP Address"]} ${computer.Name} Unable to connect to host`);
+            throw new Error(`${computer.ipaddress} ${computer.Name} ${user.username} Unable to connect to host`);
         }
 
         if (!options.includes(computer["OS Type"])) {
@@ -70,13 +71,13 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
 
         switch (computer["OS Type"].toLowerCase()) {
             case "freebsd":
-                res = await changePasswordFreeBSD(conn, computer.Username, new_password);
+                res = await changePasswordFreeBSD(conn, user.username, new_password);
                 break;
             case "linux":
-                res = await changePasswordLinux(conn, computer.Username, new_password, computer.Password);
+                res = await changePasswordLinux(conn, user.username, new_password, user.password);
                 break;
             case "darwin":
-                res = await changePasswordDarwin(conn, computer.Username, computer.Password, new_password);
+                res = await changePasswordDarwin(conn, user.username, user.password, new_password);
                 break;
             default:
                 res = "Unknown OS";
@@ -90,11 +91,11 @@ async function changePasswordOf(computer: ServerInfo, new_password: string): Pro
 
         conn.removeAllListeners();
 
-        return { password: pass_success ? new_password : computer.Password, ssh: ssh_key, error: pass_success ? false : res };
+        return { password: pass_success ? new_password : user.password, ssh: ssh_key, error: pass_success ? false : res };
     } catch (error: any) {
         if (conn) {
             conn.error(`Got Error: ${error.message ? error.message : error}`);
-        } else log(`[${computer["IP Address"]}] [${computer.Name}] Got Error: ${error.message ? error.message : error}`);
+        } else log(`[${computer.ipaddress}] [${computer.Name}] [${user.username}] Got Error: ${error.message ? error.message : error}`);
         return `Got Error: ${error.message ? error.message : error}`;
     }
 }

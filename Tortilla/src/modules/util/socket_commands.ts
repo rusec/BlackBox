@@ -1,7 +1,6 @@
-import delay from "delay";
-import { removeANSIColorCodes } from "./util";
+import { removeANSIColorCodes ,delay} from "./util";
 import { Channel } from "ssh2";
-const TIMEOUT = 4000;
+const TIMEOUT = 5000;
 
 /** THIS FILE IS FOR COMMANDS SENT BY A SOCKET CONNECTION */
 function sendCommandExpect(socket: Channel, command: string, expected: string) {
@@ -30,7 +29,29 @@ function sendCommandExpect(socket: Channel, command: string, expected: string) {
         }, TIMEOUT);
     });
 }
+/** THIS FILE IS FOR COMMANDS SENT BY A SOCKET CONNECTION */
+function socketGetOutput(socket: Channel, command: string) {
+    return new Promise((resolve, reject) => {
+        let log = "";
 
+        const onData = (data: string) => {
+            let parsedData = removeANSIColorCodes(data.toString());
+            log += parsedData;
+        };
+        const cleanUp = () => {
+            clearTimeout(timeoutId);
+            socket.stdout.removeListener("data", onData);
+        };
+
+        socket.stdout.on("data", onData);
+        socket.write(`${command}\r`);
+
+        const timeoutId = setTimeout(() => {
+            cleanUp();
+            resolve(filterLog(log));
+        }, TIMEOUT);
+    });
+}
 function sendCommandNoExpect(socket: Channel, command: string, not_expected: string): Promise<string> {
     return new Promise((resolve, reject) => {
         let log = "";
@@ -111,6 +132,72 @@ function sendInput(socket: Channel, input: string): Promise<boolean> {
     });
 }
 
+/**
+ *  Allows you to send a command and input after for Read-Host, has automatic delay 
+ *
+ */
+function sendCommandAndInput(socket:Channel, input:string, command:string): Promise<string | true>{
+    return new Promise((resolve, reject)=>{
+        let log = ''
+        let commandSent = false;
+        let sentInput = false;
+        let errored = false;
+        async function sendInputToSocket(){
+            sentInput= true;
+            await delay(100);
+            if(errored){
+                return;
+            }
+            socket.stdin.write(`${input}\r`,async  (err:any) => {
+                if (err) {
+                    cleanUp()
+                    reject(filterLog(log));
+                } else {
+                    await delay(3000);
+                    !errored && resolve(true);
+                    cleanUp();
+                }
+            });
+
+        }
+        const onData = (chuck: Buffer) => {
+            let parsedData = filterLog(chuck.toString());
+            log += parsedData;
+            if(errored){
+                return;
+            }
+            if(/(?<!["'])An error occurred.(?!["'])/.test(log.replace(/\r|\n|\r\n/g, ''))){
+                errored = true
+                reject(filterLog(log))
+                cleanUp()
+                return;
+            }
+       
+            if (log.replace(/\r|\n|\r\n/g, '').includes(command.trim()) && !commandSent) {
+                commandSent = true;
+                if(!sentInput) sendInputToSocket();
+            }
+        };
+
+        socket.on("data", onData);
+        socket.write(`${wrapTryCatch(command)}\r`);
+        
+        const cleanUp = () => {
+            clearTimeout(timerId);
+            socket.stdout.removeListener("data", onData);
+        };
+        const timerId = setTimeout(() => {
+            reject(log.replace(/\r|\n|\r\n/g, '') + " TIMEOUT");
+        }, 15000);
+
+    })
+}
+
+function wrapTryCatch(command:string){
+    return `try{ ${command} }catch{"An error occurred."}`
+}
+
+
 function sendInputExpect(socket: Channel, input: string, expect: string): Promise<string> {
     return new Promise((resolve, reject) => {
         let log:Buffer[] = [];
@@ -145,7 +232,7 @@ function filterLog(strLog:string):string{
     const consoleCharPattern = /\x1B\[.*?[@-~]/g;
     const stringWithoutConsoleChars = stringWithoutColor.replace(consoleCharPattern, ""); 
 
-    return removeWindowsLoading(stringWithoutConsoleChars)
+    return (stringWithoutConsoleChars)
 }
 
 
@@ -162,4 +249,4 @@ function removeWindowsLoading(strLog:string):string{
 
 
 
-export default { sendCommand, sendCommandExpect, sendCommandNoExpect, sendInput, sendInputExpect };
+export default { sendCommand, sendCommandAndInput, sendCommandExpect, sendCommandNoExpect, sendInput, sendInputExpect,socketGetOutput };

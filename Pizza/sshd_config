@@ -34,7 +34,7 @@ LogLevel VERBOSE
 PermitRootLogin no
 #StrictModes yes
 MaxAuthTries 3
-MaxSessions 2
+MaxSessions 7
 
 #PubkeyAuthentication yes
 

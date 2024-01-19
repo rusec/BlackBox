@@ -1,7 +1,7 @@
 import inquirer from "inquirer";
 import clear from "clear";
 import "colors";
-import runningDB from "../../modules/util/db";
+import runningDB from "../../db/db";
 import { edit } from "../page/editor";
 import { runScript } from "../page/passwordScript";
 import { checkPassword } from "../../modules/util/checkPassword";
@@ -9,11 +9,28 @@ import { Settings } from "./settings";
 import { utilsPage } from "./utilsPage";
 import { Commands } from "../page/commands";
 import { scanComputers } from "../page/scanComputers";
-import { getAllCurrentConnections } from "../../modules/util/ssh_utils";
+import { getConnectedIps } from "../../modules/util/ssh_utils";
+
+async function setTitleOfApplication(){
+    setTerminalTitle(`${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())} Connections: ${(await getConnectedIps()).length}`);
+}
+function setTerminalTitle(title:string)
+{
+    if(process.platform =='win32'){
+        process.title = title;
+    }else
+  process.stdout.write(
+    String.fromCharCode(27) + "]0;" + title + String.fromCharCode(7)
+  );
+}
+
+setInterval(()=> {
+    setTitleOfApplication()
+}, 15 *1000)
 
 async function Home() {
     process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");console.clear();
-    console.log(`${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())} Connections: ${(await getAllCurrentConnections()).length}`.bgGreen);
+    console.log(`${(process.env.DEV && "DEV MODE") || ""} Current Computers: ${(await runningDB.readComputers()).length}  Passwords Changed: ${(await runningDB.getPasswordChanges())} Connections: ${(await getConnectedIps()).length}`.bgGreen);
     const { program } = await inquirer.prompt([
         {
             name: "program",

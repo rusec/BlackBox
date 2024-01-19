@@ -1,17 +1,19 @@
 {
     "compilerOptions": {
         "incremental": true,
-        "target": "ES6",
+        "target": "es2022",
         "module": "commonjs",
         "allowJs": true,
         "checkJs": false,
         "outDir": "./dist",
         "sourceMap": true,
+        "lib": [ "dom", "es2015", "es2016", "es2017" ],
         "strict": true,
         "alwaysStrict": true,
         "moduleResolution": "node",
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "baseUrl": "."
     },
     "include": ["**/*", "..webpack.config.js"],
-    "exclude": ["releases/**", "dist/**", "build/**", "misc/**", "testing/**"]
+    "exclude": ["releases/**", "dist/**", "build/**", "misc/**", "testing/**", "test/*"]
 }

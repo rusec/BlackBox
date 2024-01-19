@@ -1,9 +1,9 @@
 import { scanComputer } from "../../modules/computer/scan";
 import { pressEnter } from "../../modules/console/enddingModules";
 import { checkPassword } from "../../modules/util/checkPassword";
-import runningDB from "../../modules/util/db";
+import runningDB from "../../db/db";
 import { log } from "../../modules/console/debug";
-import { makePermanentConnection } from "../../modules/util/ssh_utils";
+import { findAnyConnection, makeConnection } from "../../modules/util/ssh_utils";
 import { Home } from "../menu/home";
 
 
@@ -18,10 +18,10 @@ async function scanComputers(){
     for(let server of servers){
         try {
             log(`${done} of ${numberOfComputers} computers`, 'info')
-            let conn = await makePermanentConnection(server);
+            let conn = await findAnyConnection(server.users);
             if(!conn){
                 done++;
-                log(`[${server["IP Address"]}] [${server.Name}] Unable to connect to server`,'error');
+                log(`[${server.ipaddress}] [${server.Name}] Unable to connect to server`,'error');
                 continue;
             }
             await scanComputer(conn, server["OS Type"], false);
