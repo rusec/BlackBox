@@ -109,9 +109,11 @@ class DataBase {
     log: LoggerTo;
 
     constructor() {
+        this.log = new LoggerTo("db_log")
         this.encrypt = new Encryption();
         this.process_dir = path.join(os.homedir() + "/Tortilla");
         this.filePath = path.join(this.process_dir, "muffins");
+        this.checkAndCreateDB();
         this.db = new Level(this.filePath);
         this.configs = this.db.sublevel("app_configs");
         this.computers = this.db.sublevel("computers", { valueEncoding: "json" });
@@ -121,8 +123,30 @@ class DataBase {
         this.ready = false;
         this.initDB();
 
-        this.log = new LoggerTo("db_log")
 
+    }
+    private checkAndCreateDB(){
+        try {
+            if(!fs.existsSync(this.process_dir)){
+                fs.mkdirSync(this.process_dir);
+            }
+            if (!fs.existsSync(this.filePath)) {
+                // If not, create the muffins folder
+                fs.mkdirSync(this.filePath);
+``            } else {
+                // If muffins path exists, check if it's a directory
+                const stats = fs.statSync(this.filePath);
+                if (!stats.isDirectory()) {
+                    // If it's not a directory, throw an error or handle accordingly
+                    fs.unlinkSync(this.filePath);
+                    fs.mkdirSync(this.filePath)
+                    return;
+                }
+            }
+        } catch (error) {
+            this.log.log((error as Error).message,'error')
+        }
+       
     }
     async initDB() {
         try {
