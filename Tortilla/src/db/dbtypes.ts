@@ -28,6 +28,7 @@ export type User = {
     ssh_key: boolean;
     password_changes: number;
     oldPasswords: string[];
+    failedPasswords:string[];
 };
 
 export type Server = {

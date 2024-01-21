@@ -90,11 +90,14 @@ async function runScript(debug?: boolean) {
                         throw new Error(typeof passwordResult == "string" ? passwordResult : passwordResult.error ? passwordResult.error : "");
                     }
                     let wrote = await runningDB.writeUserResult(user.user_id, passwordResult);
+
                     bar.done(`${user.username} ${user.ipaddress} ${user.hostname}`);
                     success++;
                     if (!wrote) throw new Error("Unable to write user password");
                     result = `Success ${user.username} ${user.ipaddress} ${user.hostname}`;
                 } catch (error) {
+                    let passwordTried = target_passwords[index];
+                    if (passwordTried) await runningDB.writeUserFailedPassword(user.user_id, passwordTried)
                     bar.done(`Errored: ${user.username} ${user.ipaddress} ${user.hostname}`);
                     result = `Errored: ${user.username} ${user.ipaddress} ${user.hostname}` + (error as Error).message;
                     fails++;

@@ -249,6 +249,7 @@ class DataBase {
                 username: username,
                 password: this.encrypt.encrypt(password || "", this._getPKey(passwd_hash)),
                 oldPasswords: [],
+                failedPasswords: [],
                 password_changes: 0,
                 ssh_key: false,
             };
@@ -273,6 +274,12 @@ class DataBase {
 
             let password = this.encrypt.decrypt(user.password, encryptionKey);
             if (password) user.password = password;
+            user.failedPasswords = user.failedPasswords.map((pass_hash: string) => {
+                if (typeof encryptionKey == "boolean") return pass_hash;
+                let pass = this.encrypt.decrypt(pass_hash, encryptionKey);
+                if (pass) return pass;
+                return pass_hash;
+            })
             user.oldPasswords = user.oldPasswords.map((pass_hash: string) => {
                 if (typeof encryptionKey == "boolean") return pass_hash;
                 let pass = this.encrypt.decrypt(pass_hash, encryptionKey);
@@ -318,6 +325,12 @@ class DataBase {
 
                 let password = this.encrypt.decrypt(user.password, encryptionKey);
                 if (password) user.password = password;
+                user.failedPasswords = user.failedPasswords.map((pass_hash: string) => {
+                    if (typeof encryptionKey == "boolean") return pass_hash;
+                    let pass = this.encrypt.decrypt(pass_hash, encryptionKey);
+                    if (pass) return pass;
+                    return pass_hash;
+                })
                 user.oldPasswords = user.oldPasswords.map((pass_hash: string) => {
                     if (typeof encryptionKey == "boolean") return pass_hash;
                     let pass = this.encrypt.decrypt(pass_hash, encryptionKey);
@@ -591,6 +604,51 @@ class DataBase {
             return false;
         }
     }
+    async writeUserFailedPassword(user_id:string, password:string){
+        if (!password) {
+            return false;
+        }
+
+        let encryptKey = await this.getDbEncryptionKey();
+        if (!encryptKey) {
+            this.log.log("Unable to get encryption key");
+            return false;
+        }
+        let user = await this.users.get(user_id).catch(() => undefined);
+        if (!user) {
+            return false;
+        }
+
+        let password_encrypted = this.encrypt.encrypt(password, encryptKey);
+        user.failedPasswords ? user.failedPasswords.push(password_encrypted) : [password_encrypted];
+
+        await this.users.put(user.user_id, user);
+        return true;
+
+    }
+    
+    private async updateDomainUser(username:string, domain:string, passwordHash:string, skip_id:string){
+        for await(let id of this.users.keys()){
+            try {
+                if(skip_id == id) continue;
+                let user = await this.users.get(id).catch(()=>undefined);
+                if (!user) {
+                    throw new Error("Unable to find user");
+                }
+                if(user.domain != domain || user.username != username) continue;
+                let oldPassword = user.password;
+                user.password = passwordHash;
+                user.oldPasswords ? user.oldPasswords.push(oldPassword) : [oldPassword];
+    
+                await this.users.put(user.user_id, user);
+            } catch (error) {
+            this.log.error((error as Error).message);
+                
+            }
+           
+        
+        }
+    }
     async writeUserResult(user_id: string, result: password_result) {
         try {
             if (!result.password) {
@@ -617,8 +675,16 @@ class DataBase {
             logger.log(`Writing Computer ${user.ipaddress} ${user.username} in Database`, "info");
 
             await this.users.put(user.user_id, user);
+
+            if(user.domain != '' || user.domain != undefined){
+                await this.updateDomainUser(user.username, user.domain, user.password, user.user_id)
+            }
+
+
             return true;
         } catch (error) {
+            this.log.error((error as Error).message);
+
             return false;
         }
     }
@@ -643,6 +709,12 @@ class DataBase {
                 }
                 let password = this.encrypt.decrypt(user.password, encryptionKey);
                 if (password) user.password = password;
+                user.failedPasswords = user.failedPasswords.map((pass_hash: string) => {
+                    if (typeof encryptionKey == "boolean") return pass_hash;
+                    let pass = this.encrypt.decrypt(pass_hash, encryptionKey);
+                    if (pass) return pass;
+                    return pass_hash;
+                })
                 user.oldPasswords = user.oldPasswords.map((pass_hash: string) => {
                     if (typeof encryptionKey == "boolean") return pass_hash;
                     let pass = this.encrypt.decrypt(pass_hash, encryptionKey);
@@ -690,6 +762,12 @@ class DataBase {
                 }
                 let password = this.encrypt.decrypt(user.password, encryptionKey);
                 if (password) user.password = password;
+                user.failedPasswords = user.failedPasswords.map((pass_hash: string) => {
+                    if (typeof encryptionKey == "boolean") return pass_hash;
+                    let pass = this.encrypt.decrypt(pass_hash, encryptionKey);
+                    if (pass) return pass;
+                    return pass_hash;
+                })
                 user.oldPasswords = user.oldPasswords.map((pass_hash: string) => {
                     if (typeof encryptionKey == "boolean") return pass_hash;
                     let pass = this.encrypt.decrypt(pass_hash, encryptionKey);

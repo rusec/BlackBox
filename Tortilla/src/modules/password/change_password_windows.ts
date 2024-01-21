@@ -13,7 +13,7 @@ async function changePasswordWin(server:Server,user:User, conn: SSH2CONN |false,
             return await LDAPChangePassword(user,password);
         } catch (error:any) {
             logger.log(`[${server.ipaddress}] [${server.Name}] [${user.username}] error ${error.message}`,'error')
-            return error.message ? error : error.message;
+            return error.message ? error as Error : error.message as string;
          }
     }
 
@@ -40,7 +40,7 @@ async function changePasswordWin(server:Server,user:User, conn: SSH2CONN |false,
         return await changePasswordWindowsLocal(conn, username, password,useLocalUser);
     } catch (error: any) {
         logger.log(`${error}`, 'error');
-        return error.message ? error : error.message;
+        return error.message ? error as Error : error.message as string;
     }finally{
         var now = new Date();
         var lapse_time= now.getTime() - then.getTime();
@@ -72,7 +72,7 @@ async function changePasswordWindowsLocal(conn:SSH2CONN, username:string, passwo
         conn.error(`Unable to change Local password  ${error}`)
         if(error.toString().includes('An error occurred.')) return "An error occurred while changing password, check if user exist and password meets requirements"
 
-        return error ;
+        return error as Error ;
     }
 
    
@@ -106,7 +106,7 @@ async function changePasswordWinAD(conn: SSH2CONN, username: string, password: s
 
         return true;
     } catch (error: any) {
-        return error.message ? error.toString() : error.message;
+        return error.message ? error.toString() as string : error.message as string;
     }
 }
 
