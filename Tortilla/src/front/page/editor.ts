@@ -182,7 +182,6 @@ async function edit(id = -1): Promise<void> {
                 await passwordTest();
                 break;
             case "show_pass":
-                await checkPassword();
                 await showPasswords();
                 break;
             case "username_edit":
@@ -224,6 +223,7 @@ async function edit(id = -1): Promise<void> {
         async function showPasswords() {
             if (!user) return;
             console.log(`Current: ${user.password}`);
+            console.log(`Failed Passwords: ${JSON.stringify(user.failedPasswords)}`)
             console.log(`Old Passwords: ${JSON.stringify(user.oldPasswords)}`);
             await pressEnter();
         }

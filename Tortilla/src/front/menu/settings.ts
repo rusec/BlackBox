@@ -24,7 +24,7 @@ async function Settings() {
                 new inquirer.Separator("Data Setup"),
                 "Load CSV",
                 "Export DB",
-                "Restore DB",
+                new inquirer.Separator("SSH"),
                 { name: "Display Public Key", value: "display_key" },
                 new inquirer.Separator(),
                 new inquirer.Separator("Passwords"),
@@ -52,6 +52,7 @@ async function Settings() {
             await runningDB.resetMasterPassword();
             break;
         case "Load CSV":
+            await checkPassword();
             await runningDB.readCSV();
             break;
         case "display_key":
@@ -59,28 +60,6 @@ async function Settings() {
             console.log(ssh_key);
             await pressEnter();
             break;
-        // case "Restore DB":
-        // await checkPassword()
-        // let dbs = await runningDB.getBackups();
-        // let mappedOptions = dbs.map((v)=> mapDateString(v));
-        // const { date_string } = await inquirer.prompt([
-        //     {
-        //         name: "json_id",
-        //         type: "list",
-        //         pageSize: 30,
-
-        //         choices: [...mappedOptions, { name: "Back", value: "back" }],
-        //         message: "Please select a computer:",
-        //     },
-        // ]);
-        // switch (date_string) {
-        //     case "back":
-        //         break;
-        //     default:
-        //         await runningDB.restoreDB(date_string);
-        //         break;
-        // }
-        // break;
         case "Export DB":
             await checkPassword();
             await runningDB.exportDB();
