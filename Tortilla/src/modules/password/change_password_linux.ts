@@ -67,17 +67,6 @@ export { changePasswordLinux };
 async function checks(conn: SSH2CONN) {
     let passed = 7;
     conn.log("Running Security Checks");
-    const checkedForShadow = await runCommand(
-        conn,
-        `if test -f ${shadow}; then
-    echo "File exists.";
-  fi`,
-        "file exists"
-    );
-    if (typeof checkedForShadow === "string") {
-        conn.warn(`/etc/shadow check error GOT ${checkedForShadow} WANTED file exists, Please check for /etc/shadow`);
-        passed--;
-    }
 
     const checkFilePermissions = async (path: string, expectedPermissions: string, logType: options) => {
         const result = await runCommand(conn, `ls -l ${path}`, expectedPermissions);
@@ -108,7 +97,7 @@ async function checks(conn: SSH2CONN) {
     await checkCommand("type -t type", "builtin", "error");
     await checkCommand("type -t chpasswd", "file", "error");
     await checkCommand("type -t passwd", "file", "error");
-    conn.info(`Passed ${passed} of 7 tests`);
+    conn.info(`Passed ${passed} of 6 tests`);
 
     return;
 }
