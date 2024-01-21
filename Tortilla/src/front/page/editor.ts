@@ -31,7 +31,7 @@ async function edit(id = -1): Promise<void> {
 
     var ipAddressesChoices = servers.map((v, k) => {
         return {
-            name: "Conn:" + (connections.includes(v.ipaddress) ? "T" : "F") + "  " + v.ipaddress + " " + v.Name + " Users: " + v.users.length,
+            name: `Conn: ${connections.includes(v.ipaddress) ? "T" : "F"} ${v.ipaddress} ${v.Name} Users: ${v.users.length}`,
             value: k,
         };
     });
@@ -48,7 +48,6 @@ async function edit(id = -1): Promise<void> {
                 name: "json_id",
                 type: "list",
                 pageSize: 50,
-
                 choices: [...ipAddressesChoices, { name: "Home", value: "home" }],
                 message: "Please select a computer:",
             },
@@ -683,5 +682,7 @@ async function computerUtils(server: Server) {
 function blankPassword(password: string) {
     return password && password[0] + "*****" + password[password.length - 1];
 }
+
+
 
 export { edit };
