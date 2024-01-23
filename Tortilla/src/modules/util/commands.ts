@@ -72,7 +72,7 @@ const commands = {
                 step_2: `ss -tuan | grep "LISTEN" | awk '/^tcp/ {print "TCP", $5} /^udp/ {print "UDP", $5}'`
             },
             freebsd: `netstat -an | grep "LISTEN"|awk '/^tcp/ {print "TCP", $4} /^udp/ {print "UDP", $4}'`,
-            windows: `powershell.exe "Get-NetTCPConnection | Where-Object { $_.State -eq 'Listen' } | ForEach-Object {$($_.LocalPort)}"`
+            windows: `powershell.exe "Get-NetTCPConnection | Where-Object { $_.State -eq 'Listen' } | ForEach-Object {$($_.LocalPort)}"`,
         },
         windows: `powershell.exe "Get-NetTCPConnection | Where-Object { $_.State -eq 'Established' }"`,
         linux: {
@@ -93,7 +93,8 @@ const commands = {
             freebsd: {
                 step_1: `pkg info`,
                 step_2: 'pkg_info'
-            }
+            },
+            sunos: "pkginfo"
             
         },
         windows: "powershell.exe Get-Process",

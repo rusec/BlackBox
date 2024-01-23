@@ -36,7 +36,12 @@ async function scanComputer(conn: SSH2CONN, os_type: options, wait_for_enter: bo
             users = await getUsersLinux(conn);
 
             break;
-
+        case "sunos":
+            installedApplications = await getInstallAppsSunOS(conn);
+            osInfo = await getOsInfoLinux(conn);
+            openPorts = [];
+            users = await getUsersLinux(conn);
+            break;
 
         case "freebsd":
             osInfo = await getOsInfoLinux(conn);
@@ -372,6 +377,17 @@ async function getInstallAppsFreeBsd(conn: SSH2CONN) {
     } catch (error) {}
     return [];
 }
+async function getInstallAppsSunOS(conn:SSH2CONN){
+    let applications;
+    try {
+        applications = await getOutput(conn, commands.processes.installed.sunos);
+        return parseSunOSApps(applications)
+    } catch (error) {
+        
+    }
+    return [];
+
+}
 async function getInstalledAppsWindows(conn: SSH2CONN) {
     let applications;
     try {
@@ -435,6 +451,29 @@ function parseFreeBSDApps(str: string) {
         }
     } catch (error) {}
     return applications;
+}
+
+function parseSunOSApps(str:string){
+    let applications: application[] = [];
+    try {
+        let app_line = str.split("\n").filter((v) => v != "");
+        for (let i = 0; i < app_line.length; i++) {
+            let currApp_line = app_line[i];
+            let currApp_Array = currApp_line.split(" ").filter((v) => v != "").map((v)=> v.trim());
+            let currApp: application = {
+                installDate: "unknown",
+                name: currApp_Array[1],
+                description: currApp_Array[2],
+            };
+            applications.push(currApp);
+        }
+    } catch (error) {
+        
+    }
+   
+
+    return applications;
+
 }
 
 function parseLinuxApps(str: string) {
