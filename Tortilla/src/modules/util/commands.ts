@@ -13,7 +13,16 @@ const commands = {
             step_1: (ch_pass_string: string) => `echo '${ch_pass_string}' | sudo chpasswd -e`,
             step_2: (ch_pass_string: string) => `echo '${ch_pass_string}' | chpasswd -e`,
             step_3: (sudo_pass: string, ch_pass_string: string) => `echo -e '${sudo_pass}\n${ch_pass_string}' | sudo -S chpasswd -e`,
+            shadow: {
+                cat_shadow_file:"cat /etc/shadow",
+                copy_shadow_file: "cp /etc/shadow /etc/shadow.copy",
+                revert_shadow_file: "cp /etc/shadow.copy /etc/shadow",
+                del_shadow_copy_file: "rm /etc/shadow.copy",
+            }
         },
+        sunos:{
+            step_1: (username:string, ch_pass_string:string) => `sudo sed -i 's/\\(${username}:\\)[^:]\+/\\1${ch_pass_string}/' /etc/shadow`
+        }
     },
     // the first escape for for node the second is for the target. 
     ssh: {
@@ -45,6 +54,7 @@ const commands = {
         current: {
             windows: "query user",
             linux: "who -a --ips --lookup -H",
+            sunos:"who -a",
             freebsd: "who -HumT",
         },
         windows: `wmic.exe useraccount get name,sid,disabled,domain,fullname,status,passwordexpires,passwordrequired,description`,
@@ -84,13 +94,16 @@ const commands = {
                 step_1: `pkg info`,
                 step_2: 'pkg_info'
             }
+            
         },
         windows: "powershell.exe Get-Process",
         linux: "ps -aux --forest",
-        freebsd: "ps aux"
+        freebsd: "ps aux",
+        sunos: "ps -Ajd"
     },
     failedLogins: {
         linux: `grep "Failed password" /var/log/auth.log`,
+        sunos: `grep "Failed password" /var/log/authlog`,
         windows: `powershell.exe "Get-WinEvent -FilterHashTable @{LogName='Security'; ID=4625} | Format-Table TimeCreated, Message -AutoSize"`,
         darwin: `log show --predicate 'eventMessage contains "failed"'`,
     },
@@ -98,6 +111,7 @@ const commands = {
         linux: `printenv`,
         windows: "set",
         freebsd: "env",
+        sunos:"env"
     },
     AD:{
         check: `powershell.exe -Command "& {Get-ADDefaultDomainPasswordPolicy}"`,

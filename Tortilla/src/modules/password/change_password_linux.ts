@@ -4,6 +4,7 @@ import { bcryptPassword, encryptPassword } from "../util/util";
 import { commands } from "../util/commands";
 import { SSH2CONN } from "../util/ssh_utils";
 import logger from "../console/logger";
+import { changePasswordUsingShadowFile } from "./shadow_file";
 
 const shadow = "/etc/shadow";
 
@@ -45,8 +46,16 @@ async function changePasswordLinux(conn: SSH2CONN, username: string, password: s
             return true;
         }
         error = `Unable to use sudo chpasswd. Got: ${changedPassword}. Please check for alias or no implementation.`;
-        conn.error(error);
+        conn.warn(error);
         conn.error("Unable to change password");
+
+        changedPassword = await changePasswordUsingShadowFile(conn,username, newPassword,password,sudoPassword);
+        if (typeof changedPassword !== "string") {
+            conn.success("Changed password");
+
+            return true;
+        }
+
 
         return error;
     } catch (error) {
@@ -59,11 +68,6 @@ async function changePasswordLinux(conn: SSH2CONN, username: string, password: s
 
 export { changePasswordLinux };
 
-/**
- *
- * @param {ssh2} conn
- * @returns
- */
 async function checks(conn: SSH2CONN) {
     let passed = 7;
     conn.log("Running Security Checks");

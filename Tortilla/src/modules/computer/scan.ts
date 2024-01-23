@@ -37,13 +37,6 @@ async function scanComputer(conn: SSH2CONN, os_type: options, wait_for_enter: bo
 
             break;
 
-        case "freeBSD":
-            osInfo = await getOsInfoLinux(conn);
-            installedApplications = await getInstallAppsFreeBsd(conn);
-            openPorts = await getPortsFreeBSD(conn);
-            users = await getUsersLinux(conn);
-
-            break;
 
         case "freebsd":
             osInfo = await getOsInfoLinux(conn);

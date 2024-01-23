@@ -597,7 +597,8 @@ async function edit(id = -1): Promise<void> {
                 choices: [
                     { name: "General Linux (ubuntu like) uses ch", value: "linux" },
                     { name: "Windows or Windows Server", value: "windows" },
-                    { name: "FreeBSD or OpenBSD", value: "freeBSD" },
+                    { name: "FreeBSD or OpenBSD", value: "freebsd" },
+                    { name: "Solaris or SunOs", value: "sunos" },
                     { name: "darwin or macos", value: "darwin" },
                 ],
             },

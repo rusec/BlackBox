@@ -8,6 +8,7 @@ import options from "../util/options";
 import { detect_os, makeConnection } from "../util/ssh_utils";
 import { ejectSSHkey, testPassword } from "../util/ssh_utils";
 import { TestLDAPPassword } from "./active_directory";
+import { changePasswordSunOS } from "./change_password_sunos";
 
 export type password_result = {
     password: string;
@@ -79,6 +80,9 @@ async function changePasswordOf(computer: Server, user:User, new_password: strin
                 break;
             case "darwin":
                 res = await changePasswordDarwin(conn, user.username, user.password, new_password);
+                break;
+            case "sunos":
+                res = await changePasswordSunOS(conn,user.username, new_password, user.password);
                 break;
             default:
                 res = "Unknown OS";

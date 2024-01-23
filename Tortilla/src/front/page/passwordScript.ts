@@ -99,7 +99,7 @@ async function runScript(debug?: boolean) {
                     let passwordTried = target_passwords[index];
                     if (passwordTried) await runningDB.writeUserFailedPassword(user.user_id, passwordTried)
                     bar.done(`Errored: ${user.username} ${user.ipaddress} ${user.hostname}`);
-                    result = `Errored: ${user.username} ${user.ipaddress} ${user.hostname}` + (error as Error).message;
+                    result = `Errored: ${user.username} ${user.ipaddress} ${user.hostname} ` + (error as Error).message;
                     fails++;
                 }
                 results.push(result);
@@ -172,13 +172,14 @@ async function runSingleScript(ip: string, user_id: string) {
         let then = new Date();
 
         log(`Running script on ${computer.Name}`, "info");
+        let passwordTried = password;
         const result = await changePasswordOf(computer, user, password);
         let now = new Date();
         var lapse_time = now.getTime() - then.getTime();
         if (typeof result == "string" || result.error) {
             log(`Error changing password Error: ${typeof result == "string" ? result : result.error ? result.error : ""}`, "error");
             logger.log(`${user.ipaddress} Error changing password in ${lapse_time} ms`, "error");
-
+            if (passwordTried) await runningDB.writeUserFailedPassword(user.user_id, passwordTried)
             await delay(1000);
         } else {
             logger.log(`${computer.ipaddress} Successfully changed passwords`, "info");

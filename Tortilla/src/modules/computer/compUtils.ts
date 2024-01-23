@@ -22,6 +22,7 @@ async function getUsers(conn: SSH2CONN, os_type: options) {
             users = await getOutput(conn, commands.users.darwin);
             break;
         case "linux":
+        case "sunos":
             users = await getOutput(conn, commands.users.parsing.linux);
             users_array = parseUsersLinux(users);
             users = asTable(users_array);
@@ -56,6 +57,7 @@ async function getNetwork(conn: SSH2CONN, os_type: options) {
             network = await getOutput(conn, commands.network.linux.step_1);
             break;
         case "linux":
+        case "sunos":
             network = await getOutput(conn, commands.network.linux.step_1);
             if (network.includes("netstat")) {
                 network = await getOutput(conn, commands.network.linux.step_2);
@@ -93,6 +95,9 @@ async function getEVariables(conn: SSH2CONN, os_type: options) {
         case "linux":
             variables = await getOutput(conn, commands.variables.linux);
             break;
+        case "sunos":
+            variables = await getOutput(conn, commands.variables.sunos);
+            break;
         default:
             variables = "Unable to get Unknown OS";
             break;
@@ -124,6 +129,9 @@ async function getProcess(conn: SSH2CONN, os_type: options) {
             break;
         case "linux":
             processes = await getOutput(conn, commands.processes.linux);
+            break;
+        case "sunos":
+            processes = await getOutput(conn, commands.processes.sunos);
             break;
         default:
             processes = "Unable to get Unknown OS";
@@ -157,6 +165,9 @@ async function getFailedLogins(conn: SSH2CONN, os_type: options) {
         case "linux":
             failedLogins = await getOutput(conn, commands.failedLogins.linux);
             break;
+        case "sunos":
+            failedLogins = await getOutput(conn, commands.failedLogins.sunos);
+            break;
         default:
             failedLogins = "Unable to get Unknown OS";
             break;
@@ -188,6 +199,9 @@ async function getCurrentLoggedIn(conn: SSH2CONN, os_type: options) {
             break;
         case "linux":
             currentLogOns = await getOutput(conn, commands.users.current.linux);
+            break;
+        case "sunos":
+            currentLogOns = await getOutput(conn, commands.users.current.sunos);
             break;
         default:
             currentLogOns = "Unable to get Unknown OS";

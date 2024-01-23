@@ -14,6 +14,7 @@ import fs from "fs";
 import os from "os";
 import { isValidSession } from "./checkPassword";
 import LoggerTo from "../console/loggerToFile";
+import { Algorithms } from "ssh2";
 // SSH COMMANDS for ejections
 temp.track();
 let connectionLog = new LoggerTo("connections");
@@ -31,6 +32,8 @@ async function findAnyConnection(Users: User[], timeout = 3000) {
                 authHandler: ["publickey", "password"],
                 readyTimeout: timeout,
                 reconnectTries: 3,
+                algorithms: acceptedAlgos,
+
                 reconnectDelay: 1000,
             };
             const ssh = new SSH2CONN(user.hostname, sshConfig);
@@ -70,6 +73,7 @@ async function makeConnection(user: User, timeout = 3000, retryCount = 5, retryD
             privateKey: privateKey,
             authHandler: ["publickey", "password"],
             readyTimeout: timeout,
+            algorithms: acceptedAlgos,
             reconnectTries: retryCount,
             reconnectDelay: retryDelay,
         };
@@ -148,6 +152,7 @@ async function testSSH(conn: SSH2CONN) {
             privateKey: await runningDB.getPrivateSSHKey(),
             authHandler: ["publickey"],
             reconnect: false,
+            algorithms: acceptedAlgos,
             keepaliveInterval: 0,
             uniqueId: "SshKEY_TEST" + conn.config[0].host + conn.config[0].username,
             readyTimeout: 7000,
@@ -178,6 +183,7 @@ async function testPassword(conn: SSH2CONN, password: string) {
             authHandler: ["password"],
             reconnect: false,
             readyTimeout: 7000,
+            algorithms: acceptedAlgos,
             reconnectTries: 3,
             reconnectDelay: 1000,
             uniqueId: "PasswordTest" + conn.config[0].host + conn.config[0].username,
@@ -263,9 +269,6 @@ async function injectSSHkey(conn: SSH2CONN, os_type: options, force?: undefined 
                 await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
                 break;
             case "freebsd":
-                await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
-                break;
-            case "freeBSD":
                 await runCommandNoExpect(conn, commands.ssh.eject.linux(ssh_key));
                 break;
             case "darwin":
@@ -405,7 +408,7 @@ async function scanSSH(
             privateKey: await runningDB.getPrivateSSHKey(),
             authHandler: ["publickey", "password"],
             reconnect: false,
-            keepaliveInterval: 0,
+            algorithms: acceptedAlgos,
             readyTimeout: 6000,
         };
         const ssh = new SSH2CONN("", sshConfig);
@@ -496,7 +499,9 @@ async function detect_os(conn: SSH2CONN): Promise<options> {
             return "linux";
         } else if (name.includes("freebsd") || name.includes("openbsd") || name.includes("netbsd") || name.includes("dragon")) {
             return "freebsd";
-        } else if (name.includes("darwin")) {
+        } else if(name.inculdes("sunos")){
+            return "sunos";
+        }else if (name.includes("darwin")) {
             return "darwin";
         } else {
             const windowsInfo = await conn.exec(commands.detect.windows);
@@ -581,3 +586,76 @@ export {
     getConnectedIps,
     scanSSH,
 };
+
+
+const acceptedAlgos:Algorithms = {
+    // Cipher algorithms (ordered from most secure to least secure)
+    cipher: [
+      'chacha20-poly1305@openssh.com',
+      'aes256-gcm',
+      'aes256-gcm@openssh.com',
+      'aes128-gcm',
+      'aes128-gcm@openssh.com',
+      'aes256-ctr',
+      'aes192-ctr',
+      'aes128-ctr',
+      'aes256-cbc',
+      'aes192-cbc',
+      'aes128-cbc',
+    //   'arcfour256',
+    //   'arcfour128',
+    //   'arcfour',
+    //   'blowfish-cbc',
+    //   'cast128-cbc',
+    //   '3des-cbc',
+    ],
+    // Compression algorithms (ordered from most secure to least secure)
+    compress: [
+      'none',
+      'zlib@openssh.com',
+      'zlib',
+    ],
+    // HMAC algorithms (ordered from most secure to least secure)
+    hmac: [
+      'hmac-sha2-512-etm@openssh.com',
+      'hmac-sha2-256-etm@openssh.com',
+      'hmac-sha1-etm@openssh.com',
+      'hmac-sha2-512',
+      'hmac-sha2-256',
+      'hmac-sha1',
+      'hmac-ripemd160',
+      'hmac-md5',
+      'hmac-sha2-512-96',
+      'hmac-sha2-256-96',
+      'hmac-md5-96',
+      'hmac-sha1-96',
+    ],
+    // Key exchange algorithms (ordered from most secure to least secure)
+    kex: [
+      'curve25519-sha256',
+      'curve25519-sha256@libssh.org',
+      'ecdh-sha2-nistp521',
+      'ecdh-sha2-nistp384',
+      'ecdh-sha2-nistp256',
+      'diffie-hellman-group18-sha512',
+      'diffie-hellman-group17-sha512',
+      'diffie-hellman-group16-sha512',
+      'diffie-hellman-group15-sha512',
+      'diffie-hellman-group14-sha256',
+      'diffie-hellman-group-exchange-sha256',
+      'diffie-hellman-group1-sha1',
+      'diffie-hellman-group14-sha1',
+      'diffie-hellman-group-exchange-sha1',
+    ],
+    // Server host key formats (ordered from most secure to least secure)
+    serverHostKey: [
+      'ssh-ed25519',
+      'ecdsa-sha2-nistp521',
+      'ecdsa-sha2-nistp384',
+      'ecdsa-sha2-nistp256',
+      'rsa-sha2-512',
+      'rsa-sha2-256',
+      'ssh-rsa',
+      'ssh-dss',
+    ],
+  }

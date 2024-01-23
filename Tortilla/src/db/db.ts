@@ -516,11 +516,10 @@ class DataBase {
         }
     }
     async getPasswordChanges() {
-        let computers = this.computers.keys();
         let result = 0;
-        for await (let ip of computers) {
-            let computer = await this.computers.get(ip);
-            result += computer.password_changes;
+        for await (let ip of this.users.keys()) {
+            let user = await this.users.get(ip);
+            result += user.password_changes;
         }
         return result;
     }
