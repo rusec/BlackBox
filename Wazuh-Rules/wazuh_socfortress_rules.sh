@@ -44,16 +44,6 @@ logger() {
 }
 
 
-## Check if Git exists
-if ! command -v git &> /dev/null
-then
-    logger -e "git package could not be found. Please install with yum/apt-get install git."
-    exit
-else 
-    logger -e "git package found. Continuing..."
-fi
-
-
 checkArch() {
     arch=$(uname -m)
 
