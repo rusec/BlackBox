@@ -1,19 +1,16 @@
 #!/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-
+CURR_DIR="./"
 clear
+
+
+
 
 ## Continue?
 
 ## Check if system is based on yum or apt-get
-while true; do
-    read -p "Do you wish to configure Wazuh with the SOCFortress ruleset? WARNING - This script will replace all of your current custom Wazuh Rules. Please proceed with caution and it is recommended to manually back up your rules... continue? " yn
-    case $yn in
-        [Yy]* ) break;;
-        [Nn]* ) exit;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
+
+echo "Configuring Wazuh with the SOCFortress ruleset..."
 
 if [ -n "$(command -v yum)" ]; then
     sys_type="yum"
@@ -130,7 +127,7 @@ cloneRules() {
             mkdir /tmp/wazuh_rules_backup
             logger -e "Backing up current rules into /tmp/wazuh_rules_backup/"
             \cp -r /var/ossec/etc/rules/* /tmp/wazuh_rules_backup/
-            git clone https://github.com/socfortress/Wazuh-Rules.git /tmp/Wazuh-Rules
+            cp -r . /tmp/Wazuh-Rules
             cd /tmp/Wazuh-Rules || exit 1
             find . -name '*xml' -exec mv {} /var/ossec/etc/rules/ \;
             find /var/ossec/etc/rules/ -name 'decoder-linux-sysmon.xml' -exec mv {} /var/ossec/etc/decoders/ \;
@@ -154,7 +151,7 @@ cloneRules() {
             mkdir /tmp/wazuh_rules_backup
             logger -e "Backing up current rules into /tmp/wazuh_rules_backup/"
             \cp -r /var/ossec/etc/rules/* /tmp/wazuh_rules_backup/
-            git clone https://github.com/socfortress/Wazuh-Rules.git /tmp/Wazuh-Rules
+            cp -r . /tmp/Wazuh-Rules
             cd /tmp/Wazuh-Rules || exit 1
             find . -name '*xml' -exec mv {} /var/ossec/etc/rules/ \;
             find /var/ossec/etc/rules/ -name 'decoder-linux-sysmon.xml' -exec mv {} /var/ossec/etc/decoders/ \;
