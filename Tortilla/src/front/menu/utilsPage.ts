@@ -1,6 +1,6 @@
 import clear from "clear";
 import inquirer from "inquirer";
-import { generatePasswords } from "../page/generate";
+import { generatePasswords, printPasswords } from "../page/generate";
 import { Home } from "./home";
 import { bcryptPassword, encryptPassword } from "../../modules/util/util";
 
@@ -12,7 +12,7 @@ async function utilsPage() {
             name: "program",
             type: "list",
             pageSize: 60,
-            choices: [new inquirer.Separator(), "Generate Passwords", "Encrypt", "Bcrypt", new inquirer.Separator(), "Back"],
+            choices: [new inquirer.Separator(), "Generate Passwords","Print Passwords", "Encrypt", "Bcrypt", new inquirer.Separator(), "Back"],
             message: "Please select a Program",
         },
     ]);
@@ -20,6 +20,9 @@ async function utilsPage() {
     switch (program) {
         case "Generate Passwords":
             await generatePasswords();
+            break;
+        case "Print Passwords":
+            await printPasswords();
             break;
         case "Encrypt":
             await Encrypt(0);
