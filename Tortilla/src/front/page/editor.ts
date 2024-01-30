@@ -221,10 +221,10 @@ async function edit(id = -1): Promise<void> {
 
         async function showPasswords() {
             if (!user) return;
-            console.log(`Current: ${user.password}`);
-            console.log(`Failed Passwords: ${JSON.stringify(user.failedPasswords)}`)
-            console.log(`Old Passwords: ${JSON.stringify(user.oldPasswords)}`);
-            await pressEnter();
+            console.log(`Current: ${user.password}`.green);
+            console.log(`Failed Passwords: ${user.failedPasswords.map((v, index) => index === 0 ? ("Latest Failed: " + v).red: (v)).join(" | ").red}`);
+            console.log(`Old Passwords: ${user.oldPasswords.map((v, index) => index === 0 ? ("Latest Old: " + v).yellow : (v)).join(" | ").yellow}`);
+            await pressEnter();     
         }
         async function changeUsername() {
             if (!user) return;
