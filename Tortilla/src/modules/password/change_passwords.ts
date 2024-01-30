@@ -56,6 +56,7 @@ async function changePasswordOf(computer: Server, user:User, new_password: strin
             const passwordTestResult = await testPassword(newConn, newPassword);
         
             await newConn.close();
+            conn && await conn.close()
             return {
                 password: passwordTestResult || ldapTestResult ? newPassword : oldPassword,
                 ssh: !newConn ? user.ssh_key : sshKey,
