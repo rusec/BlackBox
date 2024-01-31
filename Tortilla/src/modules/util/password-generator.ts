@@ -1,9 +1,7 @@
 import keccak256 from "keccak256";
 import RandomSeed from "random-seed";
-const words = require("an-array-of-english-words");
-
-const PASSWORD_LENGTH = 20;
-
+// const words = require('../../words/words.json')
+import words from '../../words/words.json';
 /**
  *
  * Generates an array of random passwords.
@@ -17,23 +15,18 @@ function generatePasses(length: number, seeder: string): string[] {
 
     const results = [];
     for (let index = 0; index < length; index++) {
-        let pass = "";
-        while (pass.length != PASSWORD_LENGTH){
-            pass = createPassword()
-        }
-        results.push(pass);
+        
+        results.push(createPassword());
     }
     function createPassword(){
         var first_word = getWord();
         first_word = first_word[0].toUpperCase() + first_word.substring(1);
         var pass = first_word + "-";
-        for (let i = 0; i < 2; i++) {
-            if (rng.random() > 0.5) {
-                pass += rng.random() > 0.5 ? capitalizeRandomWord() : getWord();
-            } else {
-                pass += randomBetween(10, 1000);
-            }
-            if (i !== 1) {
+        let numbersIndex = randomBetween(0,3);
+        for (let i = 0; i < 3; i++) {
+            if(numbersIndex == i) pass += randomBetween(100, 1000);
+            else pass += getWord();
+            if (i !== 2) {
                 pass += "-";
             }
         }
@@ -54,7 +47,7 @@ function generatePasses(length: number, seeder: string): string[] {
     }
 
     function randomBetween(min: number, max: number) {
-        return Math.floor(max * rng.random() + min);
+        return Math.floor( rng.random() * (max - min) + min);
     }
 
     return results;

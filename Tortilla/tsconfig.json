@@ -12,7 +12,8 @@
         "alwaysStrict": true,
         "moduleResolution": "node",
         "esModuleInterop": true,
-        "baseUrl": "."
+        "baseUrl": ".",
+        "resolveJsonModule": true,
     },
     "include": ["**/*", "..webpack.config.js"],
     "exclude": ["releases/**", "dist/**", "build/**", "misc/**", "testing/**", "test/*"]
