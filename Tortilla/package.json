@@ -1,6 +1,7 @@
 {
     "dependencies": {
         "@fabio286/ssh2-promise": "github:Fabio286/ssh2-promise",
+        "@inquirer/prompts": "^3.3.2",
         "@types/level": "^6.0.3",
         "@types/ssh2-streams": "^0.1.10",
         "an-array-of-english-words": "^2.0.0",

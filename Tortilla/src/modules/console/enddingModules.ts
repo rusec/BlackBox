@@ -1,6 +1,5 @@
 import inquirer from "inquirer";
 import fs from "fs";
-
 async function logToFile(str: string) {
     const { continueLog } = await inquirer.prompt([
         {
@@ -22,5 +21,15 @@ async function pressEnter() {
         },
     ]);
 }
+async function skip() {
+    await inquirer.prompt([
+        {
+            name: "confirm",
+            type: "input",
+            message: "Press Enter to Skip",
+        },
+    ]);
+    
+}
 
-export { logToFile, pressEnter };
+export { logToFile, pressEnter ,skip };

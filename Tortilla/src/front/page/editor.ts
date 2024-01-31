@@ -18,11 +18,10 @@ import {
     removeSSH,
     testPassword,
 } from "../../modules/util/ssh_utils";
-import { changePasswordOf } from "../../modules/password/change_passwords";
 import { log } from "../../modules/console/debug";
 import logger from "../../modules/console/logger";
 import { getCurrentLoggedIn, getEVariables, getFailedLogins, getNetwork, getProcess, getUsers } from "../../modules/computer/compUtils";
-import { pressEnter } from "../../modules/console/enddingModules";
+import { pressEnter, skip } from "../../modules/console/enddingModules";
 import { scanComputer } from "../../modules/computer/scan";
 async function edit(id = -1): Promise<void> {
     await clear();
@@ -60,11 +59,18 @@ async function edit(id = -1): Promise<void> {
 
     await clear();
     log("Checking Connection");
+
+
     const computer = await runningDB.getComputer(servers[selected_id].ipaddress);
     if (!computer) return edit();
+
+    let statusPromise = getStatus(computer)
+    let skipPromise = skip();
+    let result = await Promise.race([statusPromise,skipPromise]);
+
     const header = `> ${computer.Name} ${computer.ipaddress} ${computer["OS Type"]} ${computer.domain}| Users: ${
         computer.users.length
-    } | password changes: ${computer.password_changes} | Online: ${(await getStatus(computer)) ? "Live" : "unable to connect"}`.bgBlue;
+    } | password changes: ${computer.password_changes} | Online: ${(result) ? "Live" : "unable to connect"}`.bgBlue;
 
     await clear();
 
@@ -97,6 +103,7 @@ async function edit(id = -1): Promise<void> {
             ],
             message: "Please select one of the following options:",
         },
+        
     ]);
 
     async function editUsers(user_id: number = -1): Promise<void> {

@@ -386,7 +386,7 @@ async function removeSSH(user: User, os: options) {
 
 async function getStatus(target: Server) {
     try {
-        const ssh = await findAnyConnection(target.users, 2000);
+        const ssh = await findAnyConnection(target.users, 4000);
         if (!ssh) return false;
         await ssh.close();
         return true;
