@@ -189,6 +189,11 @@ async function testPassword(conn: SSH2CONN, password: string) {
             uniqueId: "PasswordTest" + conn.config[0].host + conn.config[0].username,
         };
         const ssh = new SSH2Promise(sshConfig, true);
+
+        // TODO: Mohammed
+        // Not sure why, but there are two connections here.. One from the caller, and another here
+        // They both end up closing, but I am not sure why we connect twice and close twice
+
         await ssh.connect();
         await ssh.close();
         conn.info("Login Password active");
@@ -201,6 +206,7 @@ async function testPassword(conn: SSH2CONN, password: string) {
         return false;
     }
 }
+
 //eject ssh function
 //should check for ssh key in the folder, if it doesn't exist inject it.
 //will try to ssh using the key, if it cant it will eject one more time
@@ -439,7 +445,7 @@ async function makeInteractiveShell(server: User): Promise<boolean> {
     if (!conn) {
         return false;
     }
-    conn.close();
+    conn.close(); // W
     return new Promise(async (resolve, reject) => {
         temp.open("temp_key", async function (err, info) {
             if (err) {
@@ -499,7 +505,7 @@ async function detect_os(conn: SSH2CONN): Promise<options> {
             return "linux";
         } else if (name.includes("freebsd") || name.includes("openbsd") || name.includes("netbsd") || name.includes("dragon")) {
             return "freebsd";
-        } else if(name.inculdes("sunos")){
+        } else if(name.includes("sunos")){
             return "sunos";
         }else if (name.includes("darwin")) {
             return "darwin";

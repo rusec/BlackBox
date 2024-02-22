@@ -73,6 +73,7 @@ async function scanComputer(conn: SSH2CONN, os_type: options, wait_for_enter: bo
 
     let text = createTextFile(hostname, os, openPorts, installedApplications, osInfo, users);
     wait_for_enter && (await pressEnter());
+    await conn.close();
     return text;
 }
 type application = {
