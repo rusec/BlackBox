@@ -1,1 +1,0 @@
-Change password on SUN OS using File 
