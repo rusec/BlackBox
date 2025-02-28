@@ -7,7 +7,7 @@ from os import mkdir
 import subprocess
 from subprocess import check_output
 
-if len(argv) != 3:
+if len(argv) <= 3:
     print("Usage: eve.py <user> <hostname> <port> <suricata_dir>")
     exit(1)
 
