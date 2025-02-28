@@ -7,13 +7,14 @@ from os import mkdir
 import subprocess
 from subprocess import check_output
 
-hostname = argv[1]
-port = int(argv[2])
-suricata_dir = (argv[3]) if len(argv) > 3 else '/var/log/suricata/eve.json'
+user = argv[1]
+hostname = argv[2]
+port = int(argv[3])
+suricata_dir = (argv[4]) if len(argv) > 4 else '/var/log/suricata/eve.json'
 start = 1
 
 if len(argv) != 3:
-    print("Usage: eve.py <hostname> <port> <suricata_dir>")
+    print("Usage: eve.py <user> <hostname> <port> <suricata_dir>")
     exit(1)
 
 
@@ -28,6 +29,6 @@ if exists('/traffic/eve.json'):
     check_output(['sed', '$d', '/traffic/eve.json'])
     start = int(check_output(['wc', '-l', '/traffic/eve.json']).split()[0]) + 1
 
-conn = Connection(hostname, port=port)
+conn = Connection(hostname, port=port, user=user)
 with open('/traffic/eve.json', 'a') as f:
     res = conn.run(f'tail -f -n +{start} {suricata_dir}/eve.json', out_stream=f)
