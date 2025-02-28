@@ -7,15 +7,17 @@ from os import mkdir
 import subprocess
 from subprocess import check_output
 
+if len(argv) != 3:
+    print("Usage: eve.py <user> <hostname> <port> <suricata_dir>")
+    exit(1)
+
 user = argv[1]
 hostname = argv[2]
 port = int(argv[3])
 suricata_dir = (argv[4]) if len(argv) > 4 else '/var/log/suricata/eve.json'
 start = 1
 
-if len(argv) != 3:
-    print("Usage: eve.py <user> <hostname> <port> <suricata_dir>")
-    exit(1)
+
 
 
 
